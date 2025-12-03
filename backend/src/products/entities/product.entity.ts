@@ -6,7 +6,9 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
+import { ProductStock } from './product-stock.entity';
 
 @Entity()
 export class Product {
@@ -31,14 +33,14 @@ export class Product {
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 
+  @OneToMany(() => ProductStock, (stock) => stock.product, { cascade: true })
+  stocks: ProductStock[];
+
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 
   @Column('decimal', { precision: 10, scale: 2 })
   pricePromo: number;
-
-  @Column('decimal', { precision: 10, scale: 3, default: 0 })
-  stockQty: number;
 
   @Column()
   unitsOfMeasurement: string;
