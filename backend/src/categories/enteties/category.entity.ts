@@ -12,6 +12,9 @@ export class Category {
   @Column()
   name: string;
 
+  @Column()
+  iconPath: string;
+
   @OneToMany(() => Product, (product) => product.category)
   products: Product[];
 }

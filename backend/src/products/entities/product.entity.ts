@@ -34,6 +34,9 @@ export class Product {
   @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 
+  @Column('decimal', { precision: 10, scale: 2 })
+  pricePromo: number;
+
   @Column('decimal', { precision: 10, scale: 3, default: 0 })
   stockQty: number;
 
@@ -45,6 +48,9 @@ export class Product {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @Column({ default: false })
+  isPromo: boolean;
 
   @UpdateDateColumn()
   updatedAt: Date;
