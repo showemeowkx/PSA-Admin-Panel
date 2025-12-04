@@ -9,15 +9,14 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post()
-  create(@Body() createUserDto: UpdateUserDto) {
-    return this.authService.create(createUserDto);
+  @Post('/register')
+  register(@Body() createUserDto: CreateUserDto): Promise<void> {
+    return this.authService.register(createUserDto);
   }
 
   @Get()

@@ -20,7 +20,7 @@ export class User {
   @Column({ unique: true })
   phone: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, nullable: true, default: null })
   email: string;
 
   @OneToOne(() => Cart)
@@ -35,7 +35,7 @@ export class User {
   selectedStoreId: number;
 
   // PLACEHOLDER
-  @Column()
+  @Column({ default: null, nullable: true })
   wallet: string;
 
   @Column({ default: false })
