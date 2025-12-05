@@ -33,7 +33,4 @@ export class ProductStock {
 
   @Column('decimal', { precision: 10, scale: 3, default: 0 })
   quantity: number;
-
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
-  price: number;
 }
