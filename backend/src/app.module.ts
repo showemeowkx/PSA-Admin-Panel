@@ -12,7 +12,6 @@ import { StoreModule } from './store/store.module';
 @Module({
   imports: [
     ConfigModule.forRoot(),
-
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.POSTGRES_HOST,

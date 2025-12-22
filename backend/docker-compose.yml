@@ -17,7 +17,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # 2. NestJS Застосунок
   api:
     build:
       context: .

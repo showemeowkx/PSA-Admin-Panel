@@ -1,26 +1,212 @@
-import { Injectable } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Product } from './entities/product.entity';
+import { Repository } from 'typeorm';
+import { ProductStock } from './entities/product-stock.entity';
+import { Category } from 'src/categories/enteties/category.entity';
+import { GetProductsFiltersDto } from './dto/get-products-filters.dto';
 
 @Injectable()
 export class ProductsService {
-  create(createProductDto: CreateProductDto) {
-    return 'This action adds a new product';
+  constructor(
+    @InjectRepository(Product)
+    private productRepository: Repository<Product>,
+    @InjectRepository(ProductStock)
+    private stockRepository: Repository<ProductStock>,
+    @InjectRepository(Category)
+    private categoryRepository: Repository<Category>,
+  ) {}
+
+  async create(createProductDto: CreateProductDto): Promise<void> {
+    const category = await this.findOne(createProductDto.categoryId);
+
+    if (!category) {
+      throw new NotFoundException(
+        `Category with ID ${createProductDto.categoryId} not found`,
+      );
+    }
+
+    if (!createProductDto.stocks || createProductDto.stocks.length === 0) {
+      throw new ConflictException("Incorrect 'stoks' value");
+    }
+
+    const productEntity = this.productRepository.create({
+      ...createProductDto,
+      category,
+      imagePath: '', // Placeholder
+      isPromo: createProductDto.pricePromo === null,
+      updatedAt: new Date(),
+    });
+
+    try {
+      const product = await this.productRepository.save(productEntity);
+
+      if (createProductDto.stocks && createProductDto.stocks.length > 0) {
+        const stocks = createProductDto.stocks.map((s) =>
+          this.stockRepository.create({
+            product,
+            storeId: s.storeId,
+            quantity: s.quantity,
+          }),
+        );
+
+        await this.stockRepository.save(stocks);
+      }
+    } catch (error) {
+      if (error.code === '23505') {
+        throw new ConflictException('This product already exists');
+      }
+      throw new InternalServerErrorException(
+        `Failed to create a product: ${error.stack}`,
+      );
+    }
   }
 
-  findAll() {
-    return `This action returns all products`;
+  async findAll(getProductsFiltersDto: GetProductsFiltersDto): Promise<{
+    data: Product[];
+    metadata: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const {
+      page = 1,
+      limit = 10,
+      storeId,
+      ukrskladId,
+      categoryId,
+      search,
+      minPrice,
+      maxPrice,
+      sortMethod = 'PROMO',
+    } = getProductsFiltersDto;
+
+    const qb = this.productRepository.createQueryBuilder('product');
+
+    qb.leftJoinAndSelect('product.category', 'category');
+    qb.leftJoinAndSelect('product.stocks', 'stock');
+    qb.leftJoinAndSelect('stock.store', 'store');
+
+    if (storeId) {
+      qb.andWhere('stock.storeId = :storeId', { storeId });
+    }
+    if (ukrskladId) {
+      qb.andWhere('product.ukrskladId = :ukrskladId', { ukrskladId });
+    }
+    if (categoryId) {
+      qb.andWhere('product.categoryId = :categoryId', { categoryId });
+    }
+    if (search) {
+      qb.andWhere(
+        '(product.name ILIKE :search OR product.description ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+    if (minPrice !== undefined) {
+      qb.andWhere('product.price >= :minPrice', { minPrice });
+    }
+    if (maxPrice !== undefined) {
+      qb.andWhere('product.price <= :maxPrice', { maxPrice });
+    }
+
+    if (sortMethod != 'PROMO') {
+      qb.orderBy('product.price', sortMethod);
+    } else {
+      qb.orderBy('product.isPromo', 'DESC');
+      qb.addOrderBy('product.updatedAt', 'DESC');
+    }
+
+    qb.skip((page - 1) * limit);
+    qb.take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+
+    return {
+      data: items,
+      metadata: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(id: number): Promise<Product> {
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: ['stocks', 'stocks.store', 'category'],
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    return product;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: number, updateProductDto: UpdateProductDto) {
+    const { stocks, categoryId, ...productDetails } = updateProductDto;
+
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: ['stocks'],
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    if (categoryId) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: categoryId },
+      });
+
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${categoryId} not found`);
+      }
+      product.category = category;
+      product.categoryId = categoryId;
+    }
+
+    this.productRepository.merge(product, productDetails);
+
+    if ('pricePromo' in updateProductDto) {
+      product.isPromo = product.pricePromo === null;
+    }
+
+    if (stocks && stocks.length > 0) {
+      for (const stockDto of stocks) {
+        const existingStock = product.stocks.find(
+          (s) => s.storeId === stockDto.storeId,
+        );
+
+        if (existingStock) {
+          existingStock.quantity = stockDto.quantity;
+        } else {
+          const newStock = this.stockRepository.create({
+            storeId: stockDto.storeId,
+            quantity: stockDto.quantity,
+            product: product,
+          });
+          product.stocks.push(newStock);
+        }
+      }
+    }
+
+    return this.productRepository.save(product);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(id: number): Promise<void> {
+    const result = await this.productRepository.delete(id);
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
   }
 }
