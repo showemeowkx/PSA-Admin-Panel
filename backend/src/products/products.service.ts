@@ -150,8 +150,56 @@ export class ProductsService {
     return product;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: number, updateProductDto: UpdateProductDto) {
+    const { stocks, categoryId, ...productDetails } = updateProductDto;
+
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: ['stocks'],
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    if (categoryId) {
+      const category = await this.categoryRepository.findOne({
+        where: { id: categoryId },
+      });
+
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${categoryId} not found`);
+      }
+      product.category = category;
+      product.categoryId = categoryId;
+    }
+
+    this.productRepository.merge(product, productDetails);
+
+    if ('pricePromo' in updateProductDto) {
+      product.isPromo = product.pricePromo === null;
+    }
+
+    if (stocks && stocks.length > 0) {
+      for (const stockDto of stocks) {
+        const existingStock = product.stocks.find(
+          (s) => s.storeId === stockDto.storeId,
+        );
+
+        if (existingStock) {
+          existingStock.quantity = stockDto.quantity;
+        } else {
+          const newStock = this.stockRepository.create({
+            storeId: stockDto.storeId,
+            quantity: stockDto.quantity,
+            product: product,
+          });
+          product.stocks.push(newStock);
+        }
+      }
+    }
+
+    return this.productRepository.save(product);
   }
 
   remove(id: number) {
