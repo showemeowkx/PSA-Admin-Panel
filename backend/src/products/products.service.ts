@@ -12,6 +12,7 @@ import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
 import { ProductStock } from './entities/product-stock.entity';
 import { Category } from 'src/categories/enteties/category.entity';
+import { GetProductsFiltersDto } from './dto/get-products-filters.dto';
 
 @Injectable()
 export class ProductsService {
@@ -69,8 +70,71 @@ export class ProductsService {
     }
   }
 
-  findAll() {
-    return `This action returns all products`;
+  async findAll(getProductsFiltersDto: GetProductsFiltersDto): Promise<{
+    data: Product[];
+    metadata: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const {
+      page = 1,
+      limit = 10,
+      storeId,
+      ukrskladId,
+      categoryId,
+      search,
+      minPrice,
+      maxPrice,
+      sortMethod = 'PROMO',
+    } = getProductsFiltersDto;
+
+    const qb = this.productRepository.createQueryBuilder('product');
+
+    qb.leftJoinAndSelect('product.category', 'category');
+    qb.leftJoinAndSelect('product.stocks', 'stock');
+    qb.leftJoinAndSelect('stock.store', 'store');
+
+    if (storeId) {
+      qb.andWhere('stock.storeId = :storeId', { storeId });
+    }
+    if (ukrskladId) {
+      qb.andWhere('product.ukrskladId = :ukrskladId', { ukrskladId });
+    }
+    if (categoryId) {
+      qb.andWhere('product.categoryId = :categoryId', { categoryId });
+    }
+    if (search) {
+      qb.andWhere(
+        '(product.name ILIKE :search OR product.description ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+    if (minPrice !== undefined) {
+      qb.andWhere('product.price >= :minPrice', { minPrice });
+    }
+    if (maxPrice !== undefined) {
+      qb.andWhere('product.price <= :maxPrice', { maxPrice });
+    }
+
+    if (sortMethod != 'PROMO') {
+      qb.orderBy('product.price', sortMethod);
+    } else {
+      qb.orderBy('product.isPromo', 'DESC');
+      qb.addOrderBy('product.updatedAt', 'DESC');
+    }
+
+    qb.skip((page - 1) * limit);
+    qb.take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+
+    return {
+      data: items,
+      metadata: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: number): Promise<Product> {

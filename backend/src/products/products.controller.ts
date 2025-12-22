@@ -8,12 +8,14 @@ import {
   Delete,
   UseGuards,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { AdminGuard } from 'src/admin.guard';
 import { Product } from './entities/product.entity';
+import { GetProductsFiltersDto } from './dto/get-products-filters.dto';
 
 @Controller('products')
 export class ProductsController {
@@ -26,8 +28,16 @@ export class ProductsController {
   }
 
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  findAll(@Query() getProductsFiltersDto: GetProductsFiltersDto): Promise<{
+    data: Product[];
+    metadata: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    return this.productsService.findAll(getProductsFiltersDto);
   }
 
   @Get(':id')
