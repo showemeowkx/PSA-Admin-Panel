@@ -25,9 +25,7 @@ export class ProductsService {
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<void> {
-    const category = await this.categoryRepository.findOneBy({
-      id: createProductDto.categoryId,
-    });
+    const category = await this.findOne(createProductDto.categoryId);
 
     if (!category) {
       throw new NotFoundException(
@@ -65,7 +63,9 @@ export class ProductsService {
       if (error.code === '23505') {
         throw new ConflictException('This product already exists');
       }
-      throw new InternalServerErrorException();
+      throw new InternalServerErrorException(
+        `Failed to create a product: ${error.stack}`,
+      );
     }
   }
 
@@ -73,8 +73,17 @@ export class ProductsService {
     return `This action returns all products`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(id: number): Promise<Product> {
+    const product = await this.productRepository.findOne({
+      where: { id },
+      relations: ['stocks', 'stocks.store', 'category'],
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    return product;
   }
 
   update(id: number, updateProductDto: UpdateProductDto) {
