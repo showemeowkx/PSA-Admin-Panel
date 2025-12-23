@@ -3,12 +3,14 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Category } from './enteties/category.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TopologyDescriptionChangedEvent } from 'typeorm/browser';
 import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -47,5 +49,20 @@ export class CategoriesService {
         `Failed to get categories: ${error.stack}`,
       );
     }
+  }
+
+  async update(
+    id: number,
+    updateCategoryDto: UpdateCategoryDto,
+  ): Promise<Category> {
+    const category = await this.categoryRepository.findOne({ where: { id } });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
+
+    this.categoryRepository.merge(category, updateCategoryDto);
+
+    return await this.categoryRepository.save(category);
   }
 }
