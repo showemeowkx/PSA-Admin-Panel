@@ -9,7 +9,7 @@ export class Category {
   @Column({ unique: true })
   ukrskladId: number;
 
-  @Column()
+  @Column({ unique: true })
   name: string;
 
   @Column()
