@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -35,5 +36,10 @@ export class CategoriesController {
     @Body() updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
     return this.categoriesService.update(id, updateCategoryDto);
+  }
+
+  @Delete()
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.categoriesService.remove(id);
   }
 }
