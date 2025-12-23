@@ -8,7 +8,7 @@ export class Store {
   @Column({ nullable: true })
   ukrskladId: number;
 
-  @Column()
+  @Column({ unique: true })
   address: string;
 
   @Column({ default: true })
