@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
@@ -49,8 +50,16 @@ export class StoreService {
     return { data: stores, metadata: { total } };
   }
 
-  update(id: number, updateStoreDto: UpdateStoreDto) {
-    return `This action updates a #${id} store`;
+  async update(id: number, updateStoreDto: UpdateStoreDto): Promise<Store> {
+    const store = await this.storeRepository.findOne({ where: { id } });
+
+    if (!store) {
+      throw new NotFoundException(`Store with ID ${id} not found`);
+    }
+
+    this.storeRepository.merge(store, updateStoreDto);
+
+    return this.storeRepository.save(store);
   }
 
   remove(id: number) {

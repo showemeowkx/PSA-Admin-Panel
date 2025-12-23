@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { StoreService } from './store.service';
 import { CreateStoreDto } from './dto/create-store.dto';
@@ -31,8 +32,11 @@ export class StoreController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateStoreDto: UpdateStoreDto) {
-    return this.storeService.update(+id, updateStoreDto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateStoreDto: UpdateStoreDto,
+  ) {
+    return this.storeService.update(id, updateStoreDto);
   }
 
   @Delete(':id')
