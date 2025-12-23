@@ -35,12 +35,12 @@ export class StoreController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateStoreDto: UpdateStoreDto,
-  ) {
+  ): Promise<Store> {
     return this.storeService.update(id, updateStoreDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.storeService.remove(+id);
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.storeService.remove(id);
   }
 }

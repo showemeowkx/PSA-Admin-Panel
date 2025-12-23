@@ -62,7 +62,11 @@ export class StoreService {
     return this.storeRepository.save(store);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} store`;
+  async remove(id: number): Promise<void> {
+    const result = await this.storeRepository.delete(id);
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`Store with ID ${id} not found`);
+    }
   }
 }
