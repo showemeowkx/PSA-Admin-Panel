@@ -34,4 +34,18 @@ export class CategoriesService {
       );
     }
   }
+
+  async findAll(): Promise<{ data: Category[] }> {
+    try {
+      const categories = await this.categoryRepository.find({
+        order: { id: 'ASC' },
+      });
+
+      return { data: categories };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Failed to get categories: ${error.stack}`,
+      );
+    }
+  }
 }
