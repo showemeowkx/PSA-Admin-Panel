@@ -9,6 +9,7 @@ import { UpdateStoreDto } from './dto/update-store.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from './entities/store.entity';
 import { Repository } from 'typeorm';
+import { GetStoresFiltersDto } from './dto/get-stores-filters.dto';
 
 @Injectable()
 export class StoreService {
@@ -32,12 +33,20 @@ export class StoreService {
     }
   }
 
-  findAll() {
-    return `This action returns all store`;
-  }
+  async findAll(
+    getStoresFiltersDto: GetStoresFiltersDto,
+  ): Promise<{ data: Store[]; metadata: { total: number } }> {
+    const { search } = getStoresFiltersDto;
 
-  findOne(id: number) {
-    return `This action returns a #${id} store`;
+    const qb = this.storeRepository.createQueryBuilder('store');
+
+    if (search) {
+      qb.andWhere('(store.address ILIKE :search)', { search: `%${search}%` });
+    }
+
+    const [stores, total] = await qb.getManyAndCount();
+
+    return { data: stores, metadata: { total } };
   }
 
   update(id: number, updateStoreDto: UpdateStoreDto) {
