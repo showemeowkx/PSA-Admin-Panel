@@ -23,8 +23,7 @@ export class User {
   @Column({ unique: true, nullable: true, default: null })
   email: string;
 
-  @OneToOne(() => Cart)
-  @JoinColumn()
+  @OneToOne(() => Cart, (cart) => cart.user)
   cart: Cart;
 
   @ManyToOne(() => Store, { nullable: true })
