@@ -14,13 +14,15 @@ import * as bcrypt from 'bcryptjs';
 import { SignInDto } from './dto/sing-in.dto';
 import { JwtPayload } from './jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
+import { CartService } from 'src/cart/cart.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
-    private userRepository: Repository<User>,
-    private jwtService: JwtService,
+    private readonly userRepository: Repository<User>,
+    private readonly jwtService: JwtService,
+    private readonly cartService: CartService,
   ) {}
 
   async register(createUserDto: CreateUserDto): Promise<void> {
@@ -35,7 +37,9 @@ export class AuthService {
     });
 
     try {
-      await this.userRepository.save(user);
+      const savedUser = await this.userRepository.save(user);
+
+      await this.cartService.create(savedUser);
     } catch (error) {
       if (error.code === '23505') {
         throw new ConflictException('This user already exists');
