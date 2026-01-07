@@ -72,4 +72,18 @@ export class CartService {
       );
     }
   }
+
+  async removeFromCart(userId: number, productId: number): Promise<void> {
+    const cart = await this.getCartByUserId(userId);
+
+    const itemToDelete = cart.items.find(
+      (item) => item.product.id === productId,
+    );
+
+    if (itemToDelete) {
+      await this.cartItemRepository.remove(itemToDelete);
+    } else {
+      throw new NotFoundException('Item not found in cart');
+    }
+  }
 }

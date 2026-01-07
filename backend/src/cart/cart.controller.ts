@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  Delete,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { CartService } from './cart.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { AuthGuard } from '@nestjs/passport';
@@ -16,7 +26,18 @@ export class CartController {
   }
 
   @Post()
-  addItem(@Req() req: { user: User }, @Body() addToCartDto: AddToCartDto) {
+  addItem(
+    @Req() req: { user: User },
+    @Body() addToCartDto: AddToCartDto,
+  ): Promise<void> {
     return this.cartService.addToCart(req.user.id, addToCartDto);
+  }
+
+  @Delete()
+  removeItem(
+    @Req() req: { user: User },
+    @Param('productId', ParseIntPipe) productId: number,
+  ): Promise<void> {
+    return this.cartService.removeFromCart(req.user.id, productId);
   }
 }
