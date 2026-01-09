@@ -43,7 +43,7 @@ export class Product {
   pricePromo: number;
 
   @Column()
-  unitsOfMeasurement: string;
+  unitsOfMeasurments: string;
 
   @Column()
   imagePath: string;

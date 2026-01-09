@@ -33,7 +33,7 @@ export class CartController {
     return this.cartService.addToCart(req.user.id, addToCartDto);
   }
 
-  @Delete()
+  @Delete(':productId')
   removeItem(
     @Req() req: { user: User },
     @Param('productId', ParseIntPipe) productId: number,

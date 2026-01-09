@@ -26,7 +26,9 @@ export class ProductsService {
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<void> {
-    const category = await this.findOne(createProductDto.categoryId);
+    const category = await this.categoryRepository.findOne({
+      where: { id: createProductDto.categoryId },
+    });
 
     if (!category) {
       throw new NotFoundException(
@@ -35,37 +37,57 @@ export class ProductsService {
     }
 
     if (!createProductDto.stocks || createProductDto.stocks.length === 0) {
-      throw new ConflictException("Incorrect 'stoks' value");
+      throw new ConflictException("Incorrect 'stocks' value: cannot be empty");
     }
 
-    const productEntity = this.productRepository.create({
-      ...createProductDto,
-      category,
-      imagePath: '', // Placeholder
-      isPromo: createProductDto.pricePromo === null,
-      updatedAt: new Date(),
-    });
+    const storeIds = createProductDto.stocks.map((s) => s.storeId);
+    const uniqueStoreIds = new Set(storeIds);
+    if (storeIds.length !== uniqueStoreIds.size) {
+      throw new ConflictException(`Duplicate Store IDs found in payload.`);
+    }
 
+    const { stocks: stocksDto, ...productData } = createProductDto;
+
+    let savedProduct: Product;
     try {
-      const product = await this.productRepository.save(productEntity);
-
-      if (createProductDto.stocks && createProductDto.stocks.length > 0) {
-        const stocks = createProductDto.stocks.map((s) =>
-          this.stockRepository.create({
-            product,
-            storeId: s.storeId,
-            quantity: s.quantity,
-          }),
-        );
-
-        await this.stockRepository.save(stocks);
-      }
+      const productEntity = this.productRepository.create({
+        ...productData,
+        category,
+        imagePath: '',
+        isPromo: createProductDto.pricePromo === null,
+        updatedAt: new Date(),
+      });
+      savedProduct = await this.productRepository.save(productEntity);
     } catch (error) {
       if (error.code === '23505') {
-        throw new ConflictException('This product already exists');
+        throw new ConflictException(
+          `Product with this UkrSklad ID (${createProductDto.ukrskladId}) already exists`,
+        );
+      }
+      throw error;
+    }
+
+    try {
+      const stocksEntities = stocksDto.map((s) =>
+        this.stockRepository.create({
+          product: savedProduct,
+          storeId: s.storeId,
+          quantity: s.quantity,
+        }),
+      );
+
+      await this.stockRepository.save(stocksEntities);
+    } catch (error) {
+      await this.productRepository.delete(savedProduct.id);
+      console.error('Stock Save Error:', error);
+
+      if (error.code === '23505') {
+        throw new ConflictException(
+          `Database Error: Duplicate stock entry detected. Detail: ${error.detail}`,
+        );
       }
       throw new InternalServerErrorException(
-        `Failed to create a product: ${error.stack}`,
+        `Failed to save stocks. Rolled back. Error: ${error.message}`,
       );
     }
   }
