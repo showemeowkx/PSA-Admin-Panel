@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { JwtStrategy } from './jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
+import { CartModule } from 'src/cart/cart.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PassportModule } from '@nestjs/passport';
       }),
     }),
     TypeOrmModule.forFeature([User]),
+    CartModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

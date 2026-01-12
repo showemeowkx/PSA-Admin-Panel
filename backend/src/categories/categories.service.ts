@@ -8,14 +8,13 @@ import {
 import { Repository } from 'typeorm';
 import { Category } from './enteties/category.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TopologyDescriptionChangedEvent } from 'typeorm/browser';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
   constructor(
-    @InjectRepository(TopologyDescriptionChangedEvent)
+    @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
   ) {}
 
