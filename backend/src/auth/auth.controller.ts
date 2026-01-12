@@ -14,6 +14,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { SignInDto } from './dto/sing-in.dto';
 import { User } from './entities/user.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -48,9 +49,13 @@ export class AuthController {
     return this.authService.findOne(+id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: CreateUserDto) {
-    return this.authService.update(+id, updateUserDto);
+  @UseGuards(JwtAuthGuard)
+  @Patch()
+  updateProfile(
+    @Req() req: { user: User },
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
+    return this.authService.update(req.user.id, updateUserDto);
   }
 
   @Delete(':id')
