@@ -63,11 +63,7 @@ export class StoreService {
   }
 
   async update(id: number, updateStoreDto: UpdateStoreDto): Promise<Store> {
-    const store = await this.storeRepository.findOne({ where: { id } });
-
-    if (!store) {
-      throw new NotFoundException(`Store with ID ${id} not found`);
-    }
+    const store = await this.findOne(id);
 
     this.storeRepository.merge(store, updateStoreDto);
 
