@@ -15,6 +15,7 @@ import { SignInDto } from './dto/sing-in.dto';
 import { JwtPayload } from './jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
 import { CartService } from 'src/cart/cart.service';
+import { StoreService } from 'src/store/store.service';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +24,7 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly cartService: CartService,
+    private readonly storeService: StoreService,
   ) {}
 
   async register(createUserDto: CreateUserDto): Promise<void> {
@@ -63,6 +65,24 @@ export class AuthService {
       return { accessToken };
     } else {
       throw new UnauthorizedException('Wrong login or password!');
+    }
+  }
+
+  async chooseStore(user: User, storeId: number): Promise<void> {
+    const store = await this.storeService.findOne(storeId);
+
+    if (!store.isActive) {
+      throw new Error(`Store with ID ${storeId} is not active`);
+    }
+
+    user.selectedStore = store;
+
+    try {
+      await this.userRepository.save(user);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Failed to asign a store {userId: ${user.id}, storeId}: ${storeId}: ${error.stack}`,
+      );
     }
   }
 

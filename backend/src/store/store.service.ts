@@ -50,6 +50,18 @@ export class StoreService {
     return { data: stores, metadata: { total } };
   }
 
+  async findOne(id: number): Promise<Store> {
+    const store = await this.storeRepository.findOne({
+      where: { id },
+    });
+
+    if (!store) {
+      throw new NotFoundException(`Store with ID ${id} not found`);
+    }
+
+    return store;
+  }
+
   async update(id: number, updateStoreDto: UpdateStoreDto): Promise<Store> {
     const store = await this.storeRepository.findOne({ where: { id } });
 
