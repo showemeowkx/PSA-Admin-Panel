@@ -8,6 +8,7 @@ import {
   Delete,
   Param,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
@@ -37,7 +38,8 @@ export class CartController {
   removeItem(
     @Req() req: { user: User },
     @Param('productId', ParseIntPipe) productId: number,
+    @Query('removeAll') removeAll: 0 | 1,
   ): Promise<void> {
-    return this.cartService.removeFromCart(req.user.id, productId);
+    return this.cartService.removeFromCart(req.user.id, productId, removeAll);
   }
 }
