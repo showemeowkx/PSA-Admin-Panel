@@ -14,6 +14,9 @@ export class Order {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ unique: true, nullable: true })
+  orderNumber: string;
+
   @ManyToOne(() => User)
   user: User;
 
@@ -22,6 +25,9 @@ export class Order {
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items: OrderItem[];
+
+  @Column()
+  status: 'CANCELLED' | 'PENDING' | 'PAID';
 
   @CreateDateColumn()
   createdAt: Date;
