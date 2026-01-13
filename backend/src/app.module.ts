@@ -6,6 +6,8 @@ import { CategoriesModule } from './categories/categories.module';
 import { CartModule } from './cart/cart.module';
 import { AuthModule } from './auth/auth.module';
 import { StoreModule } from './store/store.module';
+import { PurchaseModule } from './purchase/purchase.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -30,6 +32,10 @@ import { StoreModule } from './store/store.module';
     AuthModule,
 
     StoreModule,
+
+    PurchaseModule,
+
+    OrdersModule,
   ],
 })
 export class AppModule {}
