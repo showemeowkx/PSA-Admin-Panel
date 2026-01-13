@@ -1,10 +1,12 @@
 import { Cart } from 'src/cart/entities/cart.entity';
+import { Order } from 'src/orders/entities/order.entity';
 import { Store } from 'src/store/entities/store.entity';
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -31,6 +33,9 @@ export class User {
 
   @OneToOne(() => Cart, (cart) => cart.user)
   cart: Cart;
+
+  @OneToMany(() => Order, (order) => order.user)
+  orders: Order[];
 
   @ManyToOne(() => Store, { nullable: true })
   @JoinColumn({ name: 'selectedStoreId' })
