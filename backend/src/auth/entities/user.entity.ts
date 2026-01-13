@@ -14,6 +14,12 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ nullable: true, default: null })
+  name: string;
+
+  @Column({ nullable: true, default: null })
+  surname: string;
+
   @Column()
   password: string;
 

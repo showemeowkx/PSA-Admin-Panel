@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -15,6 +16,7 @@ import { SignInDto } from './dto/sing-in.dto';
 import { JwtPayload } from './jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
 import { CartService } from 'src/cart/cart.service';
+import { StoreService } from 'src/store/store.service';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +25,7 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly cartService: CartService,
+    private readonly storeService: StoreService,
   ) {}
 
   async register(createUserDto: CreateUserDto): Promise<void> {
@@ -66,19 +69,63 @@ export class AuthService {
     }
   }
 
+  async chooseStore(user: User, storeId: number): Promise<void> {
+    const store = await this.storeService.findOne(storeId);
+
+    if (!store.isActive) {
+      throw new Error(`Store with ID ${storeId} is not active`);
+    }
+
+    user.selectedStore = store;
+
+    try {
+      await this.userRepository.save(user);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Failed to asign a store {userId: ${user.id}, storeId}: ${storeId}: ${error.stack}`,
+      );
+    }
+  }
+
   findAll() {
     return `This action returns all auth`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
+  async findOne(id: number): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    return user;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} auth`;
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.findOne(id);
+    const { password } = updateUserDto;
+
+    if (password) {
+      const salt = await bcrypt.genSalt();
+      const hashedPassword = await bcrypt.hash(password, salt);
+      updateUserDto.password = hashedPassword;
+    }
+
+    try {
+      this.userRepository.merge(user, updateUserDto);
+      return this.userRepository.save(user);
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Failed to update a user: ${error.stack}`,
+      );
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  async remove(id: number): Promise<void> {
+    const result = await this.userRepository.delete(id);
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
   }
 }
