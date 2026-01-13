@@ -1,6 +1,5 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
   Patch,
@@ -39,16 +38,6 @@ export class AuthController {
     return this.authService.chooseStore(req.user, storeId);
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
-  }
-
   @UseGuards(JwtAuthGuard)
   @Patch()
   updateProfile(
@@ -58,8 +47,9 @@ export class AuthController {
     return this.authService.update(req.user.id, updateUserDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+  @UseGuards(JwtAuthGuard)
+  @Delete()
+  deleteProfile(@Req() req: { user: User }): Promise<void> {
+    return this.authService.remove(req.user.id);
   }
 }
