@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CartModule } from './cart/cart.module';
@@ -33,7 +31,5 @@ import { StoreModule } from './store/store.module';
 
     StoreModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
