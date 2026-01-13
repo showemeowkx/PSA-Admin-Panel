@@ -31,6 +31,6 @@ export class ProductStock {
   @Column()
   storeId: number;
 
-  @Column('decimal', { precision: 10, scale: 3, default: 0 })
+  @Column({ default: 0 })
   quantity: number;
 }
