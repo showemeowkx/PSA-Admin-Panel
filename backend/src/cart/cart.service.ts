@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -51,6 +52,7 @@ export class CartService {
     const existingItem = cart.items.find(
       (item) => item.product.id === productId,
     );
+
     try {
       if (existingItem) {
         existingItem.quantity += quantity;
@@ -64,6 +66,7 @@ export class CartService {
           product: productRef,
           quantity: quantity,
         });
+
         await this.cartItemRepository.save(newItem);
       }
     } catch (error) {
@@ -71,6 +74,16 @@ export class CartService {
         `Failed to add a product to a cart: ${error.stack}`,
       );
     }
+  }
+
+  async clearCart(userId: number): Promise<void> {
+    const cart = await this.getCartByUserId(userId);
+
+    if (!cart.items || cart.items.length === 0) {
+      throw new BadRequestException('Cart is empty');
+    }
+
+    await this.cartItemRepository.delete({ cart: { id: cart.id } });
   }
 
   async removeFromCart(
