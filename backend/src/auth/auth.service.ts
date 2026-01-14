@@ -15,8 +15,8 @@ import * as bcrypt from 'bcryptjs';
 import { SignInDto } from './dto/sing-in.dto';
 import { JwtPayload } from './jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
-import { CartService } from 'src/cart/cart.service';
 import { StoreService } from 'src/store/store.service';
+import { CartService } from 'src/cart/cart.service';
 
 @Injectable()
 export class AuthService {
