@@ -20,7 +20,7 @@ export class Order {
   @ManyToOne(() => User)
   user: User;
 
-  @Column()
+  @Column('decimal', { precision: 10, scale: 2 })
   totalAmount: number;
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })

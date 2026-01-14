@@ -41,6 +41,9 @@ export class CreateProductDto {
   @IsOptional()
   pricePromo?: number;
 
+  @IsNumber()
+  portionSize: number;
+
   @IsString()
   unitsOfMeasurments: string;
 
