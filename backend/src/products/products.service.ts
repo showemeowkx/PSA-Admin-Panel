@@ -54,7 +54,7 @@ export class ProductsService {
         ...productData,
         category,
         imagePath: '',
-        isPromo: createProductDto.pricePromo === null,
+        isPromo: Boolean(createProductDto.pricePromo),
         updatedAt: new Date(),
       });
       savedProduct = await this.productRepository.save(productEntity);
@@ -202,7 +202,7 @@ export class ProductsService {
     this.productRepository.merge(product, productDetails);
 
     if ('pricePromo' in updateProductDto) {
-      product.isPromo = product.pricePromo === null;
+      product.isPromo = Boolean(product.pricePromo);
     }
 
     if (stocks && stocks.length > 0) {
