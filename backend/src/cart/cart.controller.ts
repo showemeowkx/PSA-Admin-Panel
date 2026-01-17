@@ -31,7 +31,7 @@ export class CartController {
     @Req() req: { user: User },
     @Body() addToCartDto: AddToCartDto,
   ): Promise<void> {
-    return this.cartService.addToCart(req.user.id, addToCartDto);
+    return this.cartService.addToCart(req.user, addToCartDto);
   }
 
   @Delete()
