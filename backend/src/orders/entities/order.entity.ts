@@ -17,7 +17,7 @@ export class Order {
   @Column({ unique: true, nullable: true })
   orderNumber: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
   @Column('decimal', { precision: 10, scale: 2 })
