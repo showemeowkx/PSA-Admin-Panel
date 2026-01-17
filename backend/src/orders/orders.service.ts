@@ -108,8 +108,33 @@ export class OrdersService {
     }
   }
 
-  findAll() {
-    return `This action returns all orders`;
+  async findAll(
+    userId: number,
+    paginationOptions: { page: number; limit: number },
+  ): Promise<{
+    data: Order[];
+    metadata: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const { page = 1, limit = 10 } = paginationOptions;
+
+    const qb = this.orderRepository.createQueryBuilder('order');
+
+    qb.andWhere('order.user.id = :userId', { userId });
+    qb.skip((page - 1) * limit);
+    qb.orderBy('order.createdAt', 'DESC');
+    qb.take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+
+    return {
+      data: items,
+      metadata: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   findOne(id: number) {
