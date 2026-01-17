@@ -72,11 +72,18 @@ export class OrdersService {
           (stock) => stock.storeId === chosenStore,
         );
 
-        await this.productService.update(item.product.id, {
-          stocks: [
-            { storeId: chosenStore, quantity: stock!.quantity - item.quantity },
-          ],
-        });
+        await this.productService.update(
+          item.product.id,
+          {
+            stocks: [
+              {
+                storeId: chosenStore,
+                quantity: stock!.quantity - item.quantity,
+              },
+            ],
+          },
+          true,
+        );
       }
 
       const date = savedOrder.createdAt;

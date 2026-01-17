@@ -175,6 +175,7 @@ export class ProductsService {
   async update(
     id: number,
     updateProductDto: UpdateProductDto,
+    isOrderChange: boolean = false,
   ): Promise<Product> {
     const { stocks, categoryId, ...productDetails } = updateProductDto;
 
@@ -203,6 +204,10 @@ export class ProductsService {
 
     if ('pricePromo' in updateProductDto) {
       product.isPromo = Boolean(product.pricePromo);
+    }
+
+    if (!isOrderChange) {
+      product.updatedAt = new Date();
     }
 
     if (stocks && stocks.length > 0) {
