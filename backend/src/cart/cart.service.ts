@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -10,7 +11,7 @@ import { Repository } from 'typeorm';
 import { User } from 'src/auth/entities/user.entity';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { CartItem } from './entities/cart-item.entity';
-import { Product } from 'src/products/entities/product.entity';
+import { ProductsService } from 'src/products/products.service';
 
 @Injectable()
 export class CartService {
@@ -18,6 +19,7 @@ export class CartService {
     @InjectRepository(Cart) private readonly cartRepository: Repository<Cart>,
     @InjectRepository(CartItem)
     private readonly cartItemRepository: Repository<CartItem>,
+    private readonly productsServive: ProductsService,
   ) {}
 
   async getCartByUserId(userId: number): Promise<Cart> {
@@ -44,26 +46,50 @@ export class CartService {
     }
   }
 
-  async addToCart(userId: number, addToCartDto: AddToCartDto): Promise<void> {
-    const cart = await this.getCartByUserId(userId);
+  async addToCart(user: User, addToCartDto: AddToCartDto): Promise<void> {
+    const cart = await this.getCartByUserId(user.id);
     const { productId, quantity } = addToCartDto;
 
     const existingItem = cart.items.find(
       (item) => item.product.id === productId,
     );
+
+    const product = await this.productsServive.findOne(productId);
+
+    if (product) {
+      const chosenStoreId = user.selectedStoreId;
+      const stock = product.stocks.find(
+        (stock) => stock.storeId === chosenStoreId,
+      );
+
+      if (stock) {
+        if (existingItem) {
+          if (stock.quantity < existingItem.quantity + quantity) {
+            throw new BadRequestException('No enough products in stock');
+          }
+        }
+
+        if (stock.quantity < quantity) {
+          throw new BadRequestException('No enough products in stock');
+        }
+      } else {
+        throw new BadRequestException(
+          `Unnable to find product [${product.id}] in store [${chosenStoreId}]`,
+        );
+      }
+    }
+
     try {
       if (existingItem) {
         existingItem.quantity += quantity;
         await this.cartItemRepository.save(existingItem);
       } else {
-        const productRef = new Product();
-        productRef.id = productId;
-
         const newItem = this.cartItemRepository.create({
-          cart: cart,
-          product: productRef,
-          quantity: quantity,
+          cart,
+          product,
+          quantity,
         });
+
         await this.cartItemRepository.save(newItem);
       }
     } catch (error) {
@@ -71,6 +97,16 @@ export class CartService {
         `Failed to add a product to a cart: ${error.stack}`,
       );
     }
+  }
+
+  async clearCart(userId: number): Promise<void> {
+    const cart = await this.getCartByUserId(userId);
+
+    if (!cart.items || cart.items.length === 0) {
+      throw new BadRequestException('Cart is empty');
+    }
+
+    await this.cartItemRepository.delete({ cart: { id: cart.id } });
   }
 
   async removeFromCart(

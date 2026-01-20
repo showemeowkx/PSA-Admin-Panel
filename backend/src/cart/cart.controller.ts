@@ -10,11 +10,11 @@ import {
   ParseIntPipe,
   Query,
 } from '@nestjs/common';
-import { CartService } from './cart.service';
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { Cart } from './entities/cart.entity';
 import { User } from 'src/auth/entities/user.entity';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { CartService } from './cart.service';
 
 @Controller('cart')
 @UseGuards(JwtAuthGuard)
@@ -31,7 +31,12 @@ export class CartController {
     @Req() req: { user: User },
     @Body() addToCartDto: AddToCartDto,
   ): Promise<void> {
-    return this.cartService.addToCart(req.user.id, addToCartDto);
+    return this.cartService.addToCart(req.user, addToCartDto);
+  }
+
+  @Delete()
+  clearCart(@Req() req: { user: User }): Promise<void> {
+    return this.cartService.clearCart(req.user.id);
   }
 
   @Delete(':productId')

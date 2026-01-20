@@ -42,6 +42,9 @@ export class Product {
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   pricePromo: number;
 
+  @Column('decimal', { precision: 10, scale: 3 })
+  portionSize: number;
+
   @Column()
   unitsOfMeasurments: string;
 
