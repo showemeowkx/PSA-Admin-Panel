@@ -7,6 +7,7 @@ import {
   Req,
   UseGuards,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { User } from 'src/auth/entities/user.entity';
@@ -40,8 +41,8 @@ export class OrdersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.ordersService.findOne(+id);
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.ordersService.findOne(id);
   }
 
   @Delete(':id')
