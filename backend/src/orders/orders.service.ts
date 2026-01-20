@@ -151,7 +151,11 @@ export class OrdersService {
     return order;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} order`;
+  async remove(id: number) {
+    const result = await this.orderRepository.delete(id);
+
+    if (result.affected === 0) {
+      throw new NotFoundException(`Order with ID ${id} not found`);
+    }
   }
 }
