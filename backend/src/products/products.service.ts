@@ -119,6 +119,11 @@ export class ProductsService {
     qb.leftJoinAndSelect('product.stocks', 'stock');
     qb.leftJoinAndSelect('stock.store', 'store');
 
+    qb.addSelect(
+      'CASE WHEN product.isPromo = true THEN product.pricePromo ELSE product.price END',
+      'effective_price',
+    );
+
     if (storeId) {
       qb.andWhere('stock.storeId = :storeId', { storeId });
     }
@@ -135,14 +140,20 @@ export class ProductsService {
       );
     }
     if (minPrice !== undefined) {
-      qb.andWhere('product.price >= :minPrice', { minPrice });
+      qb.andWhere(
+        'CASE WHEN product.isPromo = true THEN product.pricePromo ELSE product.price END >= :minPrice',
+        { minPrice },
+      );
     }
     if (maxPrice !== undefined) {
-      qb.andWhere('product.price <= :maxPrice', { maxPrice });
+      qb.andWhere(
+        'CASE WHEN product.isPromo = true THEN product.pricePromo ELSE product.price END <= :maxPrice',
+        { maxPrice },
+      );
     }
 
     if (sortMethod != 'PROMO') {
-      qb.orderBy('product.price', sortMethod);
+      qb.orderBy('effective_price', sortMethod);
     } else {
       qb.orderBy('product.isPromo', 'DESC');
       qb.addOrderBy('product.updatedAt', 'DESC');
