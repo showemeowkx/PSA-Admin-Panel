@@ -51,7 +51,7 @@ export class CategoriesController {
     return this.categoriesService.findAll();
   }
 
-  @Patch()
+  @Patch(':id')
   @UseInterceptors(FileInterceptor('icon'))
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -59,6 +59,16 @@ export class CategoriesController {
     @UploadedFile() file: Express.Multer.File,
   ): Promise<Category> {
     if (file) {
+      const oldCategory = await this.categoriesService.findOne(id);
+      const oldIconPath = oldCategory.iconPath;
+
+      if (
+        oldIconPath &&
+        oldIconPath != this.configService.get('DEFAULT_CATEGORY_ICON')
+      ) {
+        await this.cloudinaryService.deleteFile(oldCategory.iconPath);
+      }
+
       const result = await this.cloudinaryService.uploadFile(file);
       updateCategoryDto.iconPath = result.secure_url as string;
     }
