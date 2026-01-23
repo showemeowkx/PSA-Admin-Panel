@@ -21,7 +21,6 @@ export class CategoriesService {
   async create(createCategoryDto: CreateCategoryDto): Promise<void> {
     const categoryEntity = this.categoryRepository.create({
       ...createCategoryDto,
-      iconPath: '', // PLACEHOLDER
     });
 
     try {
