@@ -52,10 +52,16 @@ export class CategoriesController {
   }
 
   @Patch()
-  update(
+  @UseInterceptors(FileInterceptor('icon'))
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCategoryDto: UpdateCategoryDto,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<Category> {
+    if (file) {
+      const result = await this.cloudinaryService.uploadFile(file);
+      updateCategoryDto.iconPath = result.secure_url as string;
+    }
     return this.categoriesService.update(id, updateCategoryDto);
   }
 
