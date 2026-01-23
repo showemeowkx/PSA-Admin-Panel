@@ -32,16 +32,24 @@ export class CreateProductDto {
   description: string;
 
   @IsInt()
+  @Type(() => Number)
   categoryId: number;
 
   @IsNumber()
+  @Type(() => Number)
   price: number;
+
+  @IsString()
+  @IsOptional()
+  imagePath?: string;
 
   @IsNumber()
   @IsOptional()
+  @Type(() => Number)
   pricePromo?: number;
 
   @IsNumber()
+  @Type(() => Number)
   portionSize: number;
 
   @IsString()

@@ -53,7 +53,6 @@ export class ProductsService {
       const productEntity = this.productRepository.create({
         ...productData,
         category,
-        imagePath: '',
         isPromo: Boolean(createProductDto.pricePromo),
         updatedAt: new Date(),
       });
