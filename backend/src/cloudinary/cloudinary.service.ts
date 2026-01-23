@@ -26,4 +26,20 @@ export class CloudinaryService {
       stream.pipe(uploadStream);
     });
   }
+
+  async deleteFile(url: string): Promise<void> {
+    const publicId = this.extractPublicId(url);
+    if (publicId) {
+      await cloudinary.uploader.destroy(publicId);
+    }
+  }
+
+  private extractPublicId(url: string): string | null {
+    const regex = /\/v\d+\/([^/]+)\/([^.]+)\./;
+    const match = url.match(regex);
+    if (match) {
+      return `${match[1]}/${match[2]}`;
+    }
+    return null;
+  }
 }
