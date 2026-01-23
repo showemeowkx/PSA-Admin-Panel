@@ -80,13 +80,13 @@ export class CategoriesController {
     const category = await this.categoriesService.findOne(id);
     const iconPath = category.iconPath;
 
+    await this.categoriesService.remove(id);
+
     if (
       category &&
-      iconPath != this.configService.get('DEFAULT_CATEGORY_ICON')
+      iconPath !== this.configService.get('DEFAULT_CATEGORY_ICON')
     ) {
       await this.cloudinaryService.deleteFile(iconPath);
     }
-
-    return this.categoriesService.remove(id);
   }
 }
