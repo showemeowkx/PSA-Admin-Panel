@@ -66,7 +66,7 @@ export class CategoriesController {
         oldIconPath &&
         oldIconPath != this.configService.get('DEFAULT_CATEGORY_ICON')
       ) {
-        await this.cloudinaryService.deleteFile(oldCategory.iconPath);
+        await this.cloudinaryService.deleteFile(oldIconPath);
       }
 
       const result = await this.cloudinaryService.uploadFile(file);
@@ -76,7 +76,17 @@ export class CategoriesController {
   }
 
   @Delete()
-  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    const category = await this.categoriesService.findOne(id);
+    const iconPath = category.iconPath;
+
+    if (
+      category &&
+      iconPath != this.configService.get('DEFAULT_CATEGORY_ICON')
+    ) {
+      await this.cloudinaryService.deleteFile(iconPath);
+    }
+
     return this.categoriesService.remove(id);
   }
 }
