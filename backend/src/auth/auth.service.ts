@@ -17,6 +17,7 @@ import { JwtPayload } from './jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
 import { StoreService } from 'src/store/store.service';
 import { CartService } from 'src/cart/cart.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +27,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly cartService: CartService,
     private readonly storeService: StoreService,
+    private readonly configService: ConfigService,
   ) {}
 
   async register(createUserDto: CreateUserDto): Promise<void> {
@@ -37,6 +39,7 @@ export class AuthService {
     const user = this.userRepository.create({
       password: hashedPassword,
       phone: phone.trim().replaceAll(' ', ''),
+      imagePath: this.configService.get('DEFAULT_USER_PFP') as string,
     });
 
     try {

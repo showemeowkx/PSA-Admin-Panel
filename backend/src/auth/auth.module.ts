@@ -9,6 +9,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { CartModule } from 'src/cart/cart.module';
 import { StoreModule } from 'src/store/store.module';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { StoreModule } from 'src/store/store.module';
     TypeOrmModule.forFeature([User]),
     CartModule,
     StoreModule,
+    CloudinaryModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
