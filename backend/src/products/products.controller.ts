@@ -93,7 +93,17 @@ export class ProductsController {
 
   @Delete(':id')
   @UseGuards(AdminGuard)
-  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.productsService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    const product = await this.productsService.findOne(id);
+    const imagePath = product.imagePath;
+
+    await this.productsService.remove(id);
+
+    if (
+      imagePath &&
+      imagePath !== this.configService.get('DEFAULT_PRODUCT_IMAGE')
+    ) {
+      await this.cloudinaryService.deleteFile(imagePath);
+    }
   }
 }
