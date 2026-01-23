@@ -68,10 +68,26 @@ export class ProductsController {
 
   @Patch(':id')
   @UseGuards(AdminGuard)
-  update(
+  @UseInterceptors(FileInterceptor('image'))
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<Product> {
+    if (file) {
+      const product = await this.productsService.findOne(id);
+      const oldImagePath = product.imagePath;
+
+      if (
+        oldImagePath &&
+        oldImagePath !== this.configService.get('DEFAULT_PRODUCT_IMAGE')
+      ) {
+        await this.cloudinaryService.deleteFile(oldImagePath);
+      }
+
+      const result = await this.cloudinaryService.uploadFile(file);
+      updateProductDto.imagePath = result.secure_url as string;
+    }
     return this.productsService.update(id, updateProductDto);
   }
 
