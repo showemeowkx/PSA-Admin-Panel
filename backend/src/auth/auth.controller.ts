@@ -72,7 +72,14 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Delete()
-  deleteProfile(@Req() req: { user: User }): Promise<void> {
-    return this.authService.remove(req.user.id);
+  async deleteProfile(@Req() req: { user: User }): Promise<void> {
+    const user = await this.authService.findOne(req.user.id);
+    const pfpPath = user.imagePath;
+
+    await this.authService.remove(req.user.id);
+
+    if (pfpPath && pfpPath !== this.configService.get('DEFAULT_USER_PFP')) {
+      await this.cloudinaryService.deleteFile(pfpPath);
+    }
   }
 }
