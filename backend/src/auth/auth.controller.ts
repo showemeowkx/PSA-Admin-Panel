@@ -7,6 +7,8 @@ import {
   Delete,
   Req,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -14,10 +16,17 @@ import { SignInDto } from './dto/sing-in.dto';
 import { User } from './entities/user.entity';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ConfigService } from '@nestjs/config';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('/register')
   register(@Body() createUserDto: CreateUserDto): Promise<void> {
@@ -40,16 +49,43 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Patch()
-  updateProfile(
+  @UseInterceptors(FileInterceptor('pfp'))
+  async updateProfile(
     @Req() req: { user: User },
     @Body() updateUserDto: UpdateUserDto,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<User> {
-    return this.authService.update(req.user.id, updateUserDto);
+    let oldPfp: string = '';
+    if (file) {
+      const user = await this.authService.findOne(req.user.id);
+      oldPfp = user.imagePath;
+
+      const result = await this.cloudinaryService.uploadFile(file);
+      updateUserDto.imagePath = result.secure_url as string;
+    }
+
+    const updatedUser = await this.authService.update(
+      req.user.id,
+      updateUserDto,
+    );
+
+    if (oldPfp && oldPfp !== this.configService.get('DEFAULT_USER_PFP')) {
+      await this.cloudinaryService.deleteFile(oldPfp);
+    }
+
+    return updatedUser;
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete()
-  deleteProfile(@Req() req: { user: User }): Promise<void> {
-    return this.authService.remove(req.user.id);
+  async deleteProfile(@Req() req: { user: User }): Promise<void> {
+    const user = await this.authService.findOne(req.user.id);
+    const pfpPath = user.imagePath;
+
+    await this.authService.remove(req.user.id);
+
+    if (pfpPath && pfpPath !== this.configService.get('DEFAULT_USER_PFP')) {
+      await this.cloudinaryService.deleteFile(pfpPath);
+    }
   }
 }

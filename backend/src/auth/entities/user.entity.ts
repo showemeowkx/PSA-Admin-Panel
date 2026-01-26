@@ -31,6 +31,9 @@ export class User {
   @Column({ unique: true, nullable: true, default: null })
   email: string;
 
+  @Column()
+  imagePath: string;
+
   @OneToOne(() => Cart, (cart) => cart.user)
   cart: Cart;
 

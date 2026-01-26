@@ -21,7 +21,6 @@ export class CategoriesService {
   async create(createCategoryDto: CreateCategoryDto): Promise<void> {
     const categoryEntity = this.categoryRepository.create({
       ...createCategoryDto,
-      iconPath: '', // PLACEHOLDER
     });
 
     try {
@@ -34,6 +33,16 @@ export class CategoriesService {
         `Failed to create a category: ${error.stack}`,
       );
     }
+  }
+
+  async findOne(id: number): Promise<Category> {
+    const category = await this.categoryRepository.findOne({ where: { id } });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
+
+    return category;
   }
 
   async findAll(): Promise<{ data: Category[] }> {
