@@ -55,19 +55,25 @@ export class AuthController {
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<User> {
+    let oldPfp: string = '';
     if (file) {
       const user = await this.authService.findOne(req.user.id);
-      const oldPfp = user.imagePath;
-
-      if (oldPfp && oldPfp !== this.configService.get('DEFAULT_USER_PFP')) {
-        await this.cloudinaryService.deleteFile(oldPfp);
-      }
+      oldPfp = user.imagePath;
 
       const result = await this.cloudinaryService.uploadFile(file);
       updateUserDto.imagePath = result.secure_url as string;
     }
 
-    return this.authService.update(req.user.id, updateUserDto);
+    const updatedUser = await this.authService.update(
+      req.user.id,
+      updateUserDto,
+    );
+
+    if (oldPfp && oldPfp !== this.configService.get('DEFAULT_USER_PFP')) {
+      await this.cloudinaryService.deleteFile(oldPfp);
+    }
+
+    return updatedUser;
   }
 
   @UseGuards(JwtAuthGuard)

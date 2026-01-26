@@ -58,21 +58,27 @@ export class CategoriesController {
     @Body() updateCategoryDto: UpdateCategoryDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<Category> {
+    let oldIconPath = '';
     if (file) {
       const oldCategory = await this.categoriesService.findOne(id);
-      const oldIconPath = oldCategory.iconPath;
-
-      if (
-        oldIconPath &&
-        oldIconPath != this.configService.get('DEFAULT_CATEGORY_ICON')
-      ) {
-        await this.cloudinaryService.deleteFile(oldIconPath);
-      }
+      oldIconPath = oldCategory.iconPath;
 
       const result = await this.cloudinaryService.uploadFile(file);
       updateCategoryDto.iconPath = result.secure_url as string;
     }
-    return this.categoriesService.update(id, updateCategoryDto);
+    const updatedCategory = await this.categoriesService.update(
+      id,
+      updateCategoryDto,
+    );
+
+    if (
+      oldIconPath &&
+      oldIconPath != this.configService.get('DEFAULT_CATEGORY_ICON')
+    ) {
+      await this.cloudinaryService.deleteFile(oldIconPath);
+    }
+
+    return updatedCategory;
   }
 
   @Delete()
