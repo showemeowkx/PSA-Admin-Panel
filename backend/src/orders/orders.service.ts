@@ -151,11 +151,22 @@ export class OrdersService {
     return order;
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<void> {
     const result = await this.orderRepository.delete(id);
 
     if (result.affected === 0) {
       throw new NotFoundException(`Order with ID ${id} not found`);
     }
+  }
+
+  async payOrder(orderId: number): Promise<void> {
+    const order = await this.findOne(orderId);
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    order.status = 'PAID';
+    await this.orderRepository.save(order);
   }
 }
