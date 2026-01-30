@@ -71,7 +71,7 @@ export class StoreService {
   }
 
   async remove(id: number): Promise<void> {
-    const result = await this.storeRepository.delete(id);
+    const result = await this.storeRepository.softDelete(id);
 
     if (result.affected === 0) {
       throw new NotFoundException(`Store with ID ${id} not found`);
