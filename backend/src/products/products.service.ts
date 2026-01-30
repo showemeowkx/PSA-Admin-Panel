@@ -182,6 +182,20 @@ export class ProductsService {
     return product;
   }
 
+  async findOneByUkrskladId(ukrskladId: number): Promise<Product> {
+    const product = await this.productRepository.findOne({
+      where: { ukrskladId },
+    });
+
+    if (!product) {
+      throw new NotFoundException(
+        `Product with UkrSklad ID ${ukrskladId} not found`,
+      );
+    }
+
+    return product;
+  }
+
   async update(
     id: number,
     updateProductDto: UpdateProductDto,

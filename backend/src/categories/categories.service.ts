@@ -59,6 +59,20 @@ export class CategoriesService {
     }
   }
 
+  async findOneByUkrskladId(ukrskladId: number): Promise<Category> {
+    const category = await this.categoryRepository.findOne({
+      where: { ukrskladId },
+    });
+
+    if (!category) {
+      throw new NotFoundException(
+        `Category with UkrSklad ID ${ukrskladId} not found`,
+      );
+    }
+
+    return category;
+  }
+
   async update(
     id: number,
     updateCategoryDto: UpdateCategoryDto,

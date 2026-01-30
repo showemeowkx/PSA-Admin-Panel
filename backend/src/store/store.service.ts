@@ -62,6 +62,20 @@ export class StoreService {
     return store;
   }
 
+  async findOneByUkrskladId(ukrskladId: number): Promise<Store> {
+    const store = await this.storeRepository.findOne({
+      where: { ukrskladId },
+    });
+
+    if (!store) {
+      throw new NotFoundException(
+        `Store with UkrSklad ID ${ukrskladId} not found`,
+      );
+    }
+
+    return store;
+  }
+
   async update(id: number, updateStoreDto: UpdateStoreDto): Promise<Store> {
     const store = await this.findOne(id);
 
