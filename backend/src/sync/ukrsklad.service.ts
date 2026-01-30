@@ -45,4 +45,36 @@ export class UkrSkladService {
       });
     });
   }
+
+  async getCategories() {
+    return this.query('SELECT NUM, NAME FROM TIP WHERE VISIBLE = 1');
+  }
+
+  async getStores() {
+    return this.query('SELECT NUM, NAME FROM SKLAD WHERE VISIBLE = 1');
+  }
+
+  async getProducts() {
+    return this.query(`
+      SELECT 
+        NUM, 
+        NAME, 
+        CENA_R as PRICE, 
+        ED_IZM as UNIT, 
+        TIP as CATEGORY_ID
+      FROM TOVAR_NAME
+      WHERE VISIBLE = 1
+      AND IS_USLUGA = 0
+    `);
+  }
+
+  async getProductStock() {
+    return this.query(`
+      SELECT 
+        TOVAR_NUM as PRODUCT_ID,
+        SKLAD_NUM as STORE_ID,
+        KOLVO as QUANTITY
+      FROM TOVAR_ZAL
+    `);
+  }
 }
