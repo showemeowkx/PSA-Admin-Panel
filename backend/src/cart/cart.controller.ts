@@ -13,7 +13,7 @@ import {
 import { AddToCartDto } from './dto/add-to-cart.dto';
 import { Cart } from './entities/cart.entity';
 import { User } from 'src/auth/entities/user.entity';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { CartService } from './cart.service';
 
 @Controller('cart')

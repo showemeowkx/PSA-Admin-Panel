@@ -15,14 +15,15 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { GetStoresFiltersDto } from './dto/get-stores-filters.dto';
 import { Store } from './entities/store.entity';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('store')
 export class StoreController {
   constructor(private readonly storeService: StoreService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AdminGuard)
   create(@Body() createStoreDto: CreateStoreDto): Promise<void> {
     return this.storeService.create(createStoreDto);
   }
@@ -44,7 +45,7 @@ export class StoreController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AdminGuard)
   remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.storeService.remove(id);
   }

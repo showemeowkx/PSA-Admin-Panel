@@ -12,13 +12,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
-import { AdminGuard } from 'src/admin.guard';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { Category } from './enteties/category.entity';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('categories')
 export class CategoriesController {
