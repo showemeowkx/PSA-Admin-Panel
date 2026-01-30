@@ -4,8 +4,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { User } from './auth/entities/user.entity';
-import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { User } from '../entities/user.entity';
 
 @Injectable()
 export class AdminGuard extends JwtAuthGuard {
