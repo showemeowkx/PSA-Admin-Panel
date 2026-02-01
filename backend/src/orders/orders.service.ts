@@ -42,7 +42,7 @@ export class OrdersService {
         product: cartItem.product,
         productImagePath: cartItem.product.imagePath,
         productName: cartItem.product.name,
-        productPortionSize: cartItem.product.portionSize,
+        // productPortionSize: cartItem.product.portionSize,
         productUnitsOfMeasurments: cartItem.product.unitsOfMeasurments,
         priceAtPurchase: itemPrice,
         quantity: cartItem.quantity,
