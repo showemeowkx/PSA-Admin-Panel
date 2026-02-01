@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { OrderItem } from './order-item.entity';
+import { OrderStatus } from '../order-status.enum';
 
 @Entity()
 export class Order {
@@ -26,8 +27,8 @@ export class Order {
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items: OrderItem[];
 
-  @Column()
-  status: 'CANCELLED' | 'PENDING' | 'PAID';
+  @Column('enum', { enum: OrderStatus })
+  status: OrderStatus;
 
   @CreateDateColumn()
   createdAt: Date;

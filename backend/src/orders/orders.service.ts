@@ -13,6 +13,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CartService } from 'src/cart/cart.service';
 import { ProductsService } from 'src/products/products.service';
 import { ConfigService } from '@nestjs/config';
+import { OrderStatus } from './order-status.enum';
 
 @Injectable()
 export class OrdersService {
@@ -71,7 +72,7 @@ export class OrdersService {
       const newOrder = qr.manager.create(Order, {
         user,
         totalAmount,
-        status: 'PENDING',
+        status: OrderStatus.PENDING,
         items: orderItems,
         createdAt: new Date(),
       });
@@ -171,14 +172,14 @@ export class OrdersService {
     }
   }
 
-  async payOrder(orderId: number): Promise<void> {
-    const order = await this.findOne(orderId);
+  async updateStatus(id: number, status: OrderStatus): Promise<Order> {
+    const order = await this.findOne(id);
 
     if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
+      throw new NotFoundException(`Order with ID ${id} not found`);
     }
 
-    order.status = 'PAID';
-    await this.orderRepository.save(order);
+    order.status = status;
+    return this.orderRepository.save(order);
   }
 }

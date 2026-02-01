@@ -8,11 +8,14 @@ import {
   Query,
   ParseIntPipe,
   Patch,
+  ConflictException,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { User } from 'src/auth/entities/user.entity';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Order } from './entities/order.entity';
+import { OrderStatus } from './order-status.enum';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
@@ -45,8 +48,16 @@ export class OrdersController {
     return this.ordersService.findOne(id);
   }
 
-  @Patch(':id/pay')
-  payOrder(@Param('id', ParseIntPipe) orderId: number): Promise<void> {
-    return this.ordersService.payOrder(orderId);
+  @UseGuards(AdminGuard)
+  @Patch(':id/:status')
+  updateStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('status') status: OrderStatus,
+  ): Promise<Order> {
+    if (!Object.values(OrderStatus).find((s) => s === status)) {
+      throw new ConflictException('Incorrect order status value');
+    }
+
+    return this.ordersService.updateStatus(id, status);
   }
 }
