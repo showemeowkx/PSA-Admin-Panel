@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -11,6 +12,7 @@ import { OrderItem } from './entities/order-item.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CartService } from 'src/cart/cart.service';
 import { ProductsService } from 'src/products/products.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class OrdersService {
@@ -22,6 +24,7 @@ export class OrdersService {
     private readonly cartService: CartService,
     private readonly productService: ProductsService,
     private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(user: User): Promise<void> {
@@ -37,6 +40,15 @@ export class OrdersService {
     for (const cartItem of cart.items) {
       const itemPrice = cartItem.product.pricePromo || cartItem.product.price;
       totalAmount += cartItem.quantity * itemPrice;
+
+      const minOrderAmout =
+        this.configService.get<number>('MIN_ORDER_AMNT') || 500;
+
+      if (totalAmount < minOrderAmout) {
+        throw new ConflictException(
+          `Minimum order sum is ${minOrderAmout} UAH`,
+        );
+      }
 
       const orderItem = this.orderItemRepository.create({
         product: cartItem.product,
