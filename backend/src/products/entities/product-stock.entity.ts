@@ -10,7 +10,7 @@ import { Product } from './product.entity';
 import { Store } from 'src/store/entities/store.entity';
 
 @Entity()
-@Unique(['product', 'store'])
+@Unique(['product', 'storeId'])
 export class ProductStock {
   @PrimaryGeneratedColumn()
   id: number;
@@ -31,6 +31,6 @@ export class ProductStock {
   @Column()
   storeId: number;
 
-  @Column({ default: 0 })
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
   quantity: number;
 }

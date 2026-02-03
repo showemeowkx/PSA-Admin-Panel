@@ -123,6 +123,8 @@ export class ProductsService {
       'effective_price',
     );
 
+    qb.andWhere('stock.quantity > 0');
+
     if (storeId) {
       qb.andWhere('stock.storeId = :storeId', { storeId });
     }
