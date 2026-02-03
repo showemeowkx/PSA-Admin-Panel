@@ -8,10 +8,11 @@ import { ProductsModule } from 'src/products/products.module';
 import { Store } from 'src/store/entities/store.entity';
 import { ConfigModule } from '@nestjs/config';
 import { UkrSkladService } from './ukrsklad.service';
+import { ProductStock } from 'src/products/entities/product-stock.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, Category, Store]),
+    TypeOrmModule.forFeature([Product, Category, Store, ProductStock]),
     ProductsModule,
     ConfigModule,
   ],
