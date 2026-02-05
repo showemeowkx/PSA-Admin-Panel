@@ -97,6 +97,7 @@ export class UkrSkladService {
       AND IS_USLUGA = 0
       AND TIP IS NOT NULL
       AND CENA_R > 0
+      AND NAME != 'Мій товар'
     `);
   }
 

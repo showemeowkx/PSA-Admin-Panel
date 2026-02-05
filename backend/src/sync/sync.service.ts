@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable } from '@nestjs/common';
 import { UkrSkladService } from './ukrsklad.service';
 import { Repository } from 'typeorm';
@@ -23,12 +24,46 @@ export class SyncService {
     private stockRepository: Repository<ProductStock>,
   ) {}
 
-  async syncAll(): Promise<{ status: string }> {
-    await this.syncStores();
-    await this.syncCategories();
-    await this.syncProducts();
+  async syncAll(): Promise<{
+    status: string;
+    synced: string[];
+    errors: string[];
+  }> {
+    let status = 'success';
+    const synced: string[] = [];
+    const errors: string[] = [];
 
-    return { status: 'success' };
+    try {
+      synced.push('Stores');
+      await this.syncStores();
+    } catch (error) {
+      errors.push(error.stack as string);
+      synced.pop();
+    }
+
+    try {
+      synced.push('Categories');
+      await this.syncCategories();
+    } catch (error) {
+      errors.push(error.stack as string);
+      synced.pop();
+    }
+
+    try {
+      synced.push('Products');
+      await this.syncProducts();
+    } catch (error) {
+      errors.push(error.stack as string);
+      synced.pop();
+    }
+
+    if (synced.length === 0) {
+      status = 'failed';
+    } else if (synced.length < 3) {
+      status = 'partial';
+    }
+
+    return { status, synced, errors };
   }
 
   async syncStores() {
