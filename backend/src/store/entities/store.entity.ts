@@ -17,6 +17,9 @@ export class Store {
   @Column({ unique: true })
   address: string;
 
+  @Column({ nullable: true })
+  lastSyncedAddress: string;
+
   @Column({ default: true })
   isActive: boolean;
 

@@ -8,12 +8,14 @@ import { Store } from 'src/store/entities/store.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
 import { ConfigService } from '@nestjs/config';
+import { StoreService } from 'src/store/store.service';
 
 @Injectable()
 export class SyncService {
   constructor(
     private readonly ukrSklad: UkrSkladService,
     private readonly configService: ConfigService,
+    private readonly storeService: StoreService,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Category)
@@ -66,22 +68,63 @@ export class SyncService {
     return { status, synced, errors };
   }
 
-  async syncStores() {
-    const stores = await this.ukrSklad.getStores();
+  async syncStores(): Promise<{ status: string; errors: string[] }> {
+    let status = 'success';
+    const errors: string[] = [];
 
-    for (const s of stores) {
-      let store = await this.storeRepository.findOne({
-        where: { ukrskladId: s.NUM },
-      });
+    const ukrSkladStores = await this.ukrSklad.getStores();
+    const existingStoresResponse = await this.storeService.findAll({});
+    const existingStores = existingStoresResponse.data;
 
-      if (!store) {
-        store = this.storeRepository.create({ ukrskladId: s.NUM });
+    const storeMap = new Map(existingStores.map((s) => [s.ukrskladId, s]));
+
+    for (const s of ukrSkladStores) {
+      const store = storeMap.get(s.NUM);
+      const incomingAddress = s.ADDRESS || `Store #${s.NUM}`;
+
+      const storeData = {
+        ukrskladId: s.NUM,
+        address: incomingAddress,
+        lastSyncedAddress: incomingAddress,
+      };
+      try {
+        if (store) {
+          storeMap.delete(s.NUM);
+
+          await this.storeService.restore(store.id);
+          if (store.lastSyncedAddress === s.ADDRESS) {
+            storeData.address = store.address;
+          }
+
+          await this.storeService.update(store.id, {
+            ...storeData,
+            isActive: store.isActive,
+          });
+        } else {
+          await this.storeService.create(storeData);
+        }
+      } catch (error) {
+        status = 'failed';
+        errors.push(error.stack as string);
       }
-
-      store.address = s.ADDRESS || `Store #${s.NUM}`;
-      store.isActive = true;
-      await this.storeRepository.save(store);
     }
+
+    if (status !== 'success') {
+      return { status, errors };
+    }
+
+    try {
+      const storesToDelete = Array.from(storeMap.values());
+      if (storesToDelete.length > 0) {
+        const idsToDelete = storesToDelete.map((s) => s.id);
+        await this.storeService.remove(idsToDelete);
+      }
+    } catch (error) {
+      status = 'failed';
+      errors.push(error.stack as string);
+    }
+
+    return { status, errors };
   }
 
   async syncCategories() {

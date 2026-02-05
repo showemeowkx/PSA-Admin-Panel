@@ -13,7 +13,7 @@ export class SyncController {
   }
 
   @Post('/store')
-  syncStores(): Promise<void> {
+  syncStores(): Promise<{ status: string; errors: string[] }> {
     return this.syncService.syncStores();
   }
 

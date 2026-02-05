@@ -15,7 +15,6 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { GetStoresFiltersDto } from './dto/get-stores-filters.dto';
 import { Store } from './entities/store.entity';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('store')
@@ -36,7 +35,7 @@ export class StoreController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AdminGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateStoreDto: UpdateStoreDto,

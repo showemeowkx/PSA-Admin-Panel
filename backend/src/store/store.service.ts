@@ -40,6 +40,7 @@ export class StoreService {
     const { search } = getStoresFiltersDto;
 
     const qb = this.storeRepository.createQueryBuilder('store');
+    qb.withDeleted();
 
     if (search) {
       qb.andWhere('(store.address ILIKE :search)', { search: `%${search}%` });
@@ -84,11 +85,24 @@ export class StoreService {
     return this.storeRepository.save(store);
   }
 
-  async remove(id: number): Promise<void> {
-    const result = await this.storeRepository.softDelete(id);
+  async remove(ids: number | number[]): Promise<void> {
+    if (Array.isArray(ids) && ids.length === 0) {
+      return;
+    }
+
+    const result = await this.storeRepository.softDelete(ids);
 
     if (result.affected === 0) {
-      throw new NotFoundException(`Store with ID ${id} not found`);
+      const idMsg = Array.isArray(ids) ? ids.join(', ') : ids;
+      throw new NotFoundException(`No stores found with IDs: ${idMsg}`);
+    }
+  }
+
+  async restore(id: number): Promise<void> {
+    const store = await this.findOne(id);
+
+    if (store && store.deletedAt) {
+      await this.storeRepository.restore(store.id);
     }
   }
 }

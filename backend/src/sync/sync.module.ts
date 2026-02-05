@@ -9,12 +9,14 @@ import { Store } from 'src/store/entities/store.entity';
 import { ConfigModule } from '@nestjs/config';
 import { UkrSkladService } from './ukrsklad.service';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
+import { StoreModule } from 'src/store/store.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Product, Category, Store, ProductStock]),
     ProductsModule,
     ConfigModule,
+    StoreModule,
   ],
   controllers: [SyncController],
   providers: [SyncService, UkrSkladService],
