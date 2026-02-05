@@ -10,6 +10,7 @@ import { ConfigModule } from '@nestjs/config';
 import { UkrSkladService } from './ukrsklad.service';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
 import { StoreModule } from 'src/store/store.module';
+import { CategoriesModule } from 'src/categories/categories.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { StoreModule } from 'src/store/store.module';
     ProductsModule,
     ConfigModule,
     StoreModule,
+    CategoriesModule,
   ],
   controllers: [SyncController],
   providers: [SyncService, UkrSkladService],

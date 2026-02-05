@@ -52,6 +52,7 @@ export class CategoriesController {
   }
 
   @Patch(':id')
+  @UseGuards(AdminGuard)
   @UseInterceptors(FileInterceptor('icon'))
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -82,6 +83,7 @@ export class CategoriesController {
   }
 
   @Delete()
+  @UseGuards(AdminGuard)
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     const category = await this.categoriesService.findOne(id);
     const iconPath = category.iconPath;

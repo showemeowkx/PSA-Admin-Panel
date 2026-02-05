@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
 import { ConfigService } from '@nestjs/config';
 import { StoreService } from 'src/store/store.service';
+import { CategoriesService } from 'src/categories/categories.service';
 
 @Injectable()
 export class SyncService {
@@ -16,6 +17,7 @@ export class SyncService {
     private readonly ukrSklad: UkrSkladService,
     private readonly configService: ConfigService,
     private readonly storeService: StoreService,
+    private readonly categoriesService: CategoriesService,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     @InjectRepository(Category)
@@ -35,20 +37,18 @@ export class SyncService {
     const synced: string[] = [];
     const errors: string[] = [];
 
-    try {
+    const storesSyncResponse = await this.syncStores();
+    if (storesSyncResponse.status === 'success') {
       synced.push('Stores');
-      await this.syncStores();
-    } catch (error) {
-      errors.push(error.stack as string);
-      synced.pop();
+    } else {
+      errors.concat(storesSyncResponse.errors);
     }
 
-    try {
+    const categoriesSyncResponse = await this.syncCategories();
+    if (categoriesSyncResponse.status === 'success') {
       synced.push('Categories');
-      await this.syncCategories();
-    } catch (error) {
-      errors.push(error.stack as string);
-      synced.pop();
+    } else {
+      errors.concat(categoriesSyncResponse.errors);
     }
 
     try {
@@ -87,6 +87,7 @@ export class SyncService {
         address: incomingAddress,
         lastSyncedAddress: incomingAddress,
       };
+
       try {
         if (store) {
           storeMap.delete(s.NUM);
@@ -127,24 +128,66 @@ export class SyncService {
     return { status, errors };
   }
 
-  async syncCategories() {
-    const categories = await this.ukrSklad.getCategories();
+  async syncCategories(): Promise<{ status: string; errors: string[] }> {
+    let status = 'success';
+    const errors: string[] = [];
 
-    for (const c of categories) {
-      let category = await this.categoryRepository.findOne({
-        where: { ukrskladId: c.NUM },
-      });
+    const ukrSkladCategories = await this.ukrSklad.getCategories();
+    const existingCategoriesResponse = await this.categoriesService.findAll();
+    const existingCategories = existingCategoriesResponse.data;
 
-      if (!category) {
-        category = this.categoryRepository.create({
-          ukrskladId: c.NUM,
-          iconPath: this.configService.get<string>('DEFAULT_CATEGORY_ICON'),
-        });
+    const categoryMap = new Map(
+      existingCategories.map((s) => [s.ukrskladId, s]),
+    );
+
+    for (const c of ukrSkladCategories) {
+      const category = categoryMap.get(c.NUM);
+      const incomingName = c.NAME || `Category #${c.NUM}`;
+
+      const categoryData = {
+        ukrskladId: c.NUM,
+        name: c.NAME,
+        lastSyncedName: incomingName,
+      };
+
+      try {
+        if (category) {
+          categoryMap.delete(c.NUM);
+
+          await this.categoriesService.restore(category.id);
+          if (category.lastSyncedName === c.NAME) {
+            categoryData.name = category.name;
+          }
+
+          await this.categoriesService.update(category.id, categoryData);
+        } else {
+          await this.categoriesService.create({
+            ...categoryData,
+            iconPath: this.configService.get<string>('DEFAULT_CATEGORY_ICON'),
+          });
+        }
+      } catch (error) {
+        status = 'failed';
+        errors.push(error.stack as string);
       }
 
-      category.name = c.NAME || `Category #${c.NUM}`;
-      await this.categoryRepository.save(category);
+      if (status !== 'success') {
+        return { status, errors };
+      }
     }
+
+    try {
+      const categoriesToDelete = Array.from(categoryMap.values());
+      if (categoriesToDelete.length > 0) {
+        const idsToDelete = categoriesToDelete.map((c) => c.id);
+        await this.categoriesService.remove(idsToDelete);
+      }
+    } catch (error) {
+      status = 'failed';
+      errors.push(error.stack as string);
+    }
+
+    return { status, errors };
   }
 
   async syncProducts() {

@@ -17,6 +17,10 @@ export class CreateCategoryDto {
   @MaxLength(30)
   name: string;
 
+  @IsString()
+  @IsOptional()
+  lastSyncedName?: string;
+
   @IsOptional()
   @IsString()
   iconPath?: string;

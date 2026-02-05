@@ -77,22 +77,27 @@ export class CategoriesService {
     id: number,
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
-    const category = await this.categoryRepository.findOne({ where: { id } });
-
-    if (!category) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
-    }
+    const category = await this.findOne(id);
 
     this.categoryRepository.merge(category, updateCategoryDto);
 
     return await this.categoryRepository.save(category);
   }
 
-  async remove(id: number): Promise<void> {
-    const result = await this.categoryRepository.softDelete(id);
+  async remove(ids: number | number[]): Promise<void> {
+    const result = await this.categoryRepository.softDelete(ids);
 
     if (result.affected === 0) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      const idMsg = Array.isArray(ids) ? ids.join(', ') : ids;
+      throw new NotFoundException(`No stores found with IDs: ${idMsg}`);
+    }
+  }
+
+  async restore(id: number): Promise<void> {
+    const category = await this.findOne(id);
+
+    if (category && category.deletedAt) {
+      await this.categoryRepository.restore(category.id);
     }
   }
 }

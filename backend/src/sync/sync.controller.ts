@@ -18,7 +18,7 @@ export class SyncController {
   }
 
   @Post('/categories')
-  syncCategories(): Promise<void> {
+  syncCategories(): Promise<{ status: string; errors: string[] }> {
     return this.syncService.syncCategories();
   }
 
