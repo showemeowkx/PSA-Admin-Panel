@@ -193,16 +193,15 @@ export class SyncService {
       this.ukrSklad.getProducts(),
       this.ukrSklad.getProductStock(),
     ]);
-    const [allStoresResponse, allCategoriesResponse, existingProductsResponse] =
+    const [allStoresResponse, allCategoriesResponse, existingProducts] =
       await Promise.all([
         this.storeService.findAll({}),
         this.categoriesService.findAll(),
-        this.productService.findAll({ limit: 0 }),
+        this.productRepository.find({ select: ['id', 'ukrskladId'] }),
       ]);
 
     const allStores = allStoresResponse.data;
     const allCategories = allCategoriesResponse.data;
-    const existingProducts = existingProductsResponse.data;
 
     const storeMap = new Map(allStores.map((s) => [s.ukrskladId, s]));
     const categoryMap = new Map(allCategories.map((c) => [c.ukrskladId, c]));
@@ -220,37 +219,38 @@ export class SyncService {
 
       for (const p of batch) {
         const product = productMap.get(p.NUM);
-
-        const productData = {
-          id: product ? product.id : undefined,
-          ukrskladId: p.NUM,
-          name: p.NAME,
-          lastSyncedName: p.NAME,
-          description: product ? product.description : undefined,
-          price: p.PRICE,
-          pricePromo: p.PRICE_PROMO,
-          isPromo: Boolean(p.PRICE_PROMO),
-          isActive: true,
-          unitsOfMeasurments: p.UNIT,
-          imagePath: defaultImage,
-          category: p.CATEGORY_ID ? categoryMap.get(p.CATEGORY_ID) : undefined,
-        };
+        let incomingName = p.NAME;
+        let activeStatus = true;
 
         try {
           if (product) {
             productMap.delete(p.NUM);
-
-            if (product?.deletedAt) {
-              await this.productService.restore(product.id);
-            }
-
-            productData.isActive = product.isActive;
-            productData.imagePath = product.imagePath;
-
-            if (product.lastSyncedName === p.NAME) {
-              productData.name = product.name;
-            }
+            incomingName =
+              product.lastSyncedName === p.NAME ? product.name : p.NAME;
+            activeStatus = product.isActive;
           }
+
+          if (product?.deletedAt) {
+            await this.productService.restore(product.id);
+          }
+
+          const productData = {
+            id: product ? product.id : undefined,
+            ukrskladId: p.NUM,
+            name: incomingName,
+            lastSyncedName: p.NAME,
+            price: p.PRICE,
+            pricePromo: p.PRICE_PROMO,
+            isPromo: Boolean(p.PRICE_PROMO),
+            isActive: activeStatus,
+            unitsOfMeasurments: p.UNIT,
+            imagePath: product ? undefined : defaultImage,
+            category: p.CATEGORY_ID
+              ? categoryMap.get(p.CATEGORY_ID)
+              : undefined,
+          };
+
+          if (product) delete productData.imagePath;
 
           productEntitiesToSave.push(productData);
         } catch (error) {
@@ -313,8 +313,8 @@ export class SyncService {
     try {
       const productsToDelete = Array.from(productMap.values());
       if (productsToDelete.length > 0) {
-        const idsToDelete = productsToDelete.map((p) => p.id);
-        await this.productService.remove(idsToDelete);
+        const idsToDelete = productsToDelete.map((c) => c.id);
+        await this.categoriesService.remove(idsToDelete);
       }
     } catch (error) {
       status = 'failed';

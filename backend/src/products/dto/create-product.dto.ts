@@ -29,6 +29,10 @@ export class CreateProductDto {
 
   @IsString()
   @IsOptional()
+  lastSyncedName?: string;
+
+  @IsString()
+  @IsOptional()
   @MaxLength(2000)
   description?: string;
 

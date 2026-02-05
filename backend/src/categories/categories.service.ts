@@ -49,6 +49,7 @@ export class CategoriesService {
     try {
       const categories = await this.categoryRepository.find({
         order: { id: 'ASC' },
+        withDeleted: true,
       });
 
       return { data: categories };
@@ -94,7 +95,10 @@ export class CategoriesService {
   }
 
   async restore(id: number): Promise<void> {
-    const category = await this.findOne(id);
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
 
     if (category && category.deletedAt) {
       await this.categoryRepository.restore(category.id);

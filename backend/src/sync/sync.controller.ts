@@ -23,7 +23,7 @@ export class SyncController {
   }
 
   @Post('/products')
-  syncProducts(): Promise<void> {
+  syncProducts(): Promise<{ status: string; errors: string[] }> {
     return this.syncService.syncProducts();
   }
 }

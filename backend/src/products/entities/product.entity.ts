@@ -23,6 +23,9 @@ export class Product {
   name: string;
 
   @Column({ nullable: true })
+  lastSyncedName: string;
+
+  @Column({ nullable: true })
   description?: string;
 
   @Column({ nullable: true })

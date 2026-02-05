@@ -99,7 +99,10 @@ export class StoreService {
   }
 
   async restore(id: number): Promise<void> {
-    const store = await this.findOne(id);
+    const store = await this.storeRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
 
     if (store && store.deletedAt) {
       await this.storeRepository.restore(store.id);

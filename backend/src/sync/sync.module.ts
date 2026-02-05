@@ -19,6 +19,7 @@ import { CategoriesModule } from 'src/categories/categories.module';
     ConfigModule,
     StoreModule,
     CategoriesModule,
+    ProductsModule,
   ],
   controllers: [SyncController],
   providers: [SyncService, UkrSkladService],

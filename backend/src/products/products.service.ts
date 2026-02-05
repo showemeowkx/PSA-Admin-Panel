@@ -123,6 +123,8 @@ export class ProductsService {
       'effective_price',
     );
 
+    qb.withDeleted();
+
     if (storeId) {
       qb.andWhere('stock.storeId = :storeId', { storeId });
     }
@@ -172,6 +174,7 @@ export class ProductsService {
   async findOne(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({
       where: { id },
+      withDeleted: true,
       relations: ['stocks', 'stocks.store', 'category'],
     });
 
@@ -256,11 +259,23 @@ export class ProductsService {
     return this.productRepository.save(product);
   }
 
-  async remove(id: number): Promise<void> {
-    const result = await this.productRepository.softDelete(id);
+  async remove(ids: number | number[]): Promise<void> {
+    const result = await this.productRepository.softDelete(ids);
 
     if (result.affected === 0) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+      const idMsg = Array.isArray(ids) ? ids.join(', ') : ids;
+      throw new NotFoundException(`No products found with IDs: ${idMsg}`);
+    }
+  }
+
+  async restore(id: number): Promise<void> {
+    const product = await this.productRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+
+    if (product && product.deletedAt) {
+      await this.productRepository.restore(product.id);
     }
   }
 }
