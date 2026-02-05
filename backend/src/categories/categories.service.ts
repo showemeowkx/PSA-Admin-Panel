@@ -89,7 +89,7 @@ export class CategoriesService {
 
     if (result.affected === 0) {
       const idMsg = Array.isArray(ids) ? ids.join(', ') : ids;
-      throw new NotFoundException(`No stores found with IDs: ${idMsg}`);
+      throw new NotFoundException(`No categories found with IDs: ${idMsg}`);
     }
   }
 
