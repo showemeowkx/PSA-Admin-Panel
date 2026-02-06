@@ -28,8 +28,13 @@ export class CreateProductDto {
   name: string;
 
   @IsString()
+  @IsOptional()
+  lastSyncedName?: string;
+
+  @IsString()
+  @IsOptional()
   @MaxLength(2000)
-  description: string;
+  description?: string;
 
   @IsInt()
   @Type(() => Number)
@@ -47,10 +52,6 @@ export class CreateProductDto {
   @IsOptional()
   @Type(() => Number)
   pricePromo?: number;
-
-  @IsNumber()
-  @Type(() => Number)
-  portionSize: number;
 
   @IsString()
   unitsOfMeasurments: string;

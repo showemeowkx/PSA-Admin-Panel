@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  DeleteDateColumn,
 } from 'typeorm';
 import { ProductStock } from './product-stock.entity';
 
@@ -21,8 +22,11 @@ export class Product {
   @Column()
   name: string;
 
-  @Column()
-  description: string;
+  @Column({ nullable: true })
+  lastSyncedName: string;
+
+  @Column({ nullable: true })
+  description?: string;
 
   @Column({ nullable: true })
   categoryId: number;
@@ -42,9 +46,6 @@ export class Product {
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   pricePromo: number;
 
-  @Column('decimal', { precision: 10, scale: 3 })
-  portionSize: number;
-
   @Column()
   unitsOfMeasurments: string;
 
@@ -59,4 +60,7 @@ export class Product {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 }

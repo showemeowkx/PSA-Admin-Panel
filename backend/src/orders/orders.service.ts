@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -11,6 +12,8 @@ import { OrderItem } from './entities/order-item.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CartService } from 'src/cart/cart.service';
 import { ProductsService } from 'src/products/products.service';
+import { ConfigService } from '@nestjs/config';
+import { OrderStatus } from './order-status.enum';
 
 @Injectable()
 export class OrdersService {
@@ -22,6 +25,7 @@ export class OrdersService {
     private readonly cartService: CartService,
     private readonly productService: ProductsService,
     private readonly dataSource: DataSource,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(user: User): Promise<void> {
@@ -38,11 +42,20 @@ export class OrdersService {
       const itemPrice = cartItem.product.pricePromo || cartItem.product.price;
       totalAmount += cartItem.quantity * itemPrice;
 
+      const minOrderAmout =
+        this.configService.get<number>('MIN_ORDER_AMNT') || 500;
+
+      if (totalAmount < minOrderAmout) {
+        throw new ConflictException(
+          `Minimum order sum is ${minOrderAmout} UAH`,
+        );
+      }
+
       const orderItem = this.orderItemRepository.create({
         product: cartItem.product,
         productImagePath: cartItem.product.imagePath,
         productName: cartItem.product.name,
-        productPortionSize: cartItem.product.portionSize,
+        // productPortionSize: cartItem.product.portionSize,
         productUnitsOfMeasurments: cartItem.product.unitsOfMeasurments,
         priceAtPurchase: itemPrice,
         quantity: cartItem.quantity,
@@ -59,7 +72,7 @@ export class OrdersService {
       const newOrder = qr.manager.create(Order, {
         user,
         totalAmount,
-        status: 'PENDING',
+        status: OrderStatus.PENDING,
         items: orderItems,
         createdAt: new Date(),
       });
@@ -159,14 +172,14 @@ export class OrdersService {
     }
   }
 
-  async payOrder(orderId: number): Promise<void> {
-    const order = await this.findOne(orderId);
+  async updateStatus(id: number, status: OrderStatus): Promise<Order> {
+    const order = await this.findOne(id);
 
     if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
+      throw new NotFoundException(`Order with ID ${id} not found`);
     }
 
-    order.status = 'PAID';
-    await this.orderRepository.save(order);
+    order.status = status;
+    return this.orderRepository.save(order);
   }
 }

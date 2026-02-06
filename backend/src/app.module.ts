@@ -7,10 +7,13 @@ import { CartModule } from './cart/cart.module';
 import { AuthModule } from './auth/auth.module';
 import { StoreModule } from './store/store.module';
 import { OrdersModule } from './orders/orders.module';
+import { SyncModule } from './sync/sync.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.POSTGRES_HOST,
@@ -21,18 +24,13 @@ import { OrdersModule } from './orders/orders.module';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
-
     ProductsModule,
-
     CategoriesModule,
-
     CartModule,
-
     AuthModule,
-
     StoreModule,
-
     OrdersModule,
+    SyncModule,
   ],
 })
 export class AppModule {}

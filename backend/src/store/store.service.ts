@@ -40,6 +40,7 @@ export class StoreService {
     const { search } = getStoresFiltersDto;
 
     const qb = this.storeRepository.createQueryBuilder('store');
+    qb.withDeleted();
 
     if (search) {
       qb.andWhere('(store.address ILIKE :search)', { search: `%${search}%` });
@@ -62,19 +63,52 @@ export class StoreService {
     return store;
   }
 
+  async findOneByUkrskladId(ukrskladId: number): Promise<Store> {
+    const store = await this.storeRepository.findOne({
+      where: { ukrskladId },
+    });
+
+    if (!store) {
+      throw new NotFoundException(
+        `Store with UkrSklad ID ${ukrskladId} not found`,
+      );
+    }
+
+    return store;
+  }
+
   async update(id: number, updateStoreDto: UpdateStoreDto): Promise<Store> {
     const store = await this.findOne(id);
 
-    this.storeRepository.merge(store, updateStoreDto);
+    this.storeRepository.merge(store, {
+      ...updateStoreDto,
+      updatedAt: new Date(),
+    });
 
     return this.storeRepository.save(store);
   }
 
-  async remove(id: number): Promise<void> {
-    const result = await this.storeRepository.delete(id);
+  async remove(ids: number | number[]): Promise<void> {
+    if (Array.isArray(ids) && ids.length === 0) {
+      return;
+    }
+
+    const result = await this.storeRepository.softDelete(ids);
 
     if (result.affected === 0) {
-      throw new NotFoundException(`Store with ID ${id} not found`);
+      const idMsg = Array.isArray(ids) ? ids.join(', ') : ids;
+      throw new NotFoundException(`No stores found with IDs: ${idMsg}`);
+    }
+  }
+
+  async restore(id: number): Promise<void> {
+    const store = await this.storeRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+
+    if (store && store.deletedAt) {
+      await this.storeRepository.restore(store.id);
     }
   }
 }

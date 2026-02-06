@@ -15,12 +15,12 @@ import {
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { AdminGuard } from 'src/admin.guard';
 import { Product } from './entities/product.entity';
 import { GetProductsFiltersDto } from './dto/get-products-filters.dto';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('products')
 export class ProductsController {

@@ -1,4 +1,10 @@
-import { IsInt, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class CreateStoreDto {
   @IsInt()
@@ -8,4 +14,8 @@ export class CreateStoreDto {
   @MinLength(5)
   @MaxLength(100)
   address: string;
+
+  @IsString()
+  @IsOptional()
+  lastSyncedAddress?: string;
 }

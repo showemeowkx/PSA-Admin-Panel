@@ -21,6 +21,7 @@ export class CategoriesService {
   async create(createCategoryDto: CreateCategoryDto): Promise<void> {
     const categoryEntity = this.categoryRepository.create({
       ...createCategoryDto,
+      isActive: true,
     });
 
     try {
@@ -49,6 +50,7 @@ export class CategoriesService {
     try {
       const categories = await this.categoryRepository.find({
         order: { id: 'ASC' },
+        withDeleted: true,
       });
 
       return { data: categories };
@@ -59,26 +61,51 @@ export class CategoriesService {
     }
   }
 
+  async findOneByUkrskladId(ukrskladId: number): Promise<Category> {
+    const category = await this.categoryRepository.findOne({
+      where: { ukrskladId },
+    });
+
+    if (!category) {
+      throw new NotFoundException(
+        `Category with UkrSklad ID ${ukrskladId} not found`,
+      );
+    }
+
+    return category;
+  }
+
   async update(
     id: number,
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<Category> {
-    const category = await this.categoryRepository.findOne({ where: { id } });
+    const category = await this.findOne(id);
 
-    if (!category) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
-    }
-
-    this.categoryRepository.merge(category, updateCategoryDto);
+    this.categoryRepository.merge(category, {
+      ...updateCategoryDto,
+      updatedAt: new Date(),
+    });
 
     return await this.categoryRepository.save(category);
   }
 
-  async remove(id: number): Promise<void> {
-    const result = await this.categoryRepository.delete(id);
+  async remove(ids: number | number[]): Promise<void> {
+    const result = await this.categoryRepository.softDelete(ids);
 
     if (result.affected === 0) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      const idMsg = Array.isArray(ids) ? ids.join(', ') : ids;
+      throw new NotFoundException(`No categories found with IDs: ${idMsg}`);
+    }
+  }
+
+  async restore(id: number): Promise<void> {
+    const category = await this.categoryRepository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+
+    if (category && category.deletedAt) {
+      await this.categoryRepository.restore(category.id);
     }
   }
 }

@@ -19,8 +19,8 @@ export class OrderItem {
   @Column()
   productName: string;
 
-  @Column('decimal', { precision: 10, scale: 3 })
-  productPortionSize: number;
+  // @Column('decimal', { precision: 10, scale: 3 })
+  // productPortionSize: number;
 
   @Column()
   productUnitsOfMeasurments: string;
