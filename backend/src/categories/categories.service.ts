@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
@@ -13,6 +14,8 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @Injectable()
 export class CategoriesService {
+  private logger = new Logger(CategoriesService.name);
+
   constructor(
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
@@ -28,11 +31,13 @@ export class CategoriesService {
       await this.categoryRepository.save(categoryEntity);
     } catch (error) {
       if (error.code === '23505') {
+        this.logger.error(
+          `Category already exists {name: ${createCategoryDto.name}}`,
+        );
         throw new ConflictException('This category already exists');
       }
-      throw new InternalServerErrorException(
-        `Failed to create a category: ${error.stack}`,
-      );
+      this.logger.error(`Failed to create a category: ${error.stack}`);
+      throw new InternalServerErrorException('Failed to create a category');
     }
   }
 
@@ -40,7 +45,8 @@ export class CategoriesService {
     const category = await this.categoryRepository.findOne({ where: { id } });
 
     if (!category) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      this.logger.error(`Category with ID ${id} not found`);
+      throw new NotFoundException('Category not found');
     }
 
     return category;
@@ -55,24 +61,9 @@ export class CategoriesService {
 
       return { data: categories };
     } catch (error) {
-      throw new InternalServerErrorException(
-        `Failed to get categories: ${error.stack}`,
-      );
+      this.logger.error(`Failed to get categories: ${error.stack}`);
+      throw new InternalServerErrorException('Failed to get categories');
     }
-  }
-
-  async findOneByUkrskladId(ukrskladId: number): Promise<Category> {
-    const category = await this.categoryRepository.findOne({
-      where: { ukrskladId },
-    });
-
-    if (!category) {
-      throw new NotFoundException(
-        `Category with UkrSklad ID ${ukrskladId} not found`,
-      );
-    }
-
-    return category;
   }
 
   async update(
@@ -94,7 +85,8 @@ export class CategoriesService {
 
     if (result.affected === 0) {
       const idMsg = Array.isArray(ids) ? ids.join(', ') : ids;
-      throw new NotFoundException(`No categories found with IDs: ${idMsg}`);
+      this.logger.error(`No categories found with IDs: ${idMsg}`);
+      throw new NotFoundException('Some categories not found');
     }
   }
 
