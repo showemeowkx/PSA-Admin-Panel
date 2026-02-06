@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -21,6 +22,8 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
+  private logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -48,9 +51,11 @@ export class AuthService {
       await this.cartService.create(savedUser);
     } catch (error) {
       if (error.code === '23505') {
+        this.logger.error(`User already exists {phone: ${phone}}`);
         throw new ConflictException('This user already exists');
       } else {
-        throw new InternalServerErrorException();
+        this.logger.error(`Failed to register a user: ${error.stack}`);
+        throw new InternalServerErrorException('Failed to register a user');
       }
     }
   }
@@ -68,6 +73,7 @@ export class AuthService {
       const accessToken: string = await this.jwtService.signAsync(payload);
       return { accessToken };
     } else {
+      this.logger.error(`Wrong login or password {login: ${login}}`);
       throw new UnauthorizedException('Wrong login or password!');
     }
   }
@@ -76,7 +82,8 @@ export class AuthService {
     const store = await this.storeService.findOne(storeId);
 
     if (!store.isActive) {
-      throw new Error(`Store with ID ${storeId} is not active`);
+      this.logger.error(`Store with ID ${storeId} is not active`);
+      throw new Error(`Store is not active`);
     }
 
     user.selectedStore = store;
@@ -84,21 +91,19 @@ export class AuthService {
     try {
       await this.userRepository.save(user);
     } catch (error) {
-      throw new InternalServerErrorException(
-        `Failed to asign a store {userId: ${user.id}, storeId}: ${storeId}: ${error.stack}`,
+      this.logger.error(
+        `Failed to asign a store {userId: ${user.id}, storeId: ${storeId}}: ${error.stack}`,
       );
+      throw new InternalServerErrorException('Failed to asign a store');
     }
-  }
-
-  findAll() {
-    return `This action returns all auth`;
   }
 
   async findOne(id: number): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } });
 
     if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      this.logger.error(`User with ID ${id} not found`);
+      throw new NotFoundException('User not found');
     }
 
     return user;
@@ -118,9 +123,8 @@ export class AuthService {
       this.userRepository.merge(user, updateUserDto);
       return this.userRepository.save(user);
     } catch (error) {
-      throw new InternalServerErrorException(
-        `Failed to update a user: ${error.stack}`,
-      );
+      this.logger.error(`Failed to update a user: ${error.stack}`);
+      throw new InternalServerErrorException('Failed to update a user');
     }
   }
 
@@ -128,7 +132,8 @@ export class AuthService {
     const result = await this.userRepository.delete(id);
 
     if (result.affected === 0) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+      this.logger.error(`User with ID ${id} not found`);
+      throw new NotFoundException(`User not found`);
     }
   }
 }
