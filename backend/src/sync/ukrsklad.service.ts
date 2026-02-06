@@ -56,13 +56,13 @@ export class UkrSkladService {
     return new Promise((resolve, reject) => {
       Firebird.attach(this.options, (err, db) => {
         if (err) {
-          this.logger.error(`Firebird Connection Error: ${err.message}`);
+          this.logger.error(`Firebird connection error: ${err.message}`);
           return reject(err instanceof Error ? err : new Error(String(err)));
         }
         db.query(sql, params, (err, result) => {
           db.detach();
           if (err) {
-            this.logger.error(`Firebird Query Error: ${err.message}`);
+            this.logger.error(`Firebird query error: ${err.message}`);
             return reject(err instanceof Error ? err : new Error(String(err)));
           }
           resolve(result as T[]);
@@ -72,18 +72,21 @@ export class UkrSkladService {
   }
 
   async getCategories(): Promise<UkrSkladCategory[]> {
+    this.logger.verbose('Getting categories from UkrSklad...');
     return this.query<UkrSkladCategory>(
       'SELECT NUM, NAME FROM TIP WHERE VISIBLE = 1 AND CHAR_LENGTH(SKLAD_ID) > 0',
     );
   }
 
   async getStores(): Promise<UkrSkladStore[]> {
+    this.logger.verbose('Getting stores from UkrSklad...');
     return this.query<UkrSkladStore>(
       'SELECT NUM, NAME AS ADDRESS FROM SKLAD_NAMES WHERE VISIBLE = 1',
     );
   }
 
   async getProducts(): Promise<UkrSkladProduct[]> {
+    this.logger.verbose('Getting products from UkrSklad...');
     return this.query<UkrSkladProduct>(`
       SELECT 
         NUM, 
@@ -102,6 +105,7 @@ export class UkrSkladService {
   }
 
   async getProductStock(): Promise<UkrSkladStock[]> {
+    this.logger.verbose('Getting stocks from UkrSklad...');
     return this.query<UkrSkladStock>(`
       SELECT 
         TOVAR_ID as PRODUCT_ID,
