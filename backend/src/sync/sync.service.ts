@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Injectable } from '@nestjs/common';
+import { CronJob, CronTime } from 'cron';
 import { UkrSkladService } from './ukrsklad.service';
 import { Repository } from 'typeorm';
 import { Product } from 'src/products/entities/product.entity';
@@ -9,10 +10,14 @@ import { ConfigService } from '@nestjs/config';
 import { StoreService } from 'src/store/store.service';
 import { CategoriesService } from 'src/categories/categories.service';
 import { ProductsService } from 'src/products/products.service';
+import { SchedulerRegistry } from '@nestjs/schedule';
 
 @Injectable()
 export class SyncService {
+  private readonly JOB_NAME = 'auto_sync_job';
+
   constructor(
+    private readonly schedulerRegistry: SchedulerRegistry,
     private readonly ukrSklad: UkrSkladService,
     private readonly configService: ConfigService,
     private readonly storeService: StoreService,
@@ -24,40 +29,100 @@ export class SyncService {
     private stockRepository: Repository<ProductStock>,
   ) {}
 
+  onModuleInit() {
+    const defaultCron = '0 0 * * * *';
+    this.addCronJob(defaultCron);
+  }
+
+  addCronJob(cronExpression: string): void {
+    if (this.schedulerRegistry.doesExist('cron', this.JOB_NAME)) {
+      this.schedulerRegistry.deleteCronJob(this.JOB_NAME);
+    }
+
+    const job = new CronJob(cronExpression, async () => {
+      await this.syncAll();
+    });
+
+    this.schedulerRegistry.addCronJob(this.JOB_NAME, job);
+    job.start();
+  }
+
+  async setSyncState(enabled: boolean): Promise<void> {
+    if (this.schedulerRegistry.doesExist('cron', this.JOB_NAME)) {
+      const job = this.schedulerRegistry.getCronJob(this.JOB_NAME);
+      if (enabled) {
+        job.start();
+      } else {
+        await job.stop();
+      }
+    }
+  }
+
+  getSyncStatus(): {
+    running: boolean;
+    nextRun: Date | null;
+    lastRun: Date | null;
+    period: CronTime | null;
+  } {
+    if (!this.schedulerRegistry.doesExist('cron', this.JOB_NAME)) {
+      return { running: false, nextRun: null, lastRun: null, period: null };
+    }
+
+    const job = this.schedulerRegistry.getCronJob(this.JOB_NAME);
+    return {
+      running: job.isActive,
+      nextRun: job.nextDate().toJSDate(),
+      lastRun: job.lastDate(),
+      period: job.cronTime,
+    };
+  }
+
   async syncAll(): Promise<{
     status: string;
     synced: string[];
     errors: string[];
   }> {
-    let status = 'success';
+    await this.setSyncState(false);
+
     const synced: string[] = [];
     const errors: string[] = [];
+    let status = 'success';
 
-    const storesSyncResponse = await this.syncStores();
-    if (storesSyncResponse.status === 'success') {
-      synced.push('Stores');
-    } else {
-      errors.concat(storesSyncResponse.errors);
-    }
+    try {
+      const [storesRes, categoriesRes, productsRes] = await Promise.all([
+        this.syncStores(),
+        this.syncCategories(),
+        this.syncProducts(),
+      ]);
 
-    const categoriesSyncResponse = await this.syncCategories();
-    if (categoriesSyncResponse.status === 'success') {
-      synced.push('Categories');
-    } else {
-      errors.concat(categoriesSyncResponse.errors);
-    }
+      if (storesRes.status === 'success') {
+        synced.push('Stores');
+      } else {
+        errors.push(...storesRes.errors);
+      }
 
-    const productsSyncResponse = await this.syncProducts();
-    if (productsSyncResponse.status === 'success') {
-      synced.push('Products');
-    } else {
-      errors.concat(productsSyncResponse.errors);
-    }
+      if (categoriesRes.status === 'success') {
+        synced.push('Categories');
+      } else {
+        errors.push(...categoriesRes.errors);
+      }
 
-    if (synced.length === 0) {
+      if (productsRes.status === 'success') {
+        synced.push('Products');
+      } else {
+        errors.push(...productsRes.errors);
+      }
+
+      if (synced.length === 0) {
+        status = 'failed';
+      } else if (synced.length < 3) {
+        status = 'partial';
+      }
+    } catch (error) {
       status = 'failed';
-    } else if (synced.length < 3) {
-      status = 'partial';
+      errors.push(`Critical Sync execution error: ${error.message}`);
+    } finally {
+      await this.setSyncState(true);
     }
 
     return { status, synced, errors };
