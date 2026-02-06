@@ -80,7 +80,10 @@ export class CategoriesService {
   ): Promise<Category> {
     const category = await this.findOne(id);
 
-    this.categoryRepository.merge(category, updateCategoryDto);
+    this.categoryRepository.merge(category, {
+      ...updateCategoryDto,
+      updatedAt: new Date(),
+    });
 
     return await this.categoryRepository.save(category);
   }

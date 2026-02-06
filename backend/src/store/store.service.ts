@@ -80,7 +80,10 @@ export class StoreService {
   async update(id: number, updateStoreDto: UpdateStoreDto): Promise<Store> {
     const store = await this.findOne(id);
 
-    this.storeRepository.merge(store, updateStoreDto);
+    this.storeRepository.merge(store, {
+      ...updateStoreDto,
+      updatedAt: new Date(),
+    });
 
     return this.storeRepository.save(store);
   }

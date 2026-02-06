@@ -233,6 +233,7 @@ export class SyncService {
           isActive: true,
           unitsOfMeasurments: p.UNIT,
           imagePath: defaultImage,
+          updatedAt: new Date(),
           category: p.CATEGORY_ID ? categoryMap.get(p.CATEGORY_ID) : undefined,
         };
 
