@@ -4,15 +4,16 @@ import { ProductsController } from './products.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { ProductStock } from './entities/product-stock.entity';
-import { Category } from 'src/categories/enteties/category.entity';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { ConfigModule } from '@nestjs/config';
+import { CategoriesModule } from 'src/categories/categories.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Product, ProductStock, Category]),
+    TypeOrmModule.forFeature([Product, ProductStock]),
     CloudinaryModule,
     ConfigModule,
+    CategoriesModule,
   ],
   controllers: [ProductsController],
   providers: [ProductsService],

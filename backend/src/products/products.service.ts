@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -11,39 +12,36 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
 import { ProductStock } from './entities/product-stock.entity';
-import { Category } from 'src/categories/enteties/category.entity';
 import { GetProductsFiltersDto } from './dto/get-products-filters.dto';
+import { CategoriesService } from 'src/categories/categories.service';
 
 @Injectable()
 export class ProductsService {
+  private logger = new Logger();
+
   constructor(
     @InjectRepository(Product)
     private productRepository: Repository<Product>,
     @InjectRepository(ProductStock)
     private stockRepository: Repository<ProductStock>,
-    @InjectRepository(Category)
-    private categoryRepository: Repository<Category>,
+    private categoriesService: CategoriesService,
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<void> {
-    const category = await this.categoryRepository.findOne({
-      where: { id: createProductDto.categoryId },
-    });
-
-    if (!category) {
-      throw new NotFoundException(
-        `Category with ID ${createProductDto.categoryId} not found`,
-      );
-    }
+    const category = await this.categoriesService.findOne(
+      createProductDto.categoryId,
+    );
 
     if (!createProductDto.stocks || createProductDto.stocks.length === 0) {
+      this.logger.error("Incorrect 'stocks' value: cannot be empty");
       throw new ConflictException("Incorrect 'stocks' value: cannot be empty");
     }
 
     const storeIds = createProductDto.stocks.map((s) => s.storeId);
     const uniqueStoreIds = new Set(storeIds);
     if (storeIds.length !== uniqueStoreIds.size) {
-      throw new ConflictException(`Duplicate Store IDs found in payload.`);
+      this.logger.error('Duplicate store IDs found in payload');
+      throw new ConflictException('Duplicate store IDs found in payload');
     }
 
     const { stocks: stocksDto, ...productData } = createProductDto;
@@ -59,14 +57,20 @@ export class ProductsService {
       savedProduct = await this.productRepository.save(productEntity);
     } catch (error) {
       if (error.code === '23505') {
+        this.logger.error(
+          `Product with UkrSklad ID ${createProductDto.ukrskladId} already exists`,
+        );
         throw new ConflictException(
-          `Product with this UkrSklad ID (${createProductDto.ukrskladId}) already exists`,
+          'Product with this UkrSklad ID already exists',
         );
       }
-      throw error;
+      this.logger.error(`Failed to create a product: ${error.stack}`);
+      throw new InternalServerErrorException('Failed to create a product');
     }
 
     try {
+      this.logger.verbose(`Creating stocks... {productId: ${savedProduct.id}}`);
+
       const stocksEntities = stocksDto.map((s) =>
         this.stockRepository.create({
           product: savedProduct,
@@ -78,15 +82,21 @@ export class ProductsService {
       await this.stockRepository.save(stocksEntities);
     } catch (error) {
       await this.productRepository.delete(savedProduct.id);
-      console.error('Stock Save Error:', error);
 
       if (error.code === '23505') {
-        throw new ConflictException(
+        this.logger.error(
           `Database Error: Duplicate stock entry detected. Detail: ${error.detail}`,
         );
+        throw new ConflictException(
+          'Database Error: Duplicate stock entry detected',
+        );
       }
-      throw new InternalServerErrorException(
+      this.logger.error(
         `Failed to save stocks. Rolled back. Error: ${error.message}`,
+      );
+
+      throw new InternalServerErrorException(
+        'Failed to save stocks. Rolled back',
       );
     }
   }
@@ -179,21 +189,8 @@ export class ProductsService {
     });
 
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
-    }
-
-    return product;
-  }
-
-  async findOneByUkrskladId(ukrskladId: number): Promise<Product> {
-    const product = await this.productRepository.findOne({
-      where: { ukrskladId },
-    });
-
-    if (!product) {
-      throw new NotFoundException(
-        `Product with UkrSklad ID ${ukrskladId} not found`,
-      );
+      this.logger.error(`Product with ID ${id} not found`);
+      throw new NotFoundException('Product not found');
     }
 
     return product;
@@ -206,23 +203,11 @@ export class ProductsService {
   ): Promise<Product> {
     const { stocks, categoryId, ...productDetails } = updateProductDto;
 
-    const product = await this.productRepository.findOne({
-      where: { id },
-      relations: ['stocks'],
-    });
-
-    if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
-    }
+    const product = await this.findOne(id);
 
     if (categoryId) {
-      const category = await this.categoryRepository.findOne({
-        where: { id: categoryId },
-      });
+      const category = await this.categoriesService.findOne(categoryId);
 
-      if (!category) {
-        throw new NotFoundException(`Category with ID ${categoryId} not found`);
-      }
       product.category = category;
       product.categoryId = categoryId;
     }
@@ -264,7 +249,8 @@ export class ProductsService {
 
     if (result.affected === 0) {
       const idMsg = Array.isArray(ids) ? ids.join(', ') : ids;
-      throw new NotFoundException(`No products found with IDs: ${idMsg}`);
+      this.logger.error(`No products found with IDs: ${idMsg}`);
+      throw new NotFoundException('Some products not found');
     }
   }
 
