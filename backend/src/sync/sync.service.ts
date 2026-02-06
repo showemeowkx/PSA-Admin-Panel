@@ -219,7 +219,10 @@ export class SyncService {
             categoryData.name = category.name;
           }
 
-          await this.categoriesService.update(category.id, categoryData);
+          await this.categoriesService.update(category.id, {
+            ...categoryData,
+            isActive: category.isActive,
+          });
         } else {
           await this.categoriesService.create({
             ...categoryData,

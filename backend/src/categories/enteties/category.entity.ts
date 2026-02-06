@@ -28,6 +28,9 @@ export class Category {
   @OneToMany(() => Product, (product) => product.category)
   products: Product[];
 
+  @Column()
+  isActive: boolean;
+
   @UpdateDateColumn()
   updatedAt: Date;
 
