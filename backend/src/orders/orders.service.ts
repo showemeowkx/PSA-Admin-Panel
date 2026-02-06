@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { User } from 'src/auth/entities/user.entity';
@@ -17,6 +19,8 @@ import { OrderStatus } from './order-status.enum';
 
 @Injectable()
 export class OrdersService {
+  private logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
@@ -32,6 +36,7 @@ export class OrdersService {
     const cart = await this.cartService.getCartByUserId(user.id);
 
     if (!cart.items || cart.items.length === 0) {
+      this.logger.error(`Cart is empty {userId: ${user.id}}`);
       throw new BadRequestException('Cart is empty');
     }
 
@@ -46,6 +51,7 @@ export class OrdersService {
         this.configService.get<number>('MIN_ORDER_AMNT') || 500;
 
       if (totalAmount < minOrderAmout) {
+        this.logger.error(`Minimum order sum is ${minOrderAmout} UAH`);
         throw new ConflictException(
           `Minimum order sum is ${minOrderAmout} UAH`,
         );
@@ -55,7 +61,6 @@ export class OrdersService {
         product: cartItem.product,
         productImagePath: cartItem.product.imagePath,
         productName: cartItem.product.name,
-        // productPortionSize: cartItem.product.portionSize,
         productUnitsOfMeasurments: cartItem.product.unitsOfMeasurments,
         priceAtPurchase: itemPrice,
         quantity: cartItem.quantity,
@@ -114,9 +119,8 @@ export class OrdersService {
       await qr.commitTransaction();
     } catch (error) {
       await qr.rollbackTransaction();
-      throw new InternalServerErrorException(
-        `Failed to create an order: ${error}`,
-      );
+      this.logger.error(`Failed to create an order: ${error.stack}`);
+      throw new InternalServerErrorException('Failed to create an order');
     } finally {
       await qr.release();
     }
@@ -158,7 +162,8 @@ export class OrdersService {
     });
 
     if (!order) {
-      throw new NotFoundException(`Order with ID ${id} not found`);
+      this.logger.error(`Order with ID ${id} not found`);
+      throw new NotFoundException('Order not found');
     }
 
     return order;
@@ -168,17 +173,13 @@ export class OrdersService {
     const result = await this.orderRepository.delete(id);
 
     if (result.affected === 0) {
-      throw new NotFoundException(`Order with ID ${id} not found`);
+      this.logger.error(`Order with ID ${id} not found`);
+      throw new NotFoundException('Order not found');
     }
   }
 
   async updateStatus(id: number, status: OrderStatus): Promise<Order> {
     const order = await this.findOne(id);
-
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${id} not found`);
-    }
-
     order.status = status;
     return this.orderRepository.save(order);
   }

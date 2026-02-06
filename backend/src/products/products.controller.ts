@@ -11,6 +11,7 @@ import {
   Query,
   UseInterceptors,
   UploadedFile,
+  Logger,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -24,6 +25,8 @@ import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('products')
 export class ProductsController {
+  private logger = new Logger(ProductsController.name);
+
   constructor(
     private readonly productsService: ProductsService,
     private readonly cloudinaryService: CloudinaryService,
@@ -37,6 +40,10 @@ export class ProductsController {
     @Body() createProductDto: CreateProductDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<void> {
+    this.logger.verbose(
+      `Creating a product... {ukrskladId: ${createProductDto.ukrskladId}}`,
+    );
+
     if (file) {
       const result = await this.cloudinaryService.uploadFile(file);
       createProductDto.imagePath = result.secure_url as string;
@@ -58,11 +65,15 @@ export class ProductsController {
       totalPages: number;
     };
   }> {
+    this.logger.verbose(
+      `Getting products... {page: ${getProductsFiltersDto.page}, limit: ${getProductsFiltersDto.limit}}`,
+    );
     return this.productsService.findAll(getProductsFiltersDto);
   }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number): Promise<Product> {
+    this.logger.verbose(`Getting a product by ID... {productId: ${id}}`);
     return this.productsService.findOne(id);
   }
 
@@ -74,6 +85,8 @@ export class ProductsController {
     @Body() updateProductDto: UpdateProductDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<Product> {
+    this.logger.verbose(`Updating a product... {productId: ${id}}`);
+
     let oldImagePath = '';
     if (file) {
       const product = await this.productsService.findOne(id);
@@ -100,6 +113,8 @@ export class ProductsController {
   @Delete(':id')
   @UseGuards(AdminGuard)
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    this.logger.verbose(`Deleting a product... {productId: ${id}}`);
+
     const product = await this.productsService.findOne(id);
     const imagePath = product.imagePath;
 

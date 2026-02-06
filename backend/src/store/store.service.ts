@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateStoreDto } from './dto/create-store.dto';
@@ -14,6 +15,8 @@ import { GetStoresFiltersDto } from './dto/get-stores-filters.dto';
 
 @Injectable()
 export class StoreService {
+  private logger = new Logger(StoreService.name);
+
   constructor(
     @InjectRepository(Store)
     private readonly storeRepository: Repository<Store>,
@@ -26,11 +29,13 @@ export class StoreService {
       await this.storeRepository.save(storeEntity);
     } catch (error) {
       if (error.code === '23505') {
+        this.logger.error(
+          `Store already exists {address: ${createStoreDto.address}}`,
+        );
         throw new ConflictException('This store already exists');
       }
-      throw new InternalServerErrorException(
-        `Failed to create a store: ${error.stack}`,
-      );
+      this.logger.error(`Failed to create a store: ${error.stack}`);
+      throw new InternalServerErrorException('Failed to create a store');
     }
   }
 
@@ -57,21 +62,8 @@ export class StoreService {
     });
 
     if (!store) {
-      throw new NotFoundException(`Store with ID ${id} not found`);
-    }
-
-    return store;
-  }
-
-  async findOneByUkrskladId(ukrskladId: number): Promise<Store> {
-    const store = await this.storeRepository.findOne({
-      where: { ukrskladId },
-    });
-
-    if (!store) {
-      throw new NotFoundException(
-        `Store with UkrSklad ID ${ukrskladId} not found`,
-      );
+      this.logger.error(`Store with ID ${id} not found`);
+      throw new NotFoundException('Store not found');
     }
 
     return store;
@@ -97,7 +89,8 @@ export class StoreService {
 
     if (result.affected === 0) {
       const idMsg = Array.isArray(ids) ? ids.join(', ') : ids;
-      throw new NotFoundException(`No stores found with IDs: ${idMsg}`);
+      this.logger.error(`No stores found with IDs: ${idMsg}`);
+      throw new NotFoundException('Some stores not found');
     }
   }
 

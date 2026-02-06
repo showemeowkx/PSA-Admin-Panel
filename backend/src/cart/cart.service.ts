@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,6 +16,8 @@ import { ProductsService } from 'src/products/products.service';
 
 @Injectable()
 export class CartService {
+  private logger = new Logger(CartService.name);
+
   constructor(
     @InjectRepository(Cart) private readonly cartRepository: Repository<Cart>,
     @InjectRepository(CartItem)
@@ -29,6 +32,7 @@ export class CartService {
     });
 
     if (!cart) {
+      this.logger.error(`Cart not found for user with ID ${userId}`);
       throw new NotFoundException('Cart not found for this user');
     }
 
@@ -40,9 +44,8 @@ export class CartService {
     try {
       await this.cartRepository.save(cartEntity);
     } catch (error) {
-      throw new InternalServerErrorException(
-        `Failed to create a cart: ${error.stack}`,
-      );
+      this.logger.error(`Failed to create a cart: ${error.stack}`);
+      throw new InternalServerErrorException('Failed to create a cart');
     }
   }
 
@@ -65,17 +68,24 @@ export class CartService {
       if (stock) {
         if (existingItem) {
           if (stock.quantity < existingItem.quantity + quantity) {
-            throw new BadRequestException('No enough products in stock');
+            this.logger.error(
+              `Not enough products in stock {productId: ${product.id}, stockId: ${stock.id}}`,
+            );
+            throw new BadRequestException('Not enough products in stock');
           }
         }
 
         if (stock.quantity < quantity) {
-          throw new BadRequestException('No enough products in stock');
+          this.logger.error(
+            `Not enough products in stock {productId: ${product.id}, stockId: ${stock.id}}`,
+          );
+          throw new BadRequestException('Not enough products in stock');
         }
       } else {
-        throw new BadRequestException(
-          `Unnable to find product [${product.id}] in store [${chosenStoreId}]`,
+        this.logger.error(
+          `Product not found in store {productId: ${product.id}, storeId: ${chosenStoreId}}`,
         );
+        throw new BadRequestException('Product not found in the chosen store');
       }
     }
 
@@ -93,8 +103,9 @@ export class CartService {
         await this.cartItemRepository.save(newItem);
       }
     } catch (error) {
+      this.logger.error(`Failed to add a product to a cart: ${error.stack}`);
       throw new InternalServerErrorException(
-        `Failed to add a product to a cart: ${error.stack}`,
+        'Failed to add a product to a cart',
       );
     }
   }
@@ -103,6 +114,7 @@ export class CartService {
     const cart = await this.getCartByUserId(userId);
 
     if (!cart.items || cart.items.length === 0) {
+      this.logger.error(`Cart is empty {userId: ${userId}}`);
       throw new BadRequestException('Cart is empty');
     }
 
@@ -128,6 +140,9 @@ export class CartService {
         await this.cartItemRepository.save(itemToRemove);
       }
     } else {
+      this.logger.error(
+        `Item not found in cart {userId: ${userId}, productId: ${productId}}`,
+      );
       throw new NotFoundException('Item not found in cart');
     }
   }

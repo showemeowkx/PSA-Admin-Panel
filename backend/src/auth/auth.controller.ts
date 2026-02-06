@@ -9,6 +9,7 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  Logger,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -22,6 +23,8 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Controller('auth')
 export class AuthController {
+  private logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly cloudinaryService: CloudinaryService,
@@ -30,11 +33,13 @@ export class AuthController {
 
   @Post('/register')
   register(@Body() createUserDto: CreateUserDto): Promise<void> {
+    this.logger.verbose(`Creating a user... {phone: ${createUserDto.phone}}`);
     return this.authService.register(createUserDto);
   }
 
   @Post('/signin')
   signIn(@Body() signInDto: SignInDto): Promise<{ accessToken }> {
+    this.logger.verbose(`Signing in... {login: ${signInDto.login}}`);
     return this.authService.signIn(signInDto);
   }
 
@@ -44,6 +49,9 @@ export class AuthController {
     @Req() req: { user: User },
     @Param('storeId') storeId: number,
   ): Promise<void> {
+    this.logger.verbose(
+      `Selecting a store... {userId: ${req.user.id}, storeId: ${storeId}}`,
+    );
     return this.authService.chooseStore(req.user, storeId);
   }
 
@@ -55,6 +63,8 @@ export class AuthController {
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<User> {
+    this.logger.verbose(`Updating a user... {userId: ${req.user.id}}`);
+
     let oldPfp: string = '';
     if (file) {
       const user = await this.authService.findOne(req.user.id);
@@ -79,6 +89,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Delete()
   async deleteProfile(@Req() req: { user: User }): Promise<void> {
+    this.logger.verbose(`Deleting a user... {userId: ${req.user.id}}`);
+
     const user = await this.authService.findOne(req.user.id);
     const pfpPath = user.imagePath;
 

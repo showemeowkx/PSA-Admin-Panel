@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   Patch,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { User } from 'src/auth/entities/user.entity';
@@ -20,10 +21,12 @@ import { AdminGuard } from 'src/auth/guards/admin.guard';
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
 export class OrdersController {
+  private logger = new Logger(OrdersController.name);
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post()
   create(@Req() req: { user: User }): Promise<void> {
+    this.logger.verbose(`Placing an order... {userId: ${req.user.id}}`);
     return this.ordersService.create(req.user);
   }
 
@@ -40,11 +43,13 @@ export class OrdersController {
       totalPages: number;
     };
   }> {
+    this.logger.verbose(`Getting all orders... {userId: ${req.user.id}}`);
     return this.ordersService.findAll(req.user.id, paginationOptions);
   }
 
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number): Promise<Order> {
+    this.logger.verbose(`Getting an orders by ID... {orderId: ${id}}`);
     return this.ordersService.findOne(id);
   }
 
@@ -54,7 +59,12 @@ export class OrdersController {
     @Param('id', ParseIntPipe) id: number,
     @Param('status') status: OrderStatus,
   ): Promise<Order> {
+    this.logger.verbose(`Updating order status... {orderId: ${id}}`);
+
     if (!Object.values(OrderStatus).find((s) => s === status)) {
+      this.logger.error(
+        `Incorrect order status value {orderId: ${id}, status: ${status}}`,
+      );
       throw new ConflictException('Incorrect order status value');
     }
 

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CronJob, CronTime } from 'cron';
 import { UkrSkladService } from './ukrsklad.service';
 import { Repository } from 'typeorm';
@@ -14,6 +14,7 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 
 @Injectable()
 export class SyncService {
+  private logger = new Logger(SyncService.name);
   private readonly JOB_NAME = 'auto_sync_job';
 
   constructor(
@@ -40,7 +41,7 @@ export class SyncService {
     }
 
     const job = new CronJob(cronExpression, async () => {
-      await this.syncAll();
+      await this.syncAll('auto');
     });
 
     this.schedulerRegistry.addCronJob(this.JOB_NAME, job);
@@ -77,11 +78,12 @@ export class SyncService {
     };
   }
 
-  async syncAll(): Promise<{
+  async syncAll(source: string = 'manual'): Promise<{
     status: string;
     synced: string[];
     errors: string[];
   }> {
+    this.logger.verbose(`Beginning sync process... {source: ${source}}`);
     await this.setSyncState(false);
 
     const synced: string[] = [];
@@ -98,18 +100,25 @@ export class SyncService {
       if (storesRes.status === 'success') {
         synced.push('Stores');
       } else {
+        this.logger.warn('Stores sync failed! Check report for error details.');
         errors.push(...storesRes.errors);
       }
 
       if (categoriesRes.status === 'success') {
         synced.push('Categories');
       } else {
+        this.logger.warn(
+          'Categories sync failed! Check report for error details.',
+        );
         errors.push(...categoriesRes.errors);
       }
 
       if (productsRes.status === 'success') {
         synced.push('Products');
       } else {
+        this.logger.warn(
+          'Products sync failed! Check report for error details.',
+        );
         errors.push(...productsRes.errors);
       }
 
@@ -120,15 +129,23 @@ export class SyncService {
       }
     } catch (error) {
       status = 'failed';
+      this.logger.error(`Critical Sync execution error: ${error.message}`);
       errors.push(`Critical Sync execution error: ${error.message}`);
     } finally {
       await this.setSyncState(true);
     }
 
+    this.logger.verbose(`SYNC REPORT [source: ${source}]:`);
+    this.logger.verbose(`Status: ${status}`);
+    this.logger.verbose(`Synced: ${synced.join(', ') || 'none'}`);
+    this.logger.verbose(`Errors: ${errors.join(', ') || 'none'}`);
+
     return { status, synced, errors };
   }
 
   async syncStores(): Promise<{ status: string; errors: string[] }> {
+    this.logger.verbose('Beginning stores sync process...');
+
     let status = 'success';
     const errors: string[] = [];
 
@@ -166,6 +183,7 @@ export class SyncService {
         }
       } catch (error) {
         status = 'failed';
+        this.logger.error(`Failed to sync stores: ${error.stack}`);
         errors.push(error.stack as string);
       }
     }
@@ -182,13 +200,17 @@ export class SyncService {
       }
     } catch (error) {
       status = 'failed';
+      this.logger.error(`Failed to sync stores: ${error.stack}`);
       errors.push(error.stack as string);
     }
 
+    this.logger.verbose('Stores synced successfully!');
     return { status, errors };
   }
 
   async syncCategories(): Promise<{ status: string; errors: string[] }> {
+    this.logger.verbose('Beginning categories sync process...');
+
     let status = 'success';
     const errors: string[] = [];
 
@@ -231,6 +253,7 @@ export class SyncService {
         }
       } catch (error) {
         status = 'failed';
+        this.logger.error(`Failed to sync categories: ${error.stack}`);
         errors.push(error.stack as string);
       }
 
@@ -247,13 +270,17 @@ export class SyncService {
       }
     } catch (error) {
       status = 'failed';
+      this.logger.error(`Failed to sync categories: ${error.stack}`);
       errors.push(error.stack as string);
     }
 
+    this.logger.verbose('Categories synced successfully!');
     return { status, errors };
   }
 
   async syncProducts(): Promise<{ status: string; errors: string[] }> {
+    this.logger.verbose('Beginning products sync process...');
+
     let status = 'success';
     const errors: string[] = [];
 
@@ -324,6 +351,7 @@ export class SyncService {
           productEntitiesToSave.push(productData);
         } catch (error) {
           status = 'failed';
+          this.logger.error(`Failed to sync products: ${error.stack}`);
           errors.push(error.stack as string);
         }
       }
@@ -353,6 +381,7 @@ export class SyncService {
             }
           } catch (error) {
             status = 'failed';
+            this.logger.error(`Failed to sync stocks: ${error.stack}`);
             errors.push(error.stack as string);
           }
         }
@@ -371,6 +400,7 @@ export class SyncService {
         }
       } catch (error) {
         status = 'failed';
+        this.logger.error(`Failed to sync stocks: ${error.stack}`);
         errors.push(error.stack as string);
       }
     }
@@ -387,9 +417,11 @@ export class SyncService {
       }
     } catch (error) {
       status = 'failed';
+      this.logger.error(`Failed to sync products: ${error.stack}`);
       errors.push(error.stack as string);
     }
 
+    this.logger.verbose('Products synced successfully!');
     return { status, errors };
   }
 }

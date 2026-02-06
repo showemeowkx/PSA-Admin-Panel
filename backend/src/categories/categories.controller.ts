@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   Param,
   ParseIntPipe,
   Patch,
@@ -22,6 +23,8 @@ import { AdminGuard } from 'src/auth/guards/admin.guard';
 
 @Controller('categories')
 export class CategoriesController {
+  private logger = new Logger(CategoriesController.name);
+
   constructor(
     private readonly categoriesService: CategoriesService,
     private readonly cloudinaryService: CloudinaryService,
@@ -35,19 +38,26 @@ export class CategoriesController {
     @Body() createCategoryDto: CreateCategoryDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<void> {
+    this.logger.verbose(
+      `Creating a category... {ukrskladId: ${createCategoryDto.ukrskladId}}`,
+    );
+
     if (file) {
       const result = await this.cloudinaryService.uploadFile(file);
       createCategoryDto.iconPath = result.secure_url as string;
     } else {
+      this.logger.warn('No file uploaded. Using default...');
       createCategoryDto.iconPath = this.configService.get(
         'DEFAULT_CATEGORY_ICON',
       );
     }
+
     return this.categoriesService.create(createCategoryDto);
   }
 
   @Get()
   findAll(): Promise<{ data: Category[] }> {
+    this.logger.verbose('Getting all categories...');
     return this.categoriesService.findAll();
   }
 
@@ -59,6 +69,8 @@ export class CategoriesController {
     @Body() updateCategoryDto: UpdateCategoryDto,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<Category> {
+    this.logger.verbose(`Updating a category... {categoryId: ${id}}`);
+
     let oldIconPath = '';
     if (file) {
       const oldCategory = await this.categoriesService.findOne(id);
@@ -85,6 +97,8 @@ export class CategoriesController {
   @Delete()
   @UseGuards(AdminGuard)
   async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    this.logger.verbose(`Deleting a category... {categoryId: ${id}}`);
+
     const category = await this.categoriesService.findOne(id);
     const iconPath = category.iconPath;
 
