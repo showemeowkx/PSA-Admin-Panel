@@ -1,0 +1,36 @@
+import * as Joi from 'joi';
+
+export const configValidationSchema = Joi.object({
+  MIN_ORDER_AMNT: Joi.number().default(500),
+
+  POSTGRES_USER: Joi.string().required(),
+  POSTGRES_PASSWORD: Joi.string().required(),
+  POSTGRES_DB: Joi.string().required(),
+  POSTGRES_HOST: Joi.string().required(),
+  POSTGRES_PORT: Joi.string().required(),
+
+  PORT: Joi.number().default(3000),
+
+  JWT_SECRET: Joi.string().required(),
+  JWT_EXPIRE_TIME: Joi.string().default('18000s'),
+
+  CLOUDINARY_CLOUD_NAME: Joi.string().required(),
+  CLOUDINARY_API_KEY: Joi.string().required(),
+  CLOUDINARY_API_SECRET: Joi.string().required(),
+
+  DEFAULT_CATEGORY_ICON: Joi.string().default(
+    'https://res.cloudinary.com/dgsoaci96/image/upload/v1769197677/default_category.png',
+  ),
+  DEFAULT_USER_PFP: Joi.string().default(
+    'https://res.cloudinary.com/dgsoaci96/image/upload/v1769207269/user_default_i73dfk.jpg',
+  ),
+  DEFAULT_PRODUCT_IMAGE: Joi.string().default(
+    'https://res.cloudinary.com/dgsoaci96/image/upload/v1769209222/product_default_pzutee.jpg',
+  ),
+
+  UKRSKLAD_DB_HOST: Joi.string().default('host.docker.internal'),
+  UKRSKLAD_DB_PORT: Joi.number().default(3050),
+  UKRSKLAD_DB_PATH: Joi.string().required(),
+  UKRSKLAD_DB_USER: Joi.string().default('SYSDBA'),
+  UKRSKLAD_DB_PASSWORD: Joi.string().default('masterkey'),
+});

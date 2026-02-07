@@ -9,10 +9,11 @@ import { StoreModule } from './store/store.module';
 import { OrdersModule } from './orders/orders.module';
 import { SyncModule } from './sync/sync.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { configValidationSchema } from './config.schema';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
+    ConfigModule.forRoot({ validationSchema: configValidationSchema }),
     ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       type: 'postgres',
