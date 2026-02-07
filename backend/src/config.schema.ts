@@ -36,5 +36,5 @@ export const configValidationSchema = Joi.object({
 
   VERIFICATION_CODE_EXPIRE_MINUTES: Joi.number().default(5),
   TURBOSMS_TOKEN: Joi.string().required(),
-  TURBOSMS_SENDER: Joi.string().default('Msg'),
+  TURBOSMS_SENDER: Joi.string().required(),
 });

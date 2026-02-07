@@ -139,7 +139,7 @@ export class AuthService {
       code: hashedCode,
     });
 
-    this.smsService.sendVerificationCode(phone, rawCode);
+    await this.smsService.sendVerificationCode(phone, rawCode);
   }
 
   async signIn(signInDto: SignInDto): Promise<{ accessToken }> {
