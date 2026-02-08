@@ -20,6 +20,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { RequestVerificationCodeDto } from './dto/req-code.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -30,6 +31,13 @@ export class AuthController {
     private readonly cloudinaryService: CloudinaryService,
     private readonly configService: ConfigService,
   ) {}
+
+  @Post('/send-code')
+  sendCode(@Body() requestVerificationCodeDto: RequestVerificationCodeDto) {
+    return this.authService.requestRegistrationCode(
+      requestVerificationCodeDto.phone,
+    );
+  }
 
   @Post('/register')
   register(@Body() createUserDto: CreateUserDto): Promise<void> {

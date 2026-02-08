@@ -33,4 +33,8 @@ export const configValidationSchema = Joi.object({
   UKRSKLAD_DB_PATH: Joi.string().required(),
   UKRSKLAD_DB_USER: Joi.string().default('SYSDBA'),
   UKRSKLAD_DB_PASSWORD: Joi.string().default('masterkey'),
+
+  VERIFICATION_CODE_EXPIRE_MINUTES: Joi.number().default(5),
+  TURBOSMS_TOKEN: Joi.string().required(),
+  TURBOSMS_SENDER: Joi.string().required(),
 });
