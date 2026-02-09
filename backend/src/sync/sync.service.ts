@@ -2,7 +2,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CronJob, CronTime } from 'cron';
 import { UkrSkladService } from './ukrsklad.service';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Product } from 'src/products/entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
@@ -278,21 +278,31 @@ export class SyncService {
     return { status, errors };
   }
 
-  async syncProducts(): Promise<{ status: string; errors: string[] }> {
+  async syncProducts(
+    ids?: number[],
+  ): Promise<{ status: string; errors: string[] }> {
     this.logger.verbose('Beginning products sync process...');
 
     let status = 'success';
     const errors: string[] = [];
 
     const [products, stocks] = await Promise.all([
-      this.ukrSklad.getProducts(),
-      this.ukrSklad.getProductStock(),
+      this.ukrSklad.getProducts(ids),
+      this.ukrSklad.getProductStock(ids),
     ]);
+
+    const findOptions: { withDeleted: boolean; where?: { ukrskladId: any } } = {
+      withDeleted: true,
+    };
+    if (ids && ids.length > 0) {
+      findOptions.where = { ukrskladId: In(ids) };
+    }
+
     const [allStoresResponse, allCategoriesResponse, existingProducts] =
       await Promise.all([
         this.storeService.findAll({}),
         this.categoriesService.findAll(),
-        this.productRepository.find({ withDeleted: true }),
+        this.productRepository.find(findOptions),
       ]);
 
     const allStores = allStoresResponse.data;

@@ -224,7 +224,9 @@ export class OrdersService {
     const order = await this.findOne({ orderId: id });
 
     if (status === OrderStatus.READY) {
-      await this.syncService.syncProducts();
+      const productsToUpdate = this.getProductsToUpdate(order);
+
+      await this.syncService.syncProducts(productsToUpdate);
       await this.releaseReservation(order);
     }
     if (status === OrderStatus.CANCELLED) {
@@ -233,6 +235,17 @@ export class OrdersService {
 
     order.status = status;
     return this.orderRepository.save(order);
+  }
+
+  private getProductsToUpdate(order: Order) {
+    this.logger.debug(`Getting products to update... {orderId: ${order.id}}`);
+    const products: number[] = [];
+
+    for (const item of order.items) {
+      products.push(item.product.ukrskladId);
+    }
+
+    return products;
   }
 
   private async releaseReservation(order: Order) {
