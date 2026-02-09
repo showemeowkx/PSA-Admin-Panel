@@ -53,37 +53,7 @@ export class AuthService {
       'UA',
     ).formatInternational();
 
-    const record = await this.verificationCodeRepository.findOne({
-      where: { phone },
-      order: { createdAt: 'DESC' },
-    });
-
-    if (!record) {
-      this.logger.error(`No verification code found for number '${phone}'`);
-      throw new BadRequestException(
-        'No verification code found. Request a new one.',
-      );
-    }
-
-    const minutesOld = (Date.now() - record.createdAt.getTime()) / 1000 / 60;
-    const expiresIn =
-      this.configService.get<number>('VERIFICATION_CODE_EXPIRE_MINUTES') || 5;
-
-    if (minutesOld > expiresIn) {
-      await this.verificationCodeRepository.delete({ phone });
-      this.logger.error(`Code expired for number '${phone}'`);
-      throw new BadRequestException('Code expired');
-    }
-
-    const isMatch = await bcrypt.compare(code, record.code);
-    if (!isMatch) {
-      this.logger.error(`Invalid verification code for number '${phone}'`);
-      throw new BadRequestException('Invalid verification code');
-    }
-
-    this.logger.verbose(
-      `Verification code accepted successfully for number '${phone}'`,
-    );
+    await this.verifyCode(phone, code);
 
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -144,6 +114,35 @@ export class AuthService {
     } else {
       await this.smsService.sendVerificationCode(phone, rawCode);
     }
+  }
+
+  private async verifyCode(phone: string, code: string): Promise<void> {
+    const record = await this.verificationCodeRepository.findOne({
+      where: { phone },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!record) {
+      throw new BadRequestException('No verification code found');
+    }
+
+    const minutesOld = (Date.now() - record.createdAt.getTime()) / 1000 / 60;
+    const expiresIn =
+      this.configService.get<number>('VERIFICATION_CODE_EXPIRE_MINUTES') || 5;
+
+    if (minutesOld > expiresIn) {
+      await this.verificationCodeRepository.delete({ phone });
+      throw new BadRequestException('Code expired');
+    }
+
+    const isMatch = await bcrypt.compare(code, record.code);
+    if (!isMatch) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    await this.verificationCodeRepository.delete({ phone });
+
+    this.logger.verbose(`Verification code accepted for '${phone}'`);
   }
 
   async signIn(signInDto: SignInDto): Promise<{ accessToken }> {
@@ -209,6 +208,28 @@ export class AuthService {
     const phoneRaw = updateUserDto.phone;
     const email = updateUserDto.email;
 
+    const isSensitiveUpdate = password || email || phoneRaw;
+
+    if (isSensitiveUpdate) {
+      if (!updateUserDto.currentPassword) {
+        this.logger.error(`No current password provided {userId: ${id}}`);
+        throw new BadRequestException(
+          'Current password is required to change sensitive data',
+        );
+      }
+
+      const isMatch = await bcrypt.compare(
+        updateUserDto.currentPassword,
+        user.password,
+      );
+      if (!isMatch) {
+        this.logger.error(`Wrong current password {userId: ${id}}`);
+        throw new UnauthorizedException('Wrong current password');
+      }
+    }
+
+    delete updateUserDto.currentPassword;
+
     if (password) {
       const salt = await bcrypt.genSalt();
       const hashedPassword = await bcrypt.hash(password, salt);
@@ -216,10 +237,27 @@ export class AuthService {
     }
 
     if (phoneRaw) {
-      updateUserDto.phone = parsePhoneNumberWithError(
+      const newPhone = parsePhoneNumberWithError(
         phoneRaw,
         'UA',
       ).formatInternational();
+
+      const sameUser = await this.userRepository.findOneBy({
+        phone: newPhone,
+      });
+
+      this.logger.error(`User with phone '${newPhone}' already exists`);
+      if (sameUser) throw new ConflictException('This phone is already in use');
+
+      if (!updateUserDto.code) {
+        this.logger.error(
+          `No verification code provided for number '${newPhone}'`,
+        );
+        throw new BadRequestException('No verification code provided');
+      }
+
+      await this.verifyCode(newPhone, updateUserDto.code);
+      updateUserDto.phone = newPhone;
     }
 
     if (email) {
