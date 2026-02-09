@@ -207,6 +207,7 @@ export class AuthService {
     const user = await this.findOne(id);
     const password = updateUserDto.password;
     const phoneRaw = updateUserDto.phone;
+    const email = updateUserDto.email;
 
     if (password) {
       const salt = await bcrypt.genSalt();
@@ -219,6 +220,15 @@ export class AuthService {
         phoneRaw,
         'UA',
       ).formatInternational();
+    }
+
+    if (email) {
+      const sameUser = await this.userRepository.findOne({ where: { email } });
+
+      if (sameUser) {
+        this.logger.error(`User with email '${email}' already exists`);
+        throw new ConflictException('A user with this email already exists');
+      }
     }
 
     try {
