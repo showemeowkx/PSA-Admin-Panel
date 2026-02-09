@@ -139,7 +139,11 @@ export class AuthService {
       code: hashedCode,
     });
 
-    await this.smsService.sendVerificationCode(phone, rawCode);
+    if (this.configService.get<string>('NODE_ENV') !== 'prod') {
+      this.smsService.sendVerificationCodeMock(phone, rawCode);
+    } else {
+      await this.smsService.sendVerificationCode(phone, rawCode);
+    }
   }
 
   async signIn(signInDto: SignInDto): Promise<{ accessToken }> {
@@ -179,6 +183,7 @@ export class AuthService {
 
     try {
       await this.userRepository.save(user);
+      await this.cartService.clearCart(user.id);
     } catch (error) {
       this.logger.error(
         `Failed to asign a store {userId: ${user.id}, storeId: ${storeId}}: ${error.stack}`,
