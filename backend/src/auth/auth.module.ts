@@ -12,6 +12,7 @@ import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
 import { VerificationCode } from './entities/verification-code.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 
 @Module({
   imports: [
@@ -34,7 +35,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     NotificationsModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
   exports: [PassportModule, JwtStrategy, AuthService],
 })
 export class AuthModule {}
