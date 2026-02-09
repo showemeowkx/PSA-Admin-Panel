@@ -82,7 +82,9 @@ export class OrdersController {
     @Param('id', ParseIntPipe) id: number,
     @Param('status') status: OrderStatus,
   ): Promise<Order> {
-    this.logger.verbose(`Updating order status... {orderId: ${id}}`);
+    this.logger.verbose(
+      `Updating order status to ${status}... {orderId: ${id}}`,
+    );
 
     if (!Object.values(OrderStatus).find((s) => s === status)) {
       this.logger.error(

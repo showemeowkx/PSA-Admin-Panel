@@ -1,7 +1,9 @@
+import { Order } from 'src/orders/entities/order.entity';
 import {
   Column,
   DeleteDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -22,6 +24,9 @@ export class Store {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @OneToMany(() => Order, (order) => order.store)
+  orders: Order[];
 
   @UpdateDateColumn()
   updatedAt: Date;

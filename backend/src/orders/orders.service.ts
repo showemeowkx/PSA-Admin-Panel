@@ -27,10 +27,13 @@ export class OrdersService {
     @InjectRepository(Order)
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderItem)
-    private orderItemRepository: Repository<OrderItem>,
+    private readonly orderItemRepository: Repository<OrderItem>,
+    @InjectRepository(ProductStock)
+    private stockRepository: Repository<ProductStock>,
     private readonly cartService: CartService,
     private readonly dataSource: DataSource,
     private readonly configService: ConfigService,
+    private readonly syncService: SyncService,
   ) {}
 
   async create(user: User): Promise<void> {
@@ -82,6 +85,8 @@ export class OrdersService {
         totalAmount,
         status: OrderStatus.PENDING,
         items: orderItems,
+        storeId: user.selectedStoreId,
+        store: user.selectedStore,
         createdAt: new Date(),
       });
 
@@ -216,8 +221,38 @@ export class OrdersService {
   }
 
   async updateStatus(id: number, status: OrderStatus): Promise<Order> {
-    const order = await this.findOne(id);
+    const order = await this.findOne({ orderId: id });
+
+    if (status === OrderStatus.READY) {
+      await this.syncService.syncProducts();
+      await this.releaseReservation(order);
+    }
+    if (status === OrderStatus.CANCELLED) {
+      await this.releaseReservation(order);
+    }
+
     order.status = status;
     return this.orderRepository.save(order);
+  }
+
+  private async releaseReservation(order: Order) {
+    this.logger.debug(`Releasing reservation... {orderId: ${order.id}}`);
+
+    for (const item of order.items) {
+      const stock = await this.stockRepository.findOne({
+        where: {
+          productId: item.product.id,
+          storeId: order.storeId,
+        },
+      });
+
+      if (stock) {
+        stock.reserved = Math.max(
+          0,
+          Number(stock.reserved) - Number(item.quantity),
+        );
+        await this.stockRepository.save(stock);
+      }
+    }
   }
 }
