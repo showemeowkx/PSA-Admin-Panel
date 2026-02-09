@@ -76,6 +76,7 @@ export class ProductsService {
           product: savedProduct,
           storeId: s.storeId,
           quantity: s.quantity,
+          reserved: 0,
         }),
       );
 
@@ -122,6 +123,7 @@ export class ProductsService {
       sortMethod = 'PROMO',
     } = getProductsFiltersDto;
 
+    const showAll = Boolean(getProductsFiltersDto.showAll);
     const qb = this.productRepository.createQueryBuilder('product');
 
     qb.leftJoinAndSelect('product.category', 'category');
@@ -133,7 +135,10 @@ export class ProductsService {
       'effective_price',
     );
 
-    qb.withDeleted();
+    if (!showAll) {
+      qb.andWhere('stock.quantity > 0');
+      qb.withDeleted();
+    }
 
     if (storeId) {
       qb.andWhere('stock.storeId = :storeId', { storeId });

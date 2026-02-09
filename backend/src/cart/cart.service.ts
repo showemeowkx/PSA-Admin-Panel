@@ -67,19 +67,19 @@ export class CartService {
 
       if (stock) {
         if (existingItem) {
-          if (stock.quantity < existingItem.quantity + quantity) {
+          if (stock.available < existingItem.quantity + quantity) {
             this.logger.error(
-              `Not enough products in stock {productId: ${product.id}, stockId: ${stock.id}}`,
+              `Not enough products available {productId: ${product.id}, stockId: ${stock.id}}`,
             );
-            throw new BadRequestException('Not enough products in stock');
+            throw new BadRequestException('Not enough products available');
           }
         }
 
-        if (stock.quantity < quantity) {
+        if (stock.available < quantity) {
           this.logger.error(
-            `Not enough products in stock {productId: ${product.id}, stockId: ${stock.id}}`,
+            `Not enough products available {productId: ${product.id}, stockId: ${stock.id}}`,
           );
-          throw new BadRequestException('Not enough products in stock');
+          throw new BadRequestException('Not enough products available');
         }
       } else {
         this.logger.error(

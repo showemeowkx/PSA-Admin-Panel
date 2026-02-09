@@ -23,5 +23,6 @@ import { CategoriesModule } from 'src/categories/categories.module';
   ],
   controllers: [SyncController],
   providers: [SyncService, UkrSkladService],
+  exports: [SyncService],
 })
 export class SyncModule {}

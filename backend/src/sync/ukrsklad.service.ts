@@ -52,6 +52,10 @@ export class UkrSkladService {
     };
   }
 
+  private formatIds(ids: number[]): string {
+    return ids.length > 0 ? ids.join(',') : 'null';
+  }
+
   async query<T = any>(sql: string, params: any[] = []): Promise<T[]> {
     return new Promise((resolve, reject) => {
       Firebird.attach(this.options, (err, db) => {
@@ -85,9 +89,9 @@ export class UkrSkladService {
     );
   }
 
-  async getProducts(): Promise<UkrSkladProduct[]> {
+  async getProducts(ids?: number[]): Promise<UkrSkladProduct[]> {
     this.logger.verbose('Getting products from UkrSklad...');
-    return this.query<UkrSkladProduct>(`
+    let sql = `
       SELECT 
         NUM, 
         NAME, 
@@ -101,18 +105,31 @@ export class UkrSkladService {
       AND TIP IS NOT NULL
       AND CENA_R > 0
       AND NAME != 'Мій товар'
-    `);
+    `;
+
+    if (ids && ids.length > 0) {
+      sql += ` AND NUM IN (${this.formatIds(ids)})`;
+    }
+
+    return this.query<UkrSkladProduct>(sql);
   }
 
-  async getProductStock(): Promise<UkrSkladStock[]> {
+  async getProductStock(ids?: number[]): Promise<UkrSkladStock[]> {
     this.logger.verbose('Getting stocks from UkrSklad...');
-    return this.query<UkrSkladStock>(`
+
+    let sql = `
       SELECT 
         TOVAR_ID as PRODUCT_ID,
         SKLAD_ID as STORE_ID,
         KOLVO as QUANTITY
       FROM TOVAR_ZAL
       WHERE KOLVO >= 0
-    `);
+    `;
+
+    if (ids && ids.length > 0) {
+      sql += ` AND TOVAR_ID IN (${this.formatIds(ids)})`;
+    }
+
+    return this.query<UkrSkladStock>(sql);
   }
 }

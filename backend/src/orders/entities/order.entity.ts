@@ -3,12 +3,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { OrderItem } from './order-item.entity';
 import { OrderStatus } from '../order-status.enum';
+import { Store } from 'src/store/entities/store.entity';
 
 @Entity()
 export class Order {
@@ -26,6 +28,13 @@ export class Order {
 
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items: OrderItem[];
+
+  @Column({ nullable: true })
+  storeId: number;
+
+  @ManyToOne(() => Store, (store) => store.orders, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'storeId' })
+  store: Store;
 
   @Column('enum', { enum: OrderStatus })
   status: OrderStatus;

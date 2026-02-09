@@ -139,7 +139,11 @@ export class AuthService {
       code: hashedCode,
     });
 
-    await this.smsService.sendVerificationCode(phone, rawCode);
+    if (this.configService.get<string>('NODE_ENV') !== 'prod') {
+      this.smsService.sendVerificationCodeMock(phone, rawCode);
+    } else {
+      await this.smsService.sendVerificationCode(phone, rawCode);
+    }
   }
 
   async signIn(signInDto: SignInDto): Promise<{ accessToken }> {
@@ -179,6 +183,7 @@ export class AuthService {
 
     try {
       await this.userRepository.save(user);
+      await this.cartService.clearCart(user.id);
     } catch (error) {
       this.logger.error(
         `Failed to asign a store {userId: ${user.id}, storeId: ${storeId}}: ${error.stack}`,
@@ -202,6 +207,7 @@ export class AuthService {
     const user = await this.findOne(id);
     const password = updateUserDto.password;
     const phoneRaw = updateUserDto.phone;
+    const email = updateUserDto.email;
 
     if (password) {
       const salt = await bcrypt.genSalt();
@@ -214,6 +220,15 @@ export class AuthService {
         phoneRaw,
         'UA',
       ).formatInternational();
+    }
+
+    if (email) {
+      const sameUser = await this.userRepository.findOne({ where: { email } });
+
+      if (sameUser) {
+        this.logger.error(`User with email '${email}' already exists`);
+        throw new ConflictException('A user with this email already exists');
+      }
     }
 
     try {

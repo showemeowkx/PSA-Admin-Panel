@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Product } from './product.entity';
 import { Store } from 'src/store/entities/store.entity';
+import { Expose } from 'class-transformer';
 
 @Entity()
 @Unique(['product', 'storeId'])
@@ -33,4 +34,12 @@ export class ProductStock {
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   quantity: number;
+
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  reserved: number;
+
+  @Expose()
+  get available(): number {
+    return Math.max(0, this.quantity - this.reserved);
+  }
 }

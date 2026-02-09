@@ -16,6 +16,10 @@ export class SmsService {
 
   constructor(private readonly configService: ConfigService) {}
 
+  sendVerificationCodeMock(phoneNumber: string, code: string): void {
+    this.logger.debug(`[MOCK SMS] To: ${phoneNumber} | Code: ${code}`);
+  }
+
   async sendVerificationCode(phoneNumber: string, code: string): Promise<void> {
     const token = this.configService.get<string>('TURBOSMS_TOKEN');
     const sender = this.configService.get<string>('TURBOSMS_SENDER', 'Msg');
