@@ -76,6 +76,7 @@ export class ProductsService {
           product: savedProduct,
           storeId: s.storeId,
           quantity: s.quantity,
+          reserved: 0,
         }),
       );
 

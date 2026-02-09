@@ -377,6 +377,7 @@ export class SyncService {
                 product: savedProduct,
                 storeId: store.id,
                 quantity: sData.QUANTITY,
+                reserved: 0,
               });
             }
           } catch (error) {
