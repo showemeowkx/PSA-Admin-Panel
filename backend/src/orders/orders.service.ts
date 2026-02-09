@@ -226,8 +226,12 @@ export class OrdersService {
     if (status === OrderStatus.READY) {
       const productsToUpdate = this.getProductsToUpdate(order);
 
+      await this.syncService.setSyncState(false);
+
       await this.syncService.syncProducts(productsToUpdate);
       await this.releaseReservation(order);
+
+      await this.syncService.setSyncState(true);
     }
     if (status === OrderStatus.CANCELLED) {
       await this.releaseReservation(order);
