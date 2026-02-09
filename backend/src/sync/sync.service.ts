@@ -288,16 +288,15 @@ export class SyncService {
       this.ukrSklad.getProducts(),
       this.ukrSklad.getProductStock(),
     ]);
-    const [allStoresResponse, allCategoriesResponse, existingProductsResponse] =
+    const [allStoresResponse, allCategoriesResponse, existingProducts] =
       await Promise.all([
         this.storeService.findAll({}),
         this.categoriesService.findAll(),
-        this.productService.findAll({ limit: 0 }),
+        this.productRepository.find({ withDeleted: true }),
       ]);
 
     const allStores = allStoresResponse.data;
     const allCategories = allCategoriesResponse.data;
-    const existingProducts = existingProductsResponse.data;
 
     const storeMap = new Map(allStores.map((s) => [s.ukrskladId, s]));
     const categoryMap = new Map(allCategories.map((c) => [c.ukrskladId, c]));
@@ -377,7 +376,6 @@ export class SyncService {
                 product: savedProduct,
                 storeId: store.id,
                 quantity: sData.QUANTITY,
-                reserved: 0,
               });
             }
           } catch (error) {
