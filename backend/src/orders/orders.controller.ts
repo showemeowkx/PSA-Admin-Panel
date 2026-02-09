@@ -19,6 +19,7 @@ import { Order } from './entities/order.entity';
 import { OrderStatus } from './order-status.enum';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { GetOrderDto } from './dto/get-order.dto';
+import { GetOrdersDto } from './dto/get-orders.dto';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
@@ -34,9 +35,7 @@ export class OrdersController {
 
   @Get('/all')
   @UseGuards(AdminGuard)
-  findAll(
-    @Query() paginationOptions: { page: number; limit: number },
-  ): Promise<{
+  findAll(@Query() getOrdersDto: GetOrdersDto): Promise<{
     data: Order[];
     metadata: {
       total: number;
@@ -46,7 +45,7 @@ export class OrdersController {
     };
   }> {
     this.logger.verbose(`Getting all orders...`);
-    return this.ordersService.findAll(paginationOptions);
+    return this.ordersService.findAll(getOrdersDto);
   }
 
   @Get()

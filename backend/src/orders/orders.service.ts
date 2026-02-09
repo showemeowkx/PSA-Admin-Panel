@@ -18,6 +18,7 @@ import { OrderStatus } from './order-status.enum';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
 import { SyncService } from 'src/sync/sync.service';
 import { GetOrderDto } from './dto/get-order.dto';
+import { GetOrdersDto } from './dto/get-orders.dto';
 
 @Injectable()
 export class OrdersService {
@@ -128,7 +129,7 @@ export class OrdersService {
     }
   }
 
-  async findAll(paginationOptions: { page: number; limit: number }): Promise<{
+  async findAll(getOrdersDto: GetOrdersDto): Promise<{
     data: Order[];
     metadata: {
       total: number;
@@ -137,11 +138,16 @@ export class OrdersService {
       totalPages: number;
     };
   }> {
-    const { page = 1, limit = 10 } = paginationOptions;
+    const { page = 1, limit = 10, status } = getOrdersDto;
 
     const qb = this.orderRepository.createQueryBuilder('order');
 
     qb.leftJoinAndSelect('order.user', 'user');
+
+    if (status) {
+      qb.andWhere('order.status = :status', { status });
+    }
+
     qb.skip((page - 1) * limit);
     qb.orderBy('order.createdAt', 'DESC');
     qb.take(limit);
