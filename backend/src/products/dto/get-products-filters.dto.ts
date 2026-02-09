@@ -52,4 +52,9 @@ export class GetProductsFiltersDto {
   @IsOptional()
   @IsEnum(SortMethod)
   sortMethod?: SortMethod = SortMethod.PROMO;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  showAll?: 0 | 1;
 }
