@@ -16,6 +16,8 @@ import { CartService } from 'src/cart/cart.service';
 import { ConfigService } from '@nestjs/config';
 import { OrderStatus } from './order-status.enum';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
+import { SyncService } from 'src/sync/sync.service';
+import { GetOrderDto } from './dto/get-order.dto';
 
 @Injectable()
 export class OrdersService {
@@ -121,7 +123,33 @@ export class OrdersService {
     }
   }
 
-  async findAll(
+  async findAll(paginationOptions: { page: number; limit: number }): Promise<{
+    data: Order[];
+    metadata: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const { page = 1, limit = 10 } = paginationOptions;
+
+    const qb = this.orderRepository.createQueryBuilder('order');
+
+    qb.leftJoinAndSelect('order.user', 'user');
+    qb.skip((page - 1) * limit);
+    qb.orderBy('order.createdAt', 'DESC');
+    qb.take(limit);
+
+    const [items, total] = await qb.getManyAndCount();
+
+    return {
+      data: items,
+      metadata: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
+  }
+
+  async findAllByUser(
     userId: number,
     paginationOptions: { page: number; limit: number },
   ): Promise<{
@@ -150,14 +178,28 @@ export class OrdersService {
     };
   }
 
-  async findOne(id: number): Promise<Order> {
+  async findOne(getOrderDto: GetOrderDto): Promise<Order> {
+    let condition = {};
+    const { orderId, orderNumber } = getOrderDto;
+
+    if (orderId) {
+      condition = { id: orderId };
+    } else if (orderNumber) {
+      condition = { orderNumber: orderNumber };
+    } else {
+      this.logger.error(`Body is empty`);
+      throw new BadRequestException('Body is empty');
+    }
+
     const order = await this.orderRepository.findOne({
-      where: { id },
+      where: condition,
       relations: ['items', 'items.product'],
     });
 
     if (!order) {
-      this.logger.error(`Order with ID ${id} not found`);
+      this.logger.error(
+        `Order not found {identifier: ${getOrderDto.orderId || getOrderDto.orderNumber}}`,
+      );
       throw new NotFoundException('Order not found');
     }
 

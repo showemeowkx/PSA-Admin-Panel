@@ -10,6 +10,7 @@ import {
   Patch,
   ConflictException,
   Logger,
+  Body,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { User } from 'src/auth/entities/user.entity';
@@ -17,6 +18,7 @@ import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Order } from './entities/order.entity';
 import { OrderStatus } from './order-status.enum';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { GetOrderDto } from './dto/get-order.dto';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
@@ -30,8 +32,25 @@ export class OrdersController {
     return this.ordersService.create(req.user);
   }
 
-  @Get()
+  @Get('/all')
+  @UseGuards(AdminGuard)
   findAll(
+    @Query() paginationOptions: { page: number; limit: number },
+  ): Promise<{
+    data: Order[];
+    metadata: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    this.logger.verbose(`Getting all orders...`);
+    return this.ordersService.findAll(paginationOptions);
+  }
+
+  @Get()
+  findAllByUser(
     @Req() req: { user: User },
     @Query() paginationOptions: { page: number; limit: number },
   ): Promise<{
@@ -43,14 +62,18 @@ export class OrdersController {
       totalPages: number;
     };
   }> {
-    this.logger.verbose(`Getting all orders... {userId: ${req.user.id}}`);
-    return this.ordersService.findAll(req.user.id, paginationOptions);
+    this.logger.verbose(
+      `Getting all orders for user... {userId: ${req.user.id}}`,
+    );
+    return this.ordersService.findAllByUser(req.user.id, paginationOptions);
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<Order> {
-    this.logger.verbose(`Getting an orders by ID... {orderId: ${id}}`);
-    return this.ordersService.findOne(id);
+  @Get('/one')
+  findOne(@Body() getOrderDto: GetOrderDto): Promise<Order> {
+    this.logger.verbose(
+      `Getting an order... {identifier: ${getOrderDto.orderId || getOrderDto.orderNumber}}`,
+    );
+    return this.ordersService.findOne(getOrderDto);
   }
 
   @UseGuards(AdminGuard)
