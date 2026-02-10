@@ -11,6 +11,7 @@ import {
   UploadedFile,
   Logger,
   InternalServerErrorException,
+  Get,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -34,6 +35,13 @@ export class AuthController {
     private readonly cloudinaryService: CloudinaryService,
     private readonly configService: ConfigService,
   ) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  getProfile(@Req() req: { user: User }): Promise<User> {
+    this.logger.verbose(`Getting user profile... {userId: ${req.user.id}}`);
+    return this.authService.findOne(req.user.id);
+  }
 
   @Post('/send-code')
   sendCode(@Body() requestVerificationCodeDto: RequestVerificationCodeDto) {
