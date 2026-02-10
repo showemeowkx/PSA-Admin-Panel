@@ -121,7 +121,6 @@ export class ProductsService {
       page = 1,
       limit = 10,
       storeId,
-      ukrskladId,
       categoryId,
       search,
       minPrice,
@@ -130,6 +129,8 @@ export class ProductsService {
     } = getProductsFiltersDto;
 
     const showAll = Boolean(getProductsFiltersDto.showAll);
+    const showInactive = Boolean(getProductsFiltersDto.showInactive);
+    const showDeleted = Boolean(getProductsFiltersDto.showDeleted);
     const qb = this.productRepository.createQueryBuilder('product');
 
     qb.leftJoinAndSelect('product.category', 'category');
@@ -143,14 +144,15 @@ export class ProductsService {
 
     if (!showAll) {
       qb.andWhere('stock.quantity > 0');
+    }
+    if (showDeleted) {
       qb.withDeleted();
     }
-
+    if (!showInactive) {
+      qb.andWhere('product.isActive = :isActive', { isActive: true });
+    }
     if (storeId) {
       qb.andWhere('stock.storeId = :storeId', { storeId });
-    }
-    if (ukrskladId) {
-      qb.andWhere('product.ukrskladId = :ukrskladId', { ukrskladId });
     }
     if (categoryId) {
       qb.andWhere('product.categoryId = :categoryId', { categoryId });

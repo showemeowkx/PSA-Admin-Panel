@@ -26,11 +26,6 @@ export class GetProductsFiltersDto {
   storeId?: number;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  ukrskladId?: number;
-
-  @IsOptional()
   @IsString()
   search?: string;
 
@@ -57,4 +52,14 @@ export class GetProductsFiltersDto {
   @Type(() => Number)
   @IsInt()
   showAll?: 0 | 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  showInactive?: 0 | 1;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  showDeleted?: 0 | 1;
 }

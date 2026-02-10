@@ -1,7 +1,7 @@
 import {
   Controller,
   Get,
-  Post,
+  // Post,
   Body,
   Patch,
   Param,
@@ -34,7 +34,7 @@ export class ProductsController {
     private readonly configService: ConfigService,
   ) {}
 
-  @Post()
+  // @Post()
   @UseGuards(AdminGuard)
   @UseInterceptors(FileInterceptor('image'))
   async create(
