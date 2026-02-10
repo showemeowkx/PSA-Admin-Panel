@@ -219,7 +219,11 @@ export class SyncService {
     const errors: string[] = [];
 
     const ukrSkladCategories = await this.ukrSklad.getCategories();
-    const existingCategoriesResponse = await this.categoriesService.findAll();
+    const existingCategoriesResponse = await this.categoriesService.findAll({
+      limit: 0,
+      showDeleted: 1,
+      showInactive: 1,
+    });
     const existingCategories = existingCategoriesResponse.data;
 
     const categoryMap = new Map(
@@ -306,7 +310,11 @@ export class SyncService {
     const [allStoresResponse, allCategoriesResponse, existingProducts] =
       await Promise.all([
         this.storeService.findAll({}),
-        this.categoriesService.findAll(),
+        this.categoriesService.findAll({
+          limit: 0,
+          showDeleted: 1,
+          showInactive: 1,
+        }),
         this.productRepository.find(findOptions),
       ]);
 

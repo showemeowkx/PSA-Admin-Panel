@@ -15,6 +15,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AutoClearCache } from 'src/common/decorators/auto-clear-cache.decorator';
 import type { Cache } from 'cache-manager';
+import { GetCategoriesFiltersDto } from './dto/get-categories-filters.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -58,18 +59,47 @@ export class CategoriesService {
     return category;
   }
 
-  async findAll(): Promise<{ data: Category[] }> {
-    try {
-      const categories = await this.categoryRepository.find({
-        order: { id: 'ASC' },
-        withDeleted: true,
-      });
+  async findAll(getCategoriesFiltersDto: GetCategoriesFiltersDto): Promise<{
+    data: Category[];
+    metadata: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const { page = 1, limit = 10 } = getCategoriesFiltersDto;
 
-      return { data: categories };
-    } catch (error) {
-      this.logger.error(`Failed to get categories: ${error.stack}`);
-      throw new InternalServerErrorException('Failed to get categories');
+    const showInactive = Boolean(getCategoriesFiltersDto.showInactive);
+    const showDeleted = Boolean(getCategoriesFiltersDto.showDeleted);
+    const qb = this.categoryRepository.createQueryBuilder('category');
+
+    if (!showInactive) {
+      qb.andWhere('category.isActive = :isActive', { isActive: true });
     }
+
+    if (showDeleted) {
+      qb.withDeleted();
+    }
+
+    if (limit > 0) {
+      qb.skip((page - 1) * limit);
+      qb.take(limit);
+    }
+
+    qb.orderBy('category.id', 'ASC');
+
+    const [categories, total] = await qb.getManyAndCount();
+
+    return {
+      data: categories,
+      metadata: {
+        total,
+        page,
+        limit: limit > 0 ? limit : total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   @AutoClearCache('/categories')

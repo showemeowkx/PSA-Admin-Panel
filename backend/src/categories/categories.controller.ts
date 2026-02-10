@@ -7,7 +7,8 @@ import {
   Param,
   ParseIntPipe,
   Patch,
-  Post,
+  Query,
+  // Post,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -21,6 +22,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { CacheTTL } from '@nestjs/cache-manager';
+import { GetCategoriesFiltersDto } from './dto/get-categories-filters.dto';
 
 @Controller('categories')
 export class CategoriesController {
@@ -32,7 +34,7 @@ export class CategoriesController {
     private readonly configService: ConfigService,
   ) {}
 
-  @Post()
+  // @Post()
   @UseGuards(AdminGuard)
   @UseInterceptors(FileInterceptor('icon'))
   async create(
@@ -58,9 +60,17 @@ export class CategoriesController {
 
   @Get()
   @CacheTTL(60 * 60 * 1000)
-  findAll(): Promise<{ data: Category[] }> {
+  findAll(@Query() getCategoriesFiltersDto: GetCategoriesFiltersDto): Promise<{
+    data: Category[];
+    metadata: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
     this.logger.verbose('Getting all categories...');
-    return this.categoriesService.findAll();
+    return this.categoriesService.findAll(getCategoriesFiltersDto);
   }
 
   @Patch(':id')
