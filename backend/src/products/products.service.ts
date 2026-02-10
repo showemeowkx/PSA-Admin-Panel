@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   ConflictException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -14,6 +15,9 @@ import { Repository } from 'typeorm';
 import { ProductStock } from './entities/product-stock.entity';
 import { GetProductsFiltersDto } from './dto/get-products-filters.dto';
 import { CategoriesService } from 'src/categories/categories.service';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
+import { AutoClearCache } from 'src/common/decorators/auto-clear-cache.decorator';
 
 @Injectable()
 export class ProductsService {
@@ -25,8 +29,10 @@ export class ProductsService {
     @InjectRepository(ProductStock)
     private stockRepository: Repository<ProductStock>,
     private categoriesService: CategoriesService,
+    @Inject(CACHE_MANAGER) public cacheManager: Cache,
   ) {}
 
+  @AutoClearCache('/products')
   async create(createProductDto: CreateProductDto): Promise<void> {
     const category = await this.categoriesService.findOne(
       createProductDto.categoryId,
@@ -201,6 +207,7 @@ export class ProductsService {
     return product;
   }
 
+  @AutoClearCache('/products')
   async update(
     id: number,
     updateProductDto: UpdateProductDto,
@@ -249,6 +256,7 @@ export class ProductsService {
     return this.productRepository.save(product);
   }
 
+  @AutoClearCache('/products')
   async remove(ids: number | number[]): Promise<void> {
     const result = await this.productRepository.softDelete(ids);
 
@@ -259,6 +267,7 @@ export class ProductsService {
     }
   }
 
+  @AutoClearCache('/products')
   async restore(id: number): Promise<void> {
     const product = await this.productRepository.findOne({
       where: { id },

@@ -20,6 +20,7 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('categories')
 export class CategoriesController {
@@ -56,6 +57,7 @@ export class CategoriesController {
   }
 
   @Get()
+  @CacheTTL(60 * 60 * 1000)
   findAll(): Promise<{ data: Category[] }> {
     this.logger.verbose('Getting all categories...');
     return this.categoriesService.findAll();

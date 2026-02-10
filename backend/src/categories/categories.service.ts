@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   ConflictException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -11,6 +12,9 @@ import { Category } from './enteties/category.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { AutoClearCache } from 'src/common/decorators/auto-clear-cache.decorator';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class CategoriesService {
@@ -19,8 +23,10 @@ export class CategoriesService {
   constructor(
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
+    @Inject(CACHE_MANAGER) public cacheManager: Cache,
   ) {}
 
+  @AutoClearCache('/categories')
   async create(createCategoryDto: CreateCategoryDto): Promise<void> {
     const categoryEntity = this.categoryRepository.create({
       ...createCategoryDto,
@@ -66,6 +72,7 @@ export class CategoriesService {
     }
   }
 
+  @AutoClearCache('/categories')
   async update(
     id: number,
     updateCategoryDto: UpdateCategoryDto,
@@ -80,6 +87,7 @@ export class CategoriesService {
     return await this.categoryRepository.save(category);
   }
 
+  @AutoClearCache('/categories')
   async remove(ids: number | number[]): Promise<void> {
     const result = await this.categoryRepository.softDelete(ids);
 
@@ -90,6 +98,7 @@ export class CategoriesService {
     }
   }
 
+  @AutoClearCache('/categories')
   async restore(id: number): Promise<void> {
     const category = await this.categoryRepository.findOne({
       where: { id },

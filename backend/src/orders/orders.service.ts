@@ -2,6 +2,7 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -19,6 +20,9 @@ import { ProductStock } from 'src/products/entities/product-stock.entity';
 import { SyncService } from 'src/sync/sync.service';
 import { GetOrderDto } from './dto/get-order.dto';
 import { GetOrdersDto } from './dto/get-orders.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
+import { AutoClearCache } from 'src/common/decorators/auto-clear-cache.decorator';
 
 @Injectable()
 export class OrdersService {
@@ -35,8 +39,10 @@ export class OrdersService {
     private readonly dataSource: DataSource,
     private readonly configService: ConfigService,
     private readonly syncService: SyncService,
+    @Inject(CACHE_MANAGER) public cacheManager: Cache,
   ) {}
 
+  @AutoClearCache('/orders')
   async create(user: User): Promise<void> {
     const cart = await this.cartService.getCartByUserId(user.id);
 
@@ -217,6 +223,7 @@ export class OrdersService {
     return order;
   }
 
+  @AutoClearCache('/orders')
   async remove(id: number): Promise<void> {
     const result = await this.orderRepository.delete(id);
 
@@ -226,6 +233,7 @@ export class OrdersService {
     }
   }
 
+  @AutoClearCache('/orders')
   async updateStatus(id: number, status: OrderStatus): Promise<Order> {
     const order = await this.findOne({ orderId: id });
 

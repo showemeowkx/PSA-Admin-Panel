@@ -20,6 +20,7 @@ import { OrderStatus } from './order-status.enum';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { GetOrderDto } from './dto/get-order.dto';
 import { GetOrdersDto } from './dto/get-orders.dto';
+import { CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('orders')
 @UseGuards(JwtAuthGuard)
@@ -34,6 +35,7 @@ export class OrdersController {
   }
 
   @Get('/all')
+  @CacheTTL(60 * 60 * 1000)
   @UseGuards(AdminGuard)
   findAll(@Query() getOrdersDto: GetOrdersDto): Promise<{
     data: Order[];
@@ -49,6 +51,7 @@ export class OrdersController {
   }
 
   @Get()
+  @CacheTTL(60 * 60 * 1000)
   findAllByUser(
     @Req() req: { user: User },
     @Query() paginationOptions: { page: number; limit: number },
