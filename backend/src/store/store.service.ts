@@ -45,22 +45,45 @@ export class StoreService {
     }
   }
 
-  async findAll(
-    getStoresFiltersDto: GetStoresFiltersDto,
-  ): Promise<{ data: Store[]; metadata: { total: number } }> {
-    const { search } = getStoresFiltersDto;
+  async findAll(getStoresFiltersDto: GetStoresFiltersDto): Promise<{
+    data: Store[];
+    metadata: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const { limit = 10, page = 1, search } = getStoresFiltersDto;
+
+    const showInactive = Boolean(getStoresFiltersDto.showInactive);
+    const showDeleted = Boolean(getStoresFiltersDto.showDeleted);
 
     const qb = this.storeRepository.createQueryBuilder('store');
-    qb.withDeleted();
-    qb.orderBy('store.id', 'ASC');
 
+    if (!showInactive) {
+      qb.andWhere('store.isActive = :isActive', { isActive: true });
+    }
+    if (showDeleted) {
+      qb.withDeleted();
+    }
     if (search) {
       qb.andWhere('(store.address ILIKE :search)', { search: `%${search}%` });
     }
 
+    if (limit > 0) {
+      qb.skip((page - 1) * limit);
+      qb.take(limit);
+    }
+
+    qb.orderBy('store.id', 'ASC');
+
     const [stores, total] = await qb.getManyAndCount();
 
-    return { data: stores, metadata: { total } };
+    return {
+      data: stores,
+      metadata: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(id: number): Promise<Store> {

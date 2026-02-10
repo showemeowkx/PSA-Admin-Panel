@@ -154,7 +154,11 @@ export class SyncService {
     const errors: string[] = [];
 
     const ukrSkladStores = await this.ukrSklad.getStores();
-    const existingStoresResponse = await this.storeService.findAll({});
+    const existingStoresResponse = await this.storeService.findAll({
+      limit: 0,
+      showDeleted: 1,
+      showInactive: 1,
+    });
     const existingStores = existingStoresResponse.data;
 
     const storeMap = new Map(existingStores.map((s) => [s.ukrskladId, s]));
@@ -309,7 +313,11 @@ export class SyncService {
 
     const [allStoresResponse, allCategoriesResponse, existingProducts] =
       await Promise.all([
-        this.storeService.findAll({}),
+        this.storeService.findAll({
+          limit: 0,
+          showDeleted: 1,
+          showInactive: 1,
+        }),
         this.categoriesService.findAll({
           limit: 0,
           showDeleted: 1,

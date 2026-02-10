@@ -1,7 +1,7 @@
 import {
   Controller,
   Get,
-  Post,
+  // Post,
   Body,
   Patch,
   Param,
@@ -24,7 +24,7 @@ export class StoreController {
   private logger = new Logger(StoreController.name);
   constructor(private readonly storeService: StoreService) {}
 
-  @Post()
+  // @Post()
   @UseGuards(AdminGuard)
   create(@Body() createStoreDto: CreateStoreDto): Promise<void> {
     this.logger.verbose(
@@ -35,9 +35,15 @@ export class StoreController {
 
   @Get()
   @CacheTTL(60 * 60 * 1000)
-  findAll(
-    @Query() getStoresFiltersDto: GetStoresFiltersDto,
-  ): Promise<{ data: Store[]; metadata: { total: number } }> {
+  findAll(@Query() getStoresFiltersDto: GetStoresFiltersDto): Promise<{
+    data: Store[];
+    metadata: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
     this.logger.verbose('Getting all stores...');
     return this.storeService.findAll(getStoresFiltersDto);
   }
