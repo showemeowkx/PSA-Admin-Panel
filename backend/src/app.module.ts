@@ -12,6 +12,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { configValidationSchema } from './config.schema';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { redisStore } from 'cache-manager-redis-yet';
     StoreModule,
     OrdersModule,
     SyncModule,
+    PaymentsModule,
   ],
 })
 export class AppModule {}
