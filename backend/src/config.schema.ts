@@ -6,10 +6,14 @@ export const configValidationSchema = Joi.object({
   POSTGRES_USER: Joi.string().required(),
   POSTGRES_PASSWORD: Joi.string().required(),
   POSTGRES_DB: Joi.string().required(),
-  POSTGRES_HOST: Joi.string().required(),
-  POSTGRES_PORT: Joi.string().required(),
+  POSTGRES_HOST: Joi.string().default('postgres'),
+  POSTGRES_PORT: Joi.number().default(5352),
 
   PORT: Joi.number().default(3000),
+
+  REDIS_HOST: Joi.string().default('cache'),
+  REDIS_PORT: Joi.number().default(6379),
+  CACHE_TTL_MILISECONDS: Joi.string().default(3600000),
 
   JWT_ACCESS_SECRET: Joi.string().required(),
   JWT_ACCESS_EXPIRE_TIME: Joi.string().default('15m'),
