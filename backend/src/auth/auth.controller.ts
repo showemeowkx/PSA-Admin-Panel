@@ -10,6 +10,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Logger,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,6 +22,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { RequestVerificationCodeDto } from './dto/req-code.dto';
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { JwtPayload } from './jwt-payload.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -46,9 +49,35 @@ export class AuthController {
   }
 
   @Post('/signin')
-  signIn(@Body() signInDto: SignInDto): Promise<{ accessToken }> {
+  signIn(
+    @Body() signInDto: SignInDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     this.logger.verbose(`Signing in... {login: ${signInDto.login}}`);
     return this.authService.signIn(signInDto);
+  }
+
+  @UseGuards(JwtRefreshGuard)
+  @Post('refresh')
+  refreshTokens(
+    @Req() req: { user: JwtPayload & { refreshToken: string } },
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const userId = req.user['sub'];
+    const refreshToken = req.user['refreshToken'];
+
+    this.logger.verbose(`Refreshing tokens... {userId: ${userId}}`);
+
+    if (!refreshToken) {
+      throw new InternalServerErrorException('Refresh token is missing');
+    }
+
+    return this.authService.refreshTokens(userId, refreshToken);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  logout(@Req() req: { user: User }): Promise<void> {
+    this.logger.verbose(`Logging out... {login: ${req.user.phone}}`);
+    return this.authService.logout(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

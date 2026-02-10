@@ -37,11 +37,17 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   password?: string;
 
   @IsString()
+  @MinLength(6)
+  @IsOptional()
+  currentPassword?: string;
+
+  @IsString()
   @IsPhoneNumber('UA')
   @IsNotEmpty()
   @IsOptional()
   phone?: string;
 
+  @IsString()
   @IsEmail()
   @IsOptional()
   email?: string;

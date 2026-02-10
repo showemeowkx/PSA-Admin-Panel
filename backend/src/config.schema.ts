@@ -11,8 +11,10 @@ export const configValidationSchema = Joi.object({
 
   PORT: Joi.number().default(3000),
 
-  JWT_SECRET: Joi.string().required(),
-  JWT_EXPIRE_TIME: Joi.string().default('18000s'),
+  JWT_ACCESS_SECRET: Joi.string().required(),
+  JWT_ACCESS_EXPIRE_TIME: Joi.string().default('15m'),
+  JWT_REFRESH_SECRET: Joi.string().required(),
+  JWT_REFRESH_EXPIRE_TIME: Joi.string().default('7d'),
 
   CLOUDINARY_CLOUD_NAME: Joi.string().required(),
   CLOUDINARY_API_KEY: Joi.string().required(),

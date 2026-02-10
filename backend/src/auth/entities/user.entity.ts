@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { Cart } from 'src/cart/entities/cart.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { Store } from 'src/store/entities/store.entity';
@@ -53,4 +54,8 @@ export class User {
 
   @Column({ default: false })
   isAdmin: boolean;
+
+  @Column({ type: 'varchar', nullable: true })
+  @Exclude()
+  refreshToken: string | null;
 }

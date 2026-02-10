@@ -53,37 +53,7 @@ export class AuthService {
       'UA',
     ).formatInternational();
 
-    const record = await this.verificationCodeRepository.findOne({
-      where: { phone },
-      order: { createdAt: 'DESC' },
-    });
-
-    if (!record) {
-      this.logger.error(`No verification code found for number '${phone}'`);
-      throw new BadRequestException(
-        'No verification code found. Request a new one.',
-      );
-    }
-
-    const minutesOld = (Date.now() - record.createdAt.getTime()) / 1000 / 60;
-    const expiresIn =
-      this.configService.get<number>('VERIFICATION_CODE_EXPIRE_MINUTES') || 5;
-
-    if (minutesOld > expiresIn) {
-      await this.verificationCodeRepository.delete({ phone });
-      this.logger.error(`Code expired for number '${phone}'`);
-      throw new BadRequestException('Code expired');
-    }
-
-    const isMatch = await bcrypt.compare(code, record.code);
-    if (!isMatch) {
-      this.logger.error(`Invalid verification code for number '${phone}'`);
-      throw new BadRequestException('Invalid verification code');
-    }
-
-    this.logger.verbose(
-      `Verification code accepted successfully for number '${phone}'`,
-    );
+    await this.verifyCode(phone, code);
 
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -98,7 +68,6 @@ export class AuthService {
       const savedUser = await this.userRepository.save(user);
 
       await this.cartService.create(savedUser);
-      await this.verificationCodeRepository.delete({ phone });
     } catch (error) {
       if (error.code === '23505') {
         this.logger.error(`User already exists {phone: ${phone}}`);
@@ -146,7 +115,38 @@ export class AuthService {
     }
   }
 
-  async signIn(signInDto: SignInDto): Promise<{ accessToken }> {
+  private async verifyCode(phone: string, code: string): Promise<void> {
+    const record = await this.verificationCodeRepository.findOne({
+      where: { phone },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (!record) {
+      throw new BadRequestException('No verification code found');
+    }
+
+    const minutesOld = (Date.now() - record.createdAt.getTime()) / 1000 / 60;
+    const expiresIn =
+      this.configService.get<number>('VERIFICATION_CODE_EXPIRE_MINUTES') || 5;
+
+    if (minutesOld > expiresIn) {
+      await this.verificationCodeRepository.delete({ phone });
+      throw new BadRequestException('Code expired');
+    }
+
+    const isMatch = await bcrypt.compare(code, record.code);
+    if (!isMatch) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    await this.verificationCodeRepository.delete({ phone });
+
+    this.logger.verbose(`Verification code accepted for '${phone}'`);
+  }
+
+  async signIn(
+    signInDto: SignInDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const password = signInDto.password;
     const loginRaw = signInDto.login;
 
@@ -162,13 +162,68 @@ export class AuthService {
     ]);
 
     if (user && (await bcrypt.compare(password, user.password))) {
-      const payload: JwtPayload = { login, isAdmin: user.isAdmin };
-      const accessToken: string = await this.jwtService.signAsync(payload);
-      return { accessToken };
+      const payload: JwtPayload = {
+        sub: user.id,
+        login,
+        isAdmin: user.isAdmin,
+      };
+      const tokens = await this.getTokens(payload);
+
+      await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+      return tokens;
     } else {
       this.logger.error(`Wrong login or password {login: ${login}}`);
       throw new UnauthorizedException('Wrong login or password!');
     }
+  }
+
+  private async getTokens(
+    payload: JwtPayload,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
+        expiresIn: this.configService.get('JWT_ACCESS_EXPIRE_TIME') || '15m',
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get('JWT_REFRESH_SECRET'),
+        expiresIn: this.configService.get('JWT_REFRESH_EXPIRE_TIME') || '7d',
+      }),
+    ]);
+
+    return { accessToken, refreshToken };
+  }
+
+  private async updateRefreshToken(userId: number, refreshToken: string) {
+    const hash = await bcrypt.hash(refreshToken, 10);
+    await this.userRepository.update(userId, { refreshToken: hash });
+  }
+
+  async refreshTokens(
+    userId: number,
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const user = await this.userRepository.findOneBy({ id: userId });
+    if (!user || !user.refreshToken)
+      throw new UnauthorizedException('Access denied');
+
+    const tokenMatches = await bcrypt.compare(refreshToken, user.refreshToken);
+    if (!tokenMatches) throw new UnauthorizedException('Access denied');
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      login: user.phone,
+      isAdmin: user.isAdmin,
+    };
+
+    const tokens = await this.getTokens(payload);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    return tokens;
+  }
+
+  async logout(userId: number) {
+    await this.userRepository.update(userId, { refreshToken: null });
   }
 
   async chooseStore(user: User, storeId: number): Promise<void> {
@@ -209,6 +264,28 @@ export class AuthService {
     const phoneRaw = updateUserDto.phone;
     const email = updateUserDto.email;
 
+    const isSensitiveUpdate = password || email || phoneRaw;
+
+    if (isSensitiveUpdate) {
+      if (!updateUserDto.currentPassword) {
+        this.logger.error(`No current password provided {userId: ${id}}`);
+        throw new BadRequestException(
+          'Current password is required to change sensitive data',
+        );
+      }
+
+      const isMatch = await bcrypt.compare(
+        updateUserDto.currentPassword,
+        user.password,
+      );
+      if (!isMatch) {
+        this.logger.error(`Wrong current password {userId: ${id}}`);
+        throw new UnauthorizedException('Wrong current password');
+      }
+    }
+
+    delete updateUserDto.currentPassword;
+
     if (password) {
       const salt = await bcrypt.genSalt();
       const hashedPassword = await bcrypt.hash(password, salt);
@@ -216,10 +293,27 @@ export class AuthService {
     }
 
     if (phoneRaw) {
-      updateUserDto.phone = parsePhoneNumberWithError(
+      const newPhone = parsePhoneNumberWithError(
         phoneRaw,
         'UA',
       ).formatInternational();
+
+      const sameUser = await this.userRepository.findOneBy({
+        phone: newPhone,
+      });
+
+      this.logger.error(`User with phone '${newPhone}' already exists`);
+      if (sameUser) throw new ConflictException('This phone is already in use');
+
+      if (!updateUserDto.code) {
+        this.logger.error(
+          `No verification code provided for number '${newPhone}'`,
+        );
+        throw new BadRequestException('No verification code provided');
+      }
+
+      await this.verifyCode(newPhone, updateUserDto.code);
+      updateUserDto.phone = newPhone;
     }
 
     if (email) {

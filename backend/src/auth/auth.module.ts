@@ -5,13 +5,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { JwtStrategy } from './jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { CartModule } from 'src/cart/cart.module';
 import { StoreModule } from 'src/store/store.module';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
 import { VerificationCode } from './entities/verification-code.entity';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 
 @Module({
   imports: [
@@ -34,7 +35,7 @@ import { VerificationCode } from './entities/verification-code.entity';
     NotificationsModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
   exports: [PassportModule, JwtStrategy, AuthService],
 })
 export class AuthModule {}
