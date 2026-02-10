@@ -23,6 +23,7 @@ import { ConfigService } from '@nestjs/config';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { RequestVerificationCodeDto } from './dto/req-code.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { JwtPayload } from './jwt-payload.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -48,17 +49,22 @@ export class AuthController {
   }
 
   @Post('/signin')
-  signIn(@Body() signInDto: SignInDto): Promise<{ accessToken }> {
+  signIn(
+    @Body() signInDto: SignInDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     this.logger.verbose(`Signing in... {login: ${signInDto.login}}`);
     return this.authService.signIn(signInDto);
   }
 
   @UseGuards(JwtRefreshGuard)
   @Post('refresh')
-  async refreshTokens(@Req() req: { user: User }) {
-    this.logger.verbose(`Refreshing tokens... {userId: ${req.user.id}}`);
-    const userId = req.user.id;
-    const refreshToken = req.user.refreshToken;
+  refreshTokens(
+    @Req() req: { user: JwtPayload & { refreshToken: string } },
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const userId = req.user['sub'];
+    const refreshToken = req.user['refreshToken'];
+
+    this.logger.verbose(`Refreshing tokens... {userId: ${userId}}`);
 
     if (!refreshToken) {
       throw new InternalServerErrorException('Refresh token is missing');
@@ -69,9 +75,9 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
-  async logout(@Req() req: { user: User }) {
+  logout(@Req() req: { user: User }): Promise<void> {
     this.logger.verbose(`Logging out... {login: ${req.user.phone}}`);
-    await this.authService.logout(req.user.id);
+    return this.authService.logout(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
