@@ -68,7 +68,6 @@ export class AuthService {
       const savedUser = await this.userRepository.save(user);
 
       await this.cartService.create(savedUser);
-      await this.verificationCodeRepository.delete({ phone });
     } catch (error) {
       if (error.code === '23505') {
         this.logger.error(`User already exists {phone: ${phone}}`);
@@ -145,7 +144,9 @@ export class AuthService {
     this.logger.verbose(`Verification code accepted for '${phone}'`);
   }
 
-  async signIn(signInDto: SignInDto): Promise<{ accessToken }> {
+  async signIn(
+    signInDto: SignInDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const password = signInDto.password;
     const loginRaw = signInDto.login;
 
@@ -166,12 +167,63 @@ export class AuthService {
         login,
         isAdmin: user.isAdmin,
       };
-      const accessToken: string = await this.jwtService.signAsync(payload);
-      return { accessToken };
+      const tokens = await this.getTokens(payload);
+
+      await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+      return tokens;
     } else {
       this.logger.error(`Wrong login or password {login: ${login}}`);
       throw new UnauthorizedException('Wrong login or password!');
     }
+  }
+
+  private async getTokens(
+    payload: JwtPayload,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get('JWT_ACCESS_SECRET'),
+        expiresIn: this.configService.get('JWT_ACCESS_EXPIRE_TIME') || '15m',
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get('JWT_REFRESH_SECRET'),
+        expiresIn: this.configService.get('JWT_REFRESH_EXPIRE_TIME') || '7d',
+      }),
+    ]);
+
+    return { accessToken, refreshToken };
+  }
+
+  private async updateRefreshToken(userId: number, refreshToken: string) {
+    const hash = await bcrypt.hash(refreshToken, 10);
+    await this.userRepository.update(userId, { refreshToken: hash });
+  }
+
+  async refreshTokens(
+    userId: number,
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const user = await this.userRepository.findOneBy({ id: userId });
+    if (!user || !user.refreshToken)
+      throw new UnauthorizedException('Access denied');
+
+    const tokenMatches = await bcrypt.compare(refreshToken, user.refreshToken);
+    if (!tokenMatches) throw new UnauthorizedException('Access denied');
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      login: user.phone,
+      isAdmin: user.isAdmin,
+    };
+
+    const tokens = await this.getTokens(payload);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+    return tokens;
+  }
+
+  async logout(userId: number) {
+    await this.userRepository.update(userId, { refreshToken: null });
   }
 
   async chooseStore(user: User, storeId: number): Promise<void> {
