@@ -3,7 +3,11 @@ import { IsCreditCard, IsNotEmpty, IsString, Length } from 'class-validator';
 export class CreateWalletDto {
   @IsString()
   @IsNotEmpty()
-  cardHolder: string;
+  cardHolderFirstName: string;
+
+  @IsString()
+  @IsNotEmpty()
+  cardHolderLastName: string;
 
   @IsCreditCard()
   cardNumber: string;

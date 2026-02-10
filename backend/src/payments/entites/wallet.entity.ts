@@ -26,5 +26,8 @@ export class Wallet {
   maskedCard: string;
 
   @Column()
-  cardHolder: string;
+  cardHolderFirstName: string;
+
+  @Column()
+  cardHolderLastName: string;
 }
