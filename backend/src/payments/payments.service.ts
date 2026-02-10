@@ -36,4 +36,12 @@ export class PaymentsService {
   async getWallet(userId: number): Promise<Wallet | null> {
     return await this.walletRepository.findOne({ where: { userId } });
   }
+
+  async removeWallet(userId: number): Promise<void> {
+    const wallet = await this.getWallet(userId);
+
+    if (wallet) {
+      await this.walletRepository.delete(wallet);
+    }
+  }
 }

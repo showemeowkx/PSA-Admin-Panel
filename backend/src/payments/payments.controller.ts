@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Logger,
   Post,
@@ -34,5 +35,12 @@ export class PaymentsController {
   getWallet(@Req() req: { user: User }): Promise<Wallet | null> {
     this.logger.verbose(`Getting a wallet... {userId: ${req.user.id}}`);
     return this.paymentsService.getWallet(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('/wallet')
+  removeWallet(@Req() req: { user: User }): Promise<void> {
+    this.logger.verbose(`Deleting a wallet... {userId: ${req.user.id}}`);
+    return this.paymentsService.removeWallet(req.user.id);
   }
 }
