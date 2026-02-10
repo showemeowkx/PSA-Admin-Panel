@@ -52,6 +52,7 @@ export class StoreService {
 
     const qb = this.storeRepository.createQueryBuilder('store');
     qb.withDeleted();
+    qb.orderBy('store.id', 'ASC');
 
     if (search) {
       qb.andWhere('(store.address ILIKE :search)', { search: `%${search}%` });
