@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CronJob, CronTime } from 'cron';
 import { UkrSkladService } from './ukrsklad.service';
 import { In, Repository } from 'typeorm';
@@ -11,6 +11,9 @@ import { StoreService } from 'src/store/store.service';
 import { CategoriesService } from 'src/categories/categories.service';
 import { ProductsService } from 'src/products/products.service';
 import { SchedulerRegistry } from '@nestjs/schedule';
+import { AutoClearCache } from 'src/common/decorators/auto-clear-cache.decorator';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class SyncService {
@@ -28,6 +31,7 @@ export class SyncService {
     private readonly productRepository: Repository<Product>,
     @InjectRepository(ProductStock)
     private stockRepository: Repository<ProductStock>,
+    @Inject(CACHE_MANAGER) public cacheManager: Cache,
   ) {}
 
   onModuleInit() {
@@ -278,6 +282,7 @@ export class SyncService {
     return { status, errors };
   }
 
+  @AutoClearCache('/products')
   async syncProducts(
     ids?: number[],
   ): Promise<{ status: string; errors: string[] }> {

@@ -22,6 +22,7 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('products')
 export class ProductsController {
@@ -56,6 +57,7 @@ export class ProductsController {
   }
 
   @Get()
+  @CacheTTL(60 * 60 * 1000)
   findAll(@Query() getProductsFiltersDto: GetProductsFiltersDto): Promise<{
     data: Product[];
     metadata: {

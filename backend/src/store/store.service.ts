@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   ConflictException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -12,6 +13,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from './entities/store.entity';
 import { Repository } from 'typeorm';
 import { GetStoresFiltersDto } from './dto/get-stores-filters.dto';
+import { AutoClearCache } from 'src/common/decorators/auto-clear-cache.decorator';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 
 @Injectable()
 export class StoreService {
@@ -20,8 +24,10 @@ export class StoreService {
   constructor(
     @InjectRepository(Store)
     private readonly storeRepository: Repository<Store>,
+    @Inject(CACHE_MANAGER) public cacheManager: Cache,
   ) {}
 
+  @AutoClearCache('/store')
   async create(createStoreDto: CreateStoreDto): Promise<void> {
     const storeEntity = { ...createStoreDto, isActive: true };
 
@@ -69,6 +75,7 @@ export class StoreService {
     return store;
   }
 
+  @AutoClearCache('/store')
   async update(id: number, updateStoreDto: UpdateStoreDto): Promise<Store> {
     const store = await this.findOne(id);
 
@@ -80,6 +87,7 @@ export class StoreService {
     return this.storeRepository.save(store);
   }
 
+  @AutoClearCache('/store')
   async remove(ids: number | number[]): Promise<void> {
     if (Array.isArray(ids) && ids.length === 0) {
       return;
@@ -94,6 +102,7 @@ export class StoreService {
     }
   }
 
+  @AutoClearCache('/store')
   async restore(id: number): Promise<void> {
     const store = await this.storeRepository.findOne({
       where: { id },

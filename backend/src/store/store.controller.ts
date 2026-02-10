@@ -17,6 +17,7 @@ import { UpdateStoreDto } from './dto/update-store.dto';
 import { GetStoresFiltersDto } from './dto/get-stores-filters.dto';
 import { Store } from './entities/store.entity';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
+import { CacheTTL } from '@nestjs/cache-manager';
 
 @Controller('store')
 export class StoreController {
@@ -33,6 +34,7 @@ export class StoreController {
   }
 
   @Get()
+  @CacheTTL(60 * 60 * 1000)
   findAll(
     @Query() getStoresFiltersDto: GetStoresFiltersDto,
   ): Promise<{ data: Store[]; metadata: { total: number } }> {
