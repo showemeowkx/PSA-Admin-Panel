@@ -10,12 +10,11 @@ import {
 } from '@nestjs/common';
 import { User } from 'src/auth/entities/user.entity';
 import { DataSource, Repository } from 'typeorm';
-import { Order } from './entities/order.entity';
+import { Order, OrderStatus } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CartService } from 'src/cart/cart.service';
 import { ConfigService } from '@nestjs/config';
-import { OrderStatus } from './order-status.enum';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
 import { SyncService } from 'src/sync/sync.service';
 import { GetOrderDto } from './dto/get-order.dto';

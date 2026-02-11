@@ -15,8 +15,7 @@ import {
 import { OrdersService } from './orders.service';
 import { User } from 'src/auth/entities/user.entity';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { Order } from './entities/order.entity';
-import { OrderStatus } from './order-status.enum';
+import { Order, OrderStatus } from './entities/order.entity';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
 import { GetOrderDto } from './dto/get-order.dto';
 import { GetOrdersDto } from './dto/get-orders.dto';
