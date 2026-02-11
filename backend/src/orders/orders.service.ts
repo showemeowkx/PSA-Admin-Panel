@@ -22,6 +22,7 @@ import { GetOrdersDto } from './dto/get-orders.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { AutoClearCache } from 'src/common/decorators/auto-clear-cache.decorator';
+import { PaymentsService } from 'src/payments/payments.service';
 
 @Injectable()
 export class OrdersService {
@@ -38,6 +39,7 @@ export class OrdersService {
     private readonly dataSource: DataSource,
     private readonly configService: ConfigService,
     private readonly syncService: SyncService,
+    private readonly paymentsService: PaymentsService,
     @Inject(CACHE_MANAGER) public cacheManager: Cache,
   ) {}
 
@@ -86,13 +88,22 @@ export class OrdersService {
     await qr.startTransaction();
 
     try {
+      const paymentEntity = await this.paymentsService.chargeWallet(
+        user,
+        totalAmount,
+      );
+
+      const savedPayment = await qr.manager.save(paymentEntity);
+
       const newOrder = qr.manager.create(Order, {
         user,
         totalAmount,
-        status: OrderStatus.PENDING,
+        status: OrderStatus.IN_PROCESS,
         items: orderItems,
         storeId: user.selectedStoreId,
         store: user.selectedStore,
+        paymentId: savedPayment.id,
+        payment: savedPayment,
         createdAt: new Date(),
       });
 
@@ -130,6 +141,7 @@ export class OrdersService {
       this.logger.error(`Failed to create an order: ${error.stack}`);
       throw new InternalServerErrorException('Failed to create an order');
     } finally {
+      this.logger.debug(`Order places successfully! {userId: ${user.id}}`);
       await qr.release();
     }
   }
@@ -265,6 +277,7 @@ export class OrdersService {
     return products;
   }
 
+  @AutoClearCache('/products')
   private async releaseReservation(order: Order) {
     this.logger.debug(`Releasing reservation... {orderId: ${order.id}}`);
 

@@ -15,7 +15,6 @@ import { Payment } from 'src/payments/entites/payment.entity';
 
 export enum OrderStatus {
   CANCELLED = 'CANCELLED',
-  PENDING = 'PENDING',
   IN_PROCESS = 'IN PROCESS',
   READY = 'READY',
   COMPLETED = 'COMPLETED',
@@ -45,7 +44,11 @@ export class Order {
   @JoinColumn({ name: 'storeId' })
   store: Store;
 
+  @Column({ nullable: true })
+  paymentId: string;
+
   @OneToOne(() => Payment, (payment) => payment.order, { cascade: true })
+  @JoinColumn({ name: 'paymentId' })
   payment: Payment;
 
   @Column('enum', { enum: OrderStatus })

@@ -9,6 +9,7 @@ import { ProductsModule } from 'src/products/products.module';
 import { ConfigModule } from '@nestjs/config';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
 import { SyncModule } from 'src/sync/sync.module';
+import { PaymentsModule } from 'src/payments/payments.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { SyncModule } from 'src/sync/sync.module';
     ProductsModule,
     ConfigModule,
     SyncModule,
+    PaymentsModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

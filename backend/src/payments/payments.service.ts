@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateWalletDto } from './dto/create-wallet.dto';
 import { User } from 'src/auth/entities/user.entity';
 import { Wallet } from './entites/wallet.entity';
+import { Payment, PaymentStatus } from './entites/payment.entity';
 
 @Injectable()
 export class PaymentsService {
@@ -12,6 +13,8 @@ export class PaymentsService {
   constructor(
     @InjectRepository(Wallet)
     private readonly walletRepository: Repository<Wallet>,
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
   ) {}
 
   async addWallet(user: User, createWalletDto: CreateWalletDto): Promise<void> {
@@ -43,5 +46,36 @@ export class PaymentsService {
     if (wallet) {
       await this.walletRepository.delete(wallet);
     }
+  }
+
+  async chargeWallet(user: User, amount: number): Promise<Payment> {
+    const wallet = await this.getWallet(user.id);
+    if (!wallet) {
+      this.logger.error(`No wallet attached {userId: ${user.id}}`);
+      throw new BadRequestException('No wallet attached');
+    }
+
+    this.logger.debug(
+      `Attempting to charge Wallet ${wallet.id} for ${amount} UAH`,
+    );
+
+    // MOCK
+    const isSuccess = true;
+    const transactionId = `liqpay_${Math.floor(Math.random() * 1000000)}`;
+
+    if (!isSuccess) {
+      this.logger.error(`Payment declined {userId: ${user.id}}`);
+      throw new BadRequestException('Payment declined');
+    }
+
+    const payment = this.paymentRepository.create({
+      provider: 'LIQPAY_TOKEN',
+      transactionId: transactionId,
+      status: PaymentStatus.SUCCESS,
+      amount: amount,
+      wallet: wallet,
+    });
+
+    return payment;
   }
 }
