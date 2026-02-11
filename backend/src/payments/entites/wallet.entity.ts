@@ -3,9 +3,11 @@ import {
   Column,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Payment } from './payment.entity';
 
 @Entity()
 export class Wallet {
@@ -30,4 +32,7 @@ export class Wallet {
 
   @Column()
   cardHolderLastName: string;
+
+  @OneToMany(() => Payment, (payment) => payment.wallet)
+  payments: Payment[];
 }
