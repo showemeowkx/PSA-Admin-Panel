@@ -88,6 +88,25 @@ export class OrdersService {
     await qr.startTransaction();
 
     try {
+      for (const item of orderItems) {
+        const chosenStore = user.selectedStoreId;
+        const stock = await qr.manager.findOne(ProductStock, {
+          where: {
+            productId: item.product.id,
+            storeId: chosenStore,
+          },
+        });
+
+        if (!stock || stock.available < item.quantity) {
+          throw new ConflictException(
+            `Not enough stock for ${item.productName}`,
+          );
+        }
+
+        stock.reserved = Number(stock.reserved) + Number(item.quantity);
+        await qr.manager.save(stock);
+      }
+
       const paymentEntity = await this.paymentsService.chargeWallet(
         user,
         totalAmount,
@@ -108,21 +127,6 @@ export class OrdersService {
       });
 
       const savedOrder = await qr.manager.save(newOrder);
-
-      for (const item of orderItems) {
-        const chosenStore = user.selectedStoreId;
-        const stock = await qr.manager.findOne(ProductStock, {
-          where: {
-            productId: item.product.id,
-            storeId: chosenStore,
-          },
-        });
-
-        if (stock) {
-          stock.reserved = Number(stock.reserved) + Number(item.quantity);
-          await qr.manager.save(stock);
-        }
-      }
 
       const date = savedOrder.createdAt;
       const yyyy = date.getFullYear();
