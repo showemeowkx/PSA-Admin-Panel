@@ -112,12 +112,6 @@ export class CartService {
 
   async clearCart(userId: number): Promise<void> {
     const cart = await this.getCartByUserId(userId);
-
-    if (!cart.items || cart.items.length === 0) {
-      this.logger.error(`Cart is empty {userId: ${userId}}`);
-      throw new BadRequestException('Cart is empty');
-    }
-
     await this.cartItemRepository.delete({ cart: { id: cart.id } });
   }
 

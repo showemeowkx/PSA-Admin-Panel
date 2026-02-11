@@ -10,12 +10,11 @@ import {
 } from '@nestjs/common';
 import { User } from 'src/auth/entities/user.entity';
 import { DataSource, Repository } from 'typeorm';
-import { Order } from './entities/order.entity';
+import { Order, OrderStatus } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CartService } from 'src/cart/cart.service';
 import { ConfigService } from '@nestjs/config';
-import { OrderStatus } from './order-status.enum';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
 import { SyncService } from 'src/sync/sync.service';
 import { GetOrderDto } from './dto/get-order.dto';
@@ -23,6 +22,7 @@ import { GetOrdersDto } from './dto/get-orders.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { AutoClearCache } from 'src/common/decorators/auto-clear-cache.decorator';
+import { PaymentsService } from 'src/payments/payments.service';
 
 @Injectable()
 export class OrdersService {
@@ -39,6 +39,7 @@ export class OrdersService {
     private readonly dataSource: DataSource,
     private readonly configService: ConfigService,
     private readonly syncService: SyncService,
+    private readonly paymentsService: PaymentsService,
     @Inject(CACHE_MANAGER) public cacheManager: Cache,
   ) {}
 
@@ -87,18 +88,6 @@ export class OrdersService {
     await qr.startTransaction();
 
     try {
-      const newOrder = qr.manager.create(Order, {
-        user,
-        totalAmount,
-        status: OrderStatus.PENDING,
-        items: orderItems,
-        storeId: user.selectedStoreId,
-        store: user.selectedStore,
-        createdAt: new Date(),
-      });
-
-      const savedOrder = await qr.manager.save(newOrder);
-
       for (const item of orderItems) {
         const chosenStore = user.selectedStoreId;
         const stock = await qr.manager.findOne(ProductStock, {
@@ -108,11 +97,36 @@ export class OrdersService {
           },
         });
 
-        if (stock) {
-          stock.reserved = Number(stock.reserved) + Number(item.quantity);
-          await qr.manager.save(stock);
+        if (!stock || stock.available < item.quantity) {
+          throw new ConflictException(
+            `Not enough stock for ${item.productName}`,
+          );
         }
+
+        stock.reserved = Number(stock.reserved) + Number(item.quantity);
+        await qr.manager.save(stock);
       }
+
+      const paymentEntity = await this.paymentsService.chargeWallet(
+        user,
+        totalAmount,
+      );
+
+      const savedPayment = await qr.manager.save(paymentEntity);
+
+      const newOrder = qr.manager.create(Order, {
+        user,
+        totalAmount,
+        status: OrderStatus.IN_PROCESS,
+        items: orderItems,
+        storeId: user.selectedStoreId,
+        store: user.selectedStore,
+        paymentId: savedPayment.id,
+        payment: savedPayment,
+        createdAt: new Date(),
+      });
+
+      const savedOrder = await qr.manager.save(newOrder);
 
       const date = savedOrder.createdAt;
       const yyyy = date.getFullYear();
@@ -131,6 +145,7 @@ export class OrdersService {
       this.logger.error(`Failed to create an order: ${error.stack}`);
       throw new InternalServerErrorException('Failed to create an order');
     } finally {
+      this.logger.debug(`Order places successfully! {userId: ${user.id}}`);
       await qr.release();
     }
   }
@@ -266,6 +281,7 @@ export class OrdersService {
     return products;
   }
 
+  @AutoClearCache('/products')
   private async releaseReservation(order: Order) {
     this.logger.debug(`Releasing reservation... {orderId: ${order.id}}`);
 
