@@ -143,7 +143,7 @@ export class ProductsService {
     );
 
     if (!showAll) {
-      qb.andWhere('stock.quantity > 0');
+      qb.andWhere('(stock.quantity - stock.reserved) > 0');
     }
     if (showDeleted) {
       qb.withDeleted();
