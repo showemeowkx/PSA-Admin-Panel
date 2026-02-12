@@ -9,15 +9,17 @@ import {
   useIonToast,
   IonItem,
   IonLabel,
-  IonList,
+  IonIcon,
 } from "@ionic/react";
+import { eyeOutline, eyeOffOutline } from "ionicons/icons";
 import { useAuthStore } from "./auth.store";
 import { useHistory } from "react-router-dom";
 import api from "../../config/api";
 
 const LoginScreen: React.FC = () => {
-  const [phone, setPhone] = useState("");
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -25,9 +27,9 @@ const LoginScreen: React.FC = () => {
   const [presentToast] = useIonToast();
 
   const handleLogin = async () => {
-    if (!phone || !password) {
+    if (!login || !password) {
       presentToast({
-        message: "Enter login and password",
+        message: "Будь ласка, введіть логін та пароль",
         duration: 2000,
         color: "warning",
       });
@@ -36,21 +38,20 @@ const LoginScreen: React.FC = () => {
 
     setIsLoading(true);
     try {
-      const response = await api.post("/auth/signin", {
-        login: phone,
-        password: password,
-      });
-
+      const response = await api.post("/auth/signin", { login, password });
       const { accessToken } = response.data;
 
       api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
-
       const profileResponse = await api.get("/auth");
       const user = profileResponse.data;
 
       setAuth(user, accessToken);
 
-      presentToast({ message: "Welcome!", duration: 1000, color: "success" });
+      presentToast({
+        message: "Вітаємо у ВІКТЕ!",
+        duration: 1500,
+        color: "success",
+      });
 
       if (user.isAdmin) {
         history.replace("/admin");
@@ -59,7 +60,8 @@ const LoginScreen: React.FC = () => {
       }
     } catch (error: any) {
       presentToast({
-        message: error.response?.data?.message || "Check your credentials",
+        message:
+          error.response?.data?.message || "Помилка входу. Перевірте дані.",
         duration: 3000,
         color: "danger",
       });
@@ -70,40 +72,122 @@ const LoginScreen: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent className="ion-padding">
-        <div className="flex flex-col h-full justify-center max-w-md mx-auto">
-          <div className="text-center mb-10">
-            <h1 className="text-4xl font-bold text-orange-500">PSA Panel</h1>
-            <p className="text-gray-500">Enter your credentials</p>
+      <IonContent className="ion-padding custom-login-bg" scrollY={false}>
+        <div className="flex flex-col h-full justify-center items-center px-6">
+          <div className="text-center mb-6 animate-fade-in">
+            <h1 className="text-6xl font-black tracking-tighter text-orange-600 mb-1">
+              ВІКТЕ
+            </h1>
+            <div className="h-1 w-12 bg-orange-600 mx-auto rounded-full mb-2"></div>
+            <p className="text-gray-400 font-bold tracking-widest uppercase text-[9px]">
+              Доступність • Надійність • Якість
+            </p>
           </div>
 
-          <IonList className="bg-transparent">
-            <IonItem mode="md" className="mb-4">
-              <IonLabel position="floating">Phone Number</IonLabel>
-              <IonInput
-                type="tel"
-                placeholder="380..."
-                value={phone}
-                onIonInput={(e) => setPhone(e.detail.value!)}
-              />
-            </IonItem>
+          <div className="w-full max-w-sm bg-white/95 rounded-[45px] p-6 shadow-2xl border border-white">
+            <h2 className="text-xl font-bold text-gray-800 mb-6 text-center">
+              Вхід
+            </h2>
 
-            <IonItem mode="md" className="mb-6">
-              <IonLabel position="floating">Password</IonLabel>
-              <IonInput
-                type="password"
-                value={password}
-                onIonInput={(e) => setPassword(e.detail.value!)}
-              />
-            </IonItem>
-          </IonList>
+            <div className="space-y-4">
+              <div className="bg-gray-100/50 rounded-[30px] px-4 py-1 border border-gray-200/30 shadow-inner">
+                <IonItem
+                  lines="none"
+                  className="bg-transparent"
+                  style={{ "--background": "transparent" }}
+                >
+                  <div className="w-full">
+                    <IonLabel
+                      position="stacked"
+                      className="text-orange-600 font-bold ml-1 mb-1"
+                    >
+                      Email або Телефон
+                    </IonLabel>
+                    <IonInput
+                      value={login}
+                      onIonInput={(e) => setLogin(e.detail.value!)}
+                      className="font-medium text-gray-800"
+                      placeholder="Введіть дані для входу"
+                    />
+                  </div>
+                </IonItem>
+              </div>
 
-          <IonButton expand="block" onClick={handleLogin} className="h-12 mt-4">
-            Sign In
-          </IonButton>
+              <div className="bg-gray-100/50 rounded-[30px] px-4 py-1 border border-gray-200/30 shadow-inner">
+                <IonItem
+                  lines="none"
+                  className="bg-transparent"
+                  style={{ "--background": "transparent" }}
+                >
+                  <div className="w-full">
+                    <IonLabel
+                      position="stacked"
+                      className="text-orange-600 font-bold ml-1 mb-1"
+                    >
+                      Пароль
+                    </IonLabel>
+                    <div className="flex items-center">
+                      <IonInput
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onIonInput={(e) => setPassword(e.detail.value!)}
+                        className="font-medium text-gray-800"
+                        placeholder="Введіть пароль"
+                      />
+                      <IonIcon
+                        icon={showPassword ? eyeOffOutline : eyeOutline}
+                        className="text-gray-400 text-xl ml-2 cursor-pointer"
+                        onClick={() => setShowPassword(!showPassword)}
+                      />
+                    </div>
+                  </div>
+                </IonItem>
+              </div>
 
-          <IonLoading isOpen={isLoading} message="Checking credentials..." />
+              <div className="text-right px-2">
+                <a
+                  href="#"
+                  className="text-[11px] text-orange-600 font-medium hover:underline"
+                >
+                  Забули пароль?
+                </a>
+              </div>
+
+              <IonButton
+                expand="block"
+                onClick={handleLogin}
+                className="h-14 mt-4 font-black text-lg"
+                style={{
+                  "--border-radius": "30px",
+                  "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
+                }}
+                color="primary"
+              >
+                УВІЙТИ
+              </IonButton>
+            </div>
+
+            <div className="mt-8 text-center border-t border-gray-100 pt-5">
+              <p className="text-xs text-gray-500 mb-1">Немає акаунту?</p>
+              <a
+                href="#"
+                className="text-sm text-orange-600 font-bold hover:underline"
+              >
+                Зареєструватися у ВІКТЕ
+              </a>
+            </div>
+          </div>
+
+          <p className="mt-8 text-gray-400 text-[9px] uppercase tracking-widest">
+            © 2026 ВІКТЕ. Всі права захищені.
+          </p>
         </div>
+
+        <IonLoading
+          isOpen={isLoading}
+          message="Завантаження..."
+          spinner="circular"
+        />
       </IonContent>
     </IonPage>
   );
