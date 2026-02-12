@@ -61,16 +61,6 @@ export class OrdersService {
         : cartItem.product.price;
       totalAmount += cartItem.quantity * itemPrice;
 
-      const minOrderAmout =
-        this.configService.get<number>('MIN_ORDER_AMNT') || 500;
-
-      if (totalAmount < minOrderAmout) {
-        this.logger.error(`Minimum order sum is ${minOrderAmout} UAH`);
-        throw new ConflictException(
-          `Minimum order sum is ${minOrderAmout} UAH`,
-        );
-      }
-
       const orderItem = this.orderItemRepository.create({
         product: cartItem.product,
         productImagePath: cartItem.product.imagePath,
@@ -81,6 +71,14 @@ export class OrdersService {
       });
 
       orderItems.push(orderItem);
+    }
+
+    const minOrderAmout =
+      this.configService.get<number>('MIN_ORDER_AMNT') || 500;
+
+    if (totalAmount < minOrderAmout) {
+      this.logger.error(`Minimum order sum is ${minOrderAmout} UAH`);
+      throw new ConflictException(`Minimum order sum is ${minOrderAmout} UAH`);
     }
 
     const qr = this.dataSource.createQueryRunner();
@@ -95,6 +93,7 @@ export class OrdersService {
             productId: item.product.id,
             storeId: chosenStore,
           },
+          lock: { mode: 'pessimistic_write' },
         });
 
         if (!stock || stock.available < item.quantity) {
