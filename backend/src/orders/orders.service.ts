@@ -23,6 +23,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { AutoClearCache } from 'src/common/decorators/auto-clear-cache.decorator';
 import { PaymentsService } from 'src/payments/payments.service';
+import { CartItem } from 'src/cart/entities/cart-item.entity';
 
 @Injectable()
 export class OrdersService {
@@ -135,8 +136,7 @@ export class OrdersService {
       savedOrder.orderNumber = `${yyyy}${mm}${dd}-${savedOrder.id}`;
 
       await qr.manager.save(savedOrder);
-
-      await this.cartService.clearCart(user.id);
+      await qr.manager.delete(CartItem, { cart: { id: cart.id } });
 
       await qr.commitTransaction();
     } catch (error) {
