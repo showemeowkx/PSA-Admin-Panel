@@ -80,7 +80,7 @@ const LoginScreen: React.FC = () => {
             </h1>
             <div className="h-1 w-12 bg-orange-600 mx-auto rounded-full mb-2"></div>
             <p className="text-gray-400 font-bold tracking-widest uppercase text-[9px]">
-              Доступність • Надійність • Якість
+              Ласкаво просимо! Будь ласка, увійдіть до свого кабінету
             </p>
           </div>
 
@@ -169,12 +169,12 @@ const LoginScreen: React.FC = () => {
 
             <div className="mt-8 text-center border-t border-gray-100 pt-5">
               <p className="text-xs text-gray-500 mb-1">Немає акаунту?</p>
-              <a
-                href="#"
-                className="text-sm text-orange-600 font-bold hover:underline"
+              <span
+                onClick={() => history.push("/register")}
+                className="text-sm text-orange-600 font-bold hover:underline cursor-pointer"
               >
                 Зареєструватися у ВІКТЕ
-              </a>
+              </span>
             </div>
           </div>
 
