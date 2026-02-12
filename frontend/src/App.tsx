@@ -19,6 +19,7 @@ import "./index.css";
 
 import { useAuthStore } from "./features/auth/auth.store";
 import LoginScreen from "./features/auth/LoginScreen";
+import RegisterScreen from "./features/auth/RegisterScreen";
 
 const AdminLayout: React.FC = () => (
   <div className="p-10">
@@ -42,6 +43,10 @@ const App: React.FC = () => {
         <IonRouterOutlet>
           <Route exact path="/login">
             {isAuthenticated ? <Redirect to="/" /> : <LoginScreen />}
+          </Route>
+
+          <Route exact path="/register">
+            {isAuthenticated ? <Redirect to="/" /> : <RegisterScreen />}
           </Route>
 
           <Route path="/admin">
