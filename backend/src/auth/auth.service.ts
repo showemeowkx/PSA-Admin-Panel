@@ -27,6 +27,7 @@ import {
   parsePhoneNumberWithError,
   isValidPhoneNumber,
 } from 'libphonenumber-js';
+import { RefreshPasswordDto } from './dto/refresh-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -79,7 +80,10 @@ export class AuthService {
     }
   }
 
-  async requestRegistrationCode(phoneRaw: string): Promise<void> {
+  async requestRegistrationCode(
+    phoneRaw: string,
+    refresh: 0 | 1,
+  ): Promise<void> {
     const phone = parsePhoneNumberWithError(
       phoneRaw,
       'UA',
@@ -93,7 +97,7 @@ export class AuthService {
       where: { phone },
     });
 
-    if (existingUser) {
+    if (existingUser && !refresh) {
       this.logger.error(`Phone number is already registered {phone: ${phone}}`);
       throw new ConflictException('This phone number is already registered');
     }
@@ -331,6 +335,36 @@ export class AuthService {
     } catch (error) {
       this.logger.error(`Failed to update a user: ${error.stack}`);
       throw new InternalServerErrorException('Failed to update a user');
+    }
+  }
+
+  async restorePassword(refreshPasswordDto: RefreshPasswordDto): Promise<void> {
+    const { phoneRaw, code, newPassword } = refreshPasswordDto;
+
+    const phone = parsePhoneNumberWithError(
+      phoneRaw,
+      'UA',
+    ).formatInternational();
+
+    const user = await this.userRepository.findOneBy({ phone });
+
+    if (!user) {
+      this.logger.error(`User with phone '${phone}' not found`);
+      throw new NotFoundException('This user is not registered');
+    }
+
+    await this.verifyCode(phone, code);
+
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+
+    try {
+      await this.userRepository.save(user);
+    } catch (error) {
+      this.logger.error(`Failed to restore password: ${error.stack}`);
+      throw new InternalServerErrorException('Failed to restore password');
     }
   }
 
