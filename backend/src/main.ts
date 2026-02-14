@@ -18,6 +18,12 @@ async function bootstrap() {
     }),
   );
 
+  app.enableCors({
+    origin: [process.env.FRONTEND_URL || 'http://localhost:5173'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
+
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   const port = process.env.PORT ?? 3000;
