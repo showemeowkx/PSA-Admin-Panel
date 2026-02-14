@@ -20,6 +20,7 @@ import "./index.css";
 import { useAuthStore } from "./features/auth/auth.store";
 import LoginScreen from "./features/auth/LoginScreen";
 import RegisterScreen from "./features/auth/RegisterScreen";
+import ForgotPasswordScreen from "./features/auth/RestorePasswordScreen";
 
 const AdminLayout: React.FC = () => (
   <div className="p-10">
@@ -47,6 +48,10 @@ const App: React.FC = () => {
 
           <Route exact path="/register">
             {isAuthenticated ? <Redirect to="/" /> : <RegisterScreen />}
+          </Route>
+
+          <Route exact path="/forgot-password">
+            {isAuthenticated ? <Redirect to="/" /> : <ForgotPasswordScreen />}
           </Route>
 
           <Route path="/admin">

@@ -145,12 +145,12 @@ const LoginScreen: React.FC = () => {
               </div>
 
               <div className="text-right px-2">
-                <a
-                  href="#"
-                  className="text-[11px] text-orange-600 font-medium hover:underline"
+                <span
+                  onClick={() => history.push("/forgot-password")}
+                  className="text-[11px] text-orange-600 font-medium hover:underline cursor-pointer"
                 >
                   Забули пароль?
-                </a>
+                </span>
               </div>
 
               <IonButton
