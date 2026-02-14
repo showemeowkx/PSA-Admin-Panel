@@ -17,7 +17,7 @@ import {
   eyeOutline,
   eyeOffOutline,
   lockClosedOutline,
-  checkmarkDoneCircleOutline,
+  checkmarkCircleOutline,
 } from "ionicons/icons";
 import { useHistory } from "react-router-dom";
 import api from "../../config/api";
@@ -238,7 +238,7 @@ const ForgotPasswordScreen: React.FC = () => {
                             if (val !== numeric) e.target.value = numeric;
                           }}
                           className="font-medium text-gray-800"
-                          placeholder="------"
+                          placeholder="6-значний код"
                           maxlength={6}
                         />
                         <IonIcon
@@ -308,7 +308,7 @@ const ForgotPasswordScreen: React.FC = () => {
                           confirmPassword &&
                           password === confirmPassword && (
                             <IonIcon
-                              icon={checkmarkDoneCircleOutline}
+                              icon={checkmarkCircleOutline}
                               className="text-green-500 text-xl ml-2"
                             />
                           )}
