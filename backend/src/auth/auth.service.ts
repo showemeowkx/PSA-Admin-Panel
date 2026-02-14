@@ -90,7 +90,7 @@ export class AuthService {
     ).formatInternational();
 
     this.logger.verbose(
-      `Requesting a verification code for number '${phone}'...`,
+      `Requesting a verification code for number '${phone}'... {refresh: ${Boolean(refresh)}}`,
     );
 
     const existingUser = await this.userRepository.findOne({
@@ -100,6 +100,11 @@ export class AuthService {
     if (existingUser && !refresh) {
       this.logger.error(`Phone number is already registered {phone: ${phone}}`);
       throw new ConflictException('This phone number is already registered');
+    }
+
+    if (!existingUser && refresh) {
+      this.logger.error(`User is not registered {phone: ${phone}}`);
+      throw new ConflictException('This phone number is not registered');
     }
 
     const rawCode = crypto.randomInt(100000, 999999).toString();
