@@ -12,6 +12,7 @@ import {
   Logger,
   InternalServerErrorException,
   Get,
+  Query,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -25,6 +26,7 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { RequestVerificationCodeDto } from './dto/req-code.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { JwtPayload } from './jwt-payload.interface';
+import { RefreshPasswordDto } from './dto/refresh-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -44,9 +46,13 @@ export class AuthController {
   }
 
   @Post('/send-code')
-  sendCode(@Body() requestVerificationCodeDto: RequestVerificationCodeDto) {
+  sendCode(
+    @Body() requestVerificationCodeDto: RequestVerificationCodeDto,
+    @Query('refresh') refresh: 0 | 1,
+  ): Promise<void> {
     return this.authService.requestRegistrationCode(
       requestVerificationCodeDto.phone,
+      refresh,
     );
   }
 
@@ -144,5 +150,13 @@ export class AuthController {
     if (pfpPath && pfpPath !== this.configService.get('DEFAULT_USER_PFP')) {
       await this.cloudinaryService.deleteFile(pfpPath);
     }
+  }
+
+  @Post('/restore-password')
+  restorePassword(@Body() refreshPasswordDto: RefreshPasswordDto) {
+    this.logger.verbose(
+      `Restoring password... {phone: ${refreshPasswordDto.phoneRaw}}`,
+    );
+    return this.authService.restorePassword(refreshPasswordDto);
   }
 }

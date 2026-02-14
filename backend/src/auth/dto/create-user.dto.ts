@@ -22,7 +22,7 @@ export class CreateUserDto {
   phone: string;
 
   @IsString()
-  @Length(6)
+  @Length(6, 6)
   @IsNotEmpty()
   code: string;
 }
