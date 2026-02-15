@@ -7,7 +7,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   isAdmin?: boolean;
-  chosenStoreId?: number;
+  selectedStoreId?: number;
 }
 
 interface AuthState {
@@ -20,7 +20,7 @@ interface AuthState {
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
 
-  setChosenStore: (storeId: number) => void;
+  setSelectedStore: (storeId: number) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -41,10 +41,10 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      setChosenStore: (storeId) => {
+      setSelectedStore: (storeId) => {
         const { user } = get();
         if (user) {
-          set({ user: { ...user, chosenStoreId: storeId } });
+          set({ user: { ...user, selectedStoreId: storeId } });
         }
       },
     }),

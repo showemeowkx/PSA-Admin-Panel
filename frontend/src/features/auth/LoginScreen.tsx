@@ -39,29 +39,30 @@ const LoginScreen: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await api.post("/auth/signin", { login, password });
-      const { accessToken } = response.data;
+      const token = response.data.accessToken;
 
-      api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
-      const profileResponse = await api.get("/auth");
-      const user = profileResponse.data;
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const user = await api.get("/auth").then((res) => res.data);
 
-      setAuth(user, accessToken);
+      setAuth(token, user);
 
       presentToast({
-        message: "Вітаємо у ВІКТЕ!",
+        message: "Вхід успішний!",
         duration: 1500,
         color: "success",
       });
 
-      if (user.isAdmin) {
-        history.replace("/admin");
+      if (user.selectedStoreId) {
+        history.replace("/app/shop");
       } else {
-        history.replace("/app");
+        history.replace("/select-store");
       }
     } catch (error: any) {
+      console.error("Login error:", error);
+      const message =
+        error.response?.data?.message || "Помилка входу. Перевірте дані";
       presentToast({
-        message:
-          error.response?.data?.message || "Помилка входу. Перевірте дані.",
+        message: Array.isArray(message) ? message[0] : message,
         duration: 3000,
         color: "danger",
       });

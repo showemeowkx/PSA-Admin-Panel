@@ -7,7 +7,6 @@ import "@ionic/react/css/core.css";
 import "@ionic/react/css/normalize.css";
 import "@ionic/react/css/structure.css";
 import "@ionic/react/css/typography.css";
-
 import "@ionic/react/css/padding.css";
 import "@ionic/react/css/float-elements.css";
 import "@ionic/react/css/text-alignment.css";
@@ -22,6 +21,7 @@ import LoginScreen from "./features/auth/LoginScreen";
 import RegisterScreen from "./features/auth/RegisterScreen";
 import ForgotPasswordScreen from "./features/auth/RestorePasswordScreen";
 import ShopLayout from "./features/shop/ShopLayout";
+import SelectStoreScreen from "./features/auth/SelectStoreScreen";
 
 const AdminLayout: React.FC = () => (
   <div className="p-10">
@@ -34,16 +34,34 @@ setupIonicReact();
 const App: React.FC = () => {
   const { isAuthenticated, user } = useAuthStore();
 
+  const getHomeRoute = () => {
+    if (user?.isAdmin) return "/admin";
+    if (user?.selectedStoreId) return "/app";
+    return "/select-store";
+  };
+
   return (
     <IonApp>
       <IonReactRouter>
         <IonRouterOutlet>
           <Route exact path="/login">
-            {isAuthenticated ? <Redirect to="/" /> : <LoginScreen />}
+            {isAuthenticated ? (
+              <Redirect to={getHomeRoute()} />
+            ) : (
+              <LoginScreen />
+            )}
           </Route>
 
           <Route exact path="/register">
-            {isAuthenticated ? <Redirect to="/" /> : <RegisterScreen />}
+            {isAuthenticated ? (
+              <Redirect to={getHomeRoute()} />
+            ) : (
+              <RegisterScreen />
+            )}
+          </Route>
+
+          <Route exact path="/select-store">
+            {isAuthenticated ? <SelectStoreScreen /> : <Redirect to="/login" />}
           </Route>
 
           <Route exact path="/forgot-password">
@@ -62,8 +80,10 @@ const App: React.FC = () => {
             {isAuthenticated ? (
               user?.isAdmin ? (
                 <Redirect to="/admin" />
-              ) : (
+              ) : user?.selectedStoreId ? (
                 <ShopLayout />
+              ) : (
+                <Redirect to="/select-store" />
               )
             ) : (
               <Redirect to="/login" />
@@ -72,11 +92,7 @@ const App: React.FC = () => {
 
           <Route exact path="/">
             {isAuthenticated ? (
-              user?.isAdmin ? (
-                <Redirect to="/admin" />
-              ) : (
-                <Redirect to="/app" />
-              )
+              <Redirect to={getHomeRoute()} />
             ) : (
               <Redirect to="/login" />
             )}
