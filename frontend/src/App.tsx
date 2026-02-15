@@ -21,15 +21,11 @@ import { useAuthStore } from "./features/auth/auth.store";
 import LoginScreen from "./features/auth/LoginScreen";
 import RegisterScreen from "./features/auth/RegisterScreen";
 import ForgotPasswordScreen from "./features/auth/RestorePasswordScreen";
+import ShopLayout from "./features/shop/ShopLayout";
 
 const AdminLayout: React.FC = () => (
   <div className="p-10">
     <h1>Admin Panel</h1>
-  </div>
-);
-const MobileLayout: React.FC = () => (
-  <div className="p-10">
-    <h1>Client App</h1>
   </div>
 );
 
@@ -67,7 +63,7 @@ const App: React.FC = () => {
               user?.isAdmin ? (
                 <Redirect to="/admin" />
               ) : (
-                <MobileLayout />
+                <ShopLayout />
               )
             ) : (
               <Redirect to="/login" />
