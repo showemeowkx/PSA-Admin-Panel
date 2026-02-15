@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useState, useRef } from "react";
 import {
   IonPage,
   IonContent,
@@ -21,10 +21,19 @@ import {
 import { useHistory } from "react-router-dom";
 import CategoryCard from "./components/CategoryCard";
 import ProductCard from "./components/ProductCard";
+import { useAuthStore } from "../auth/auth.store";
+import StoreSelectorModal from "./components/StoreSelectorModal";
+import { MOCK_STORES } from "./shop.data";
 
 const ShopScreen: React.FC = () => {
   const history = useHistory();
+  const { user } = useAuthStore();
+  const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+
   const categoriesRef = useRef<HTMLDivElement>(null);
+
+  const currentStore =
+    MOCK_STORES.find((s) => s.id === user?.chosenStoreId) || MOCK_STORES[0];
 
   const scrollCategories = (direction: "left" | "right") => {
     if (categoriesRef.current) {
@@ -151,6 +160,11 @@ const ShopScreen: React.FC = () => {
 
   return (
     <IonPage>
+      <StoreSelectorModal
+        isOpen={isStoreModalOpen}
+        onClose={() => setIsStoreModalOpen(false)}
+      />
+
       <IonHeader className="ion-no-border shadow-sm z-40 bg-white md:hidden">
         <IonToolbar
           className="bg-white"
@@ -158,8 +172,11 @@ const ShopScreen: React.FC = () => {
         >
           <div className="flex flex-col pb-3 pt-2 px-4 gap-3">
             <div className="flex items-center justify-between">
-              <button className="flex items-center gap-2 active:opacity-70">
-                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
+              <button
+                onClick={() => setIsStoreModalOpen(true)}
+                className="flex items-center gap-2 active:opacity-70 group"
+              >
+                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 group-active:scale-90 transition-transform">
                   <IonIcon icon={storefrontOutline} />
                 </div>
                 <div className="text-left">
@@ -167,8 +184,8 @@ const ShopScreen: React.FC = () => {
                     Магазин
                   </p>
                   <div className="flex items-center gap-1">
-                    <span className="text-sm font-black text-gray-800 leading-none">
-                      Хрещатик, 1
+                    <span className="text-sm font-black text-gray-800 leading-none truncate max-w-[180px]">
+                      {currentStore.address.split(",")[0]}
                     </span>
                     <IonIcon
                       icon={chevronDownOutline}
