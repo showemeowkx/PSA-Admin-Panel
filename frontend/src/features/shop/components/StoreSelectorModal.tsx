@@ -18,7 +18,7 @@ const StoreSelectorModal: React.FC<StoreSelectorModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { user, setChosenStore } = useAuthStore();
+  const { user, setSelectedStore } = useAuthStore();
   const [searchText, setSearchText] = useState("");
 
   const filteredStores = useMemo(() => {
@@ -28,7 +28,7 @@ const StoreSelectorModal: React.FC<StoreSelectorModalProps> = ({
   }, [searchText]);
 
   const handleSelect = (id: number) => {
-    setChosenStore(id);
+    setSelectedStore(id);
     onClose();
   };
 
@@ -67,7 +67,7 @@ const StoreSelectorModal: React.FC<StoreSelectorModalProps> = ({
 
           <div className="flex flex-col gap-3 pb-10 overflow-y-auto">
             {filteredStores.map((store) => {
-              const isSelected = user?.chosenStoreId === store.id;
+              const isSelected = user?.selectedStoreId === store.id;
 
               return (
                 <div

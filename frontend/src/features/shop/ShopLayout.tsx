@@ -25,13 +25,13 @@ import { MOCK_STORES } from "./shop.data";
 
 const ShopLayout: React.FC = () => {
   const location = useLocation();
-  const { user, setChosenStore } = useAuthStore();
+  const { user, setSelectedStore } = useAuthStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const currentStore =
-    MOCK_STORES.find((s) => s.id === user?.chosenStoreId) || MOCK_STORES[0];
+    MOCK_STORES.find((s) => s.id === user?.selectedStoreId) || MOCK_STORES[0];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -47,7 +47,7 @@ const ShopLayout: React.FC = () => {
   }, []);
 
   const handleStoreSelect = (id: number) => {
-    setChosenStore(id);
+    setSelectedStore(id);
     setIsDropdownOpen(false);
   };
 
@@ -159,7 +159,7 @@ const ShopLayout: React.FC = () => {
                 </div>
                 <div className="max-h-[400px] overflow-y-auto pr-1">
                   {MOCK_STORES.map((store) => {
-                    const isSelected = user?.chosenStoreId === store.id;
+                    const isSelected = user?.selectedStoreId === store.id;
                     return (
                       <div
                         key={store.id}
