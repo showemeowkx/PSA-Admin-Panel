@@ -12,7 +12,7 @@ export class GetOrdersDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(0)
   limit?: number = 10;
 
   @IsOptional()

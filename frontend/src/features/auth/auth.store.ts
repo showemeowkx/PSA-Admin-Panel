@@ -1,45 +1,51 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-interface User {
+export interface User {
   id: number;
   phone: string;
-  firstName: string;
-  isAdmin: boolean;
-  selectedStoreId?: number | null;
+  firstName?: string;
+  lastName?: string;
+  isAdmin?: boolean;
+  selectedStoreId?: number;
 }
 
 interface AuthState {
-  user: User | null;
   token: string | null;
+  user: User | null;
   isAuthenticated: boolean;
 
-  setAuth: (user: User, token: string) => void;
-  setStore: (storeId: number) => void;
+  setAuth: (token: string, user: User) => void;
+
   logout: () => void;
+  updateUser: (updates: Partial<User>) => void;
+
+  setSelectedStore: (storeId: number) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
-      user: null,
+    (set, get) => ({
       token: null,
+      user: null,
       isAuthenticated: false,
 
-      setAuth: (user, token) =>
-        set({
-          user,
-          token,
-          isAuthenticated: true,
-        }),
+      setAuth: (token, user) => set({ token, user, isAuthenticated: true }),
 
-      setStore: (storeId) =>
-        set((state) => ({
-          user: state.user ? { ...state.user, selectedStoreId: storeId } : null,
-        })),
+      logout: () => set({ token: null, user: null, isAuthenticated: false }),
 
-      logout: () => {
-        set({ user: null, token: null, isAuthenticated: false });
+      updateUser: (updates) => {
+        const { user } = get();
+        if (user) {
+          set({ user: { ...user, ...updates } });
+        }
+      },
+
+      setSelectedStore: (storeId) => {
+        const { user } = get();
+        if (user) {
+          set({ user: { ...user, selectedStoreId: storeId } });
+        }
       },
     }),
     {
