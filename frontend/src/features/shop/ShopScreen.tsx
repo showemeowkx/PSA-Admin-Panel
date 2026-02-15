@@ -33,7 +33,7 @@ const ShopScreen: React.FC = () => {
   const categoriesRef = useRef<HTMLDivElement>(null);
 
   const currentStore =
-    MOCK_STORES.find((s) => s.id === user?.chosenStoreId) || MOCK_STORES[0];
+    MOCK_STORES.find((s) => s.id === user?.selectedStoreId) || MOCK_STORES[0];
 
   const scrollCategories = (direction: "left" | "right") => {
     if (categoriesRef.current) {
@@ -273,13 +273,33 @@ const ShopScreen: React.FC = () => {
               </div>
             </div>
 
-            <div
-              ref={categoriesRef}
-              className="flex overflow-x-auto pb-4 hide-scrollbar pr-4 gap-3 md:gap-5 scroll-smooth py-2"
-            >
-              {categories.map((cat) => (
-                <CategoryCard key={cat.id} name={cat.name} />
-              ))}
+            {/* Обгортка для позиціонування мобільних стрілок */}
+            <div className="relative">
+              {/* --- MOBILE LEFT ARROW (Hint) --- */}
+              <div className="absolute left-0 top-0 bottom-4 z-10 w-8 bg-gradient-to-r from-gray-50 to-transparent md:hidden flex items-center justify-start pointer-events-none opacity-50">
+                <IonIcon
+                  icon={chevronBackOutline}
+                  className="text-gray-400 text-lg"
+                />
+              </div>
+
+              {/* --- LIST --- */}
+              <div
+                ref={categoriesRef}
+                className="flex overflow-x-auto pb-4 hide-scrollbar pr-4 gap-3 md:gap-5 scroll-smooth py-2 relative z-0"
+              >
+                {categories.map((cat) => (
+                  <CategoryCard key={cat.id} name={cat.name} />
+                ))}
+              </div>
+
+              {/* --- MOBILE RIGHT ARROW (Animated Hint) --- */}
+              <div className="absolute right-0 top-0 bottom-4 z-10 w-12 bg-gradient-to-l from-gray-50 via-gray-50/80 to-transparent md:hidden flex items-center justify-end pr-1 pointer-events-none">
+                <IonIcon
+                  icon={chevronForwardOutline}
+                  className="text-orange-400 text-2xl animate-pulse drop-shadow-sm"
+                />
+              </div>
             </div>
           </div>
 
