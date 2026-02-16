@@ -9,6 +9,8 @@ import {
   IonIcon,
   IonRefresher,
   IonRefresherContent,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
 } from "@ionic/react";
 import {
   searchOutline,
@@ -57,6 +59,9 @@ const ShopScreen: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
 
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
   const categoriesRef = useRef<HTMLDivElement>(null);
 
   const fetchStores = async () => {
@@ -81,14 +86,32 @@ const ShopScreen: React.FC = () => {
     }
   };
 
-  const fetchProducts = async (storeId: number) => {
+  const fetchProducts = async (
+    storeId: number,
+    pageNum: number,
+    isLoadMore: boolean = false,
+  ) => {
     try {
       const { data } = await api.get(
-        `/products?limit=24&showAll=0&showDeleted=0&showInactive=0&storeId=${storeId}`,
+        `/products?limit=24&page=${pageNum}&showAll=0&showDeleted=0&showInactive=0&storeId=${storeId}`,
       );
-      setProducts(data.data || []);
+
+      const newProducts = data.data || [];
+
+      if (isLoadMore) {
+        setProducts((prev) => [...prev, ...newProducts]);
+      } else {
+        setProducts(newProducts);
+      }
+
+      if (newProducts.length < 24) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
     } catch (e) {
       console.error("Failed to fetch products", e);
+      setHasMore(false);
     }
   };
 
@@ -101,17 +124,35 @@ const ShopScreen: React.FC = () => {
 
   useEffect(() => {
     if (user?.selectedStoreId && token) {
-      fetchProducts(user.selectedStoreId);
+      fetchProducts(user.selectedStoreId, 1, false);
     }
   }, [user?.selectedStoreId, token]);
 
   const handleRefresh = async (e: CustomEvent) => {
+    setPage(1);
+    setHasMore(true);
+
     const promises = [fetchStores(), fetchCategories()];
+
     if (user?.selectedStoreId) {
-      promises.push(fetchProducts(user.selectedStoreId));
+      promises.push(fetchProducts(user.selectedStoreId, 1, false));
     }
+
     await Promise.all(promises);
     e.detail.complete();
+  };
+
+  const handleInfinite = async (ev: CustomEvent<void>) => {
+    if (!user?.selectedStoreId) {
+      (ev.target as HTMLIonInfiniteScrollElement).complete();
+      return;
+    }
+
+    const nextPage = page + 1;
+    await fetchProducts(user.selectedStoreId, nextPage, true);
+    setPage(nextPage);
+
+    (ev.target as HTMLIonInfiniteScrollElement).complete();
   };
 
   const currentStore = stores.find((s) => s.id === user?.selectedStoreId) || {
@@ -293,6 +334,16 @@ const ShopScreen: React.FC = () => {
               )}
             </div>
           </div>
+          <IonInfiniteScroll
+            onIonInfinite={handleInfinite}
+            threshold="100px"
+            disabled={!hasMore}
+          >
+            <IonInfiniteScrollContent
+              loadingSpinner="bubbles"
+              loadingText="Завантаження товарів..."
+            />
+          </IonInfiniteScroll>
         </div>
       </IonContent>
     </IonPage>
