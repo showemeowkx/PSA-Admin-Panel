@@ -21,7 +21,8 @@ import {
 } from "ionicons/icons";
 import ShopScreen from "./ShopScreen";
 import { useAuthStore } from "../auth/auth.store";
-import { MOCK_STORES } from "./shop.data";
+import type { Store } from "./components/StoreSelectorModal";
+import api from "../../config/api";
 
 const ShopLayout: React.FC = () => {
   const location = useLocation();
@@ -30,8 +31,24 @@ const ShopLayout: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const currentStore =
-    MOCK_STORES.find((s) => s.id === user?.selectedStoreId) || MOCK_STORES[0];
+  const [stores, setStores] = useState<Store[]>([]);
+
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        const { data } = await api.get(
+          "/store?limit=0&showInactive=0&showDeleted=0",
+        );
+        setStores(Array.isArray(data) ? data : data.data || []);
+      } catch (e) {
+        console.error("Layout: Failed to fetch stores", e);
+      }
+    };
+    fetchStores();
+  }, []);
+
+  const currentStore = stores.find((s) => s.id === user?.selectedStoreId) ||
+    stores[0] || { address: "Невідомий магазин", id: 0 };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -158,7 +175,7 @@ const ShopLayout: React.FC = () => {
                   Оберіть магазин
                 </div>
                 <div className="max-h-[400px] overflow-y-auto pr-1">
-                  {MOCK_STORES.map((store) => {
+                  {stores.map((store) => {
                     const isSelected = user?.selectedStoreId === store.id;
                     return (
                       <div

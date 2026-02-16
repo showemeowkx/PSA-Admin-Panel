@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   IonPage,
   IonContent,
@@ -22,18 +22,40 @@ import { useHistory } from "react-router-dom";
 import CategoryCard from "./components/CategoryCard";
 import ProductCard from "./components/ProductCard";
 import { useAuthStore } from "../auth/auth.store";
-import StoreSelectorModal from "./components/StoreSelectorModal";
-import { MOCK_STORES } from "./shop.data";
+import StoreSelectorModal, {
+  type Store,
+} from "./components/StoreSelectorModal";
+import api from "../../config/api";
 
 const ShopScreen: React.FC = () => {
   const history = useHistory();
   const { user } = useAuthStore();
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+  const [stores, setStores] = useState<Store[]>([]);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
 
-  const currentStore =
-    MOCK_STORES.find((s) => s.id === user?.selectedStoreId) || MOCK_STORES[0];
+  const fetchStores = async () => {
+    try {
+      const { data } = await api.get(
+        "/store?limit=0&showInactive=0&showDeleted=0",
+      );
+      const list = Array.isArray(data) ? data : data.data || [];
+      setStores(list);
+    } catch (e) {
+      console.error("Failed to fetch stores", e);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      await fetchStores();
+    })();
+  }, []);
+
+  const currentStore = stores.find((s) => s.id === user?.selectedStoreId) || {
+    address: "Неактивний магазин",
+  };
 
   const scrollCategories = (direction: "left" | "right") => {
     if (categoriesRef.current) {
@@ -163,6 +185,7 @@ const ShopScreen: React.FC = () => {
       <StoreSelectorModal
         isOpen={isStoreModalOpen}
         onClose={() => setIsStoreModalOpen(false)}
+        stores={stores}
       />
 
       <IonHeader className="ion-no-border shadow-sm z-40 bg-white md:hidden">

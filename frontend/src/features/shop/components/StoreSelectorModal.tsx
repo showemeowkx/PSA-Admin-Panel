@@ -7,25 +7,32 @@ import {
   searchOutline,
 } from "ionicons/icons";
 import { useAuthStore } from "../../auth/auth.store";
-import { MOCK_STORES } from "../shop.data";
+
+export interface Store {
+  id: number;
+  address: string;
+  isActive: boolean;
+}
 
 interface StoreSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  stores: Store[];
 }
 
 const StoreSelectorModal: React.FC<StoreSelectorModalProps> = ({
   isOpen,
   onClose,
+  stores,
 }) => {
   const { user, setSelectedStore } = useAuthStore();
   const [searchText, setSearchText] = useState("");
 
   const filteredStores = useMemo(() => {
-    return MOCK_STORES.filter((store) =>
+    return stores.filter((store) =>
       store.address.toLowerCase().includes(searchText.toLowerCase()),
     );
-  }, [searchText]);
+  }, [stores, searchText]);
 
   const handleSelect = (id: number) => {
     setSelectedStore(id);
