@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useRef, useEffect } from "react";
 import {
   IonPage,
@@ -49,7 +50,7 @@ interface Category {
 
 const ShopScreen: React.FC = () => {
   const history = useHistory();
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
 
   const [stores, setStores] = useState<Store[]>([]);
@@ -63,8 +64,7 @@ const ShopScreen: React.FC = () => {
       const { data } = await api.get(
         "/store?limit=0&showInactive=0&showDeleted=0",
       );
-      const list = Array.isArray(data) ? data : data.data || [];
-      setStores(list);
+      setStores(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
       console.error("Failed to fetch stores", e);
     }
@@ -75,8 +75,7 @@ const ShopScreen: React.FC = () => {
       const { data } = await api.get(
         "/categories?limit=0&showInactive=0&showDeleted=0",
       );
-      const list = data.data || [];
-      setCategories(list);
+      setCategories(data.data || []);
     } catch (e) {
       console.error("Failed to fetch categories", e);
     }
@@ -94,19 +93,17 @@ const ShopScreen: React.FC = () => {
   };
 
   useEffect(() => {
-    (async () => {
-      await fetchStores();
-      await fetchCategories();
-    })();
-  }, []);
+    if (token) {
+      fetchStores();
+      fetchCategories();
+    }
+  }, [token]);
 
   useEffect(() => {
-    (async () => {
-      if (user?.selectedStoreId) {
-        await fetchProducts(user.selectedStoreId);
-      }
-    })();
-  }, [user?.selectedStoreId]);
+    if (user?.selectedStoreId && token) {
+      fetchProducts(user.selectedStoreId);
+    }
+  }, [user?.selectedStoreId, token]);
 
   const handleRefresh = async (e: CustomEvent) => {
     const promises = [fetchStores(), fetchCategories()];

@@ -112,7 +112,9 @@ const StoreSelectorModal: React.FC<StoreSelectorModalProps> = ({
                       <span
                         className={`text-[10px] font-medium ${store.isActive ? "text-green-500" : "text-red-400"}`}
                       >
-                        {store.isActive ? "Відчинено" : "Тимчасово зачинено"}
+                        {store.isActive
+                          ? "Магазин доступний"
+                          : "Магазин недоступний"}
                       </span>
                     </div>
                   </div>

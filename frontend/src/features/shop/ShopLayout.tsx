@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useRef } from "react";
 import {
   IonTabs,
@@ -10,7 +11,7 @@ import {
   IonContent,
   useIonToast,
 } from "@ionic/react";
-import { Route, Redirect, useLocation } from "react-router-dom";
+import { Route, Redirect, useLocation, useHistory } from "react-router-dom";
 import {
   homeOutline,
   basketOutline,
@@ -22,17 +23,17 @@ import {
 } from "ionicons/icons";
 import ShopScreen from "./ShopScreen";
 import { useAuthStore } from "../auth/auth.store";
-import type { Store } from "./components/StoreSelectorModal";
 import api from "../../config/api";
+import { type Store } from "./components/StoreSelectorModal";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
   const location = useLocation();
-  const { user, setSelectedStore } = useAuthStore();
+  const history = useHistory();
+  const { user, setSelectedStore, token, logout } = useAuthStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
   const [stores, setStores] = useState<Store[]>([]);
 
   useEffect(() => {
@@ -44,18 +45,13 @@ const ShopLayout: React.FC = () => {
         setStores(Array.isArray(data) ? data : data.data || []);
       } catch (e) {
         console.error("Layout: Failed to fetch stores", e);
-        presentToast({
-          message: "Не вдалося завантажити магазини",
-          color: "danger",
-          duration: 2000,
-        });
       }
     };
-    fetchStores();
-  }, [presentToast]);
+    if (token) fetchStores();
+  }, [token]);
 
   const currentStore = stores.find((s) => s.id === user?.selectedStoreId) ||
-    stores[0] || { address: "Невідомий магазин", id: 0 };
+    stores[0] || { address: "Магазин", id: 0 };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -73,22 +69,25 @@ const ShopLayout: React.FC = () => {
   const handleStoreSelect = async (id: number) => {
     try {
       await api.post(`/auth/store/${id}`);
-
       setSelectedStore(id);
       setIsDropdownOpen(false);
-
       presentToast({
         message: "Магазин успішно змінено!",
         duration: 1500,
         color: "success",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update store:", error);
-      presentToast({
-        message: "Не вдалося змінити магазин",
-        duration: 2000,
-        color: "danger",
-      });
+      if (error.response && error.response.status === 401) {
+        logout();
+        history.replace("/login");
+      } else {
+        presentToast({
+          message: "Не вдалося змінити магазин",
+          duration: 2000,
+          color: "danger",
+        });
+      }
     }
   };
 
@@ -96,7 +95,6 @@ const ShopLayout: React.FC = () => {
     <IonTabs>
       <IonRouterOutlet>
         <Route exact path="/app/shop" component={ShopScreen} />
-
         <Route
           exact
           path="/app/cart"
@@ -110,7 +108,6 @@ const ShopLayout: React.FC = () => {
             </IonPage>
           )}
         />
-
         <Route
           exact
           path="/app/purchases"
@@ -124,7 +121,6 @@ const ShopLayout: React.FC = () => {
             </IonPage>
           )}
         />
-
         <Route
           exact
           path="/app/profile"
@@ -138,7 +134,6 @@ const ShopLayout: React.FC = () => {
             </IonPage>
           )}
         />
-
         <Route exact path="/app">
           <Redirect to="/app/shop" />
         </Route>
@@ -218,7 +213,9 @@ const ShopLayout: React.FC = () => {
                           <p
                             className={`text-[10px] ${store.isActive ? "text-green-500" : "text-red-400"}`}
                           >
-                            {store.isActive ? "Відчинено" : "Зачинено"}
+                            {store.isActive
+                              ? "Магазин доступний"
+                              : "Магащин недоступний"}
                           </p>
                         </div>
 
