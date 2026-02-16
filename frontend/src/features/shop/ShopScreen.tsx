@@ -27,6 +27,20 @@ import StoreSelectorModal, {
 } from "./components/StoreSelectorModal";
 import api from "../../config/api";
 
+interface Product {
+  id: number;
+  ukrskladId: number;
+  name: string;
+  description?: string;
+  categoryId: number;
+  price: number;
+  pricePromo: number | null;
+  unitsOfMeasurments: string;
+  imagePath: string;
+  isActive: boolean;
+  isPromo: boolean;
+}
+
 interface Category {
   id: number;
   name: string;
@@ -40,6 +54,7 @@ const ShopScreen: React.FC = () => {
 
   const [stores, setStores] = useState<Store[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
 
@@ -67,12 +82,40 @@ const ShopScreen: React.FC = () => {
     }
   };
 
+  const fetchProducts = async (storeId: number) => {
+    try {
+      const { data } = await api.get(
+        `/products?limit=24&showAll=0&showDeleted=0&showInactive=0&storeId=${storeId}`,
+      );
+      setProducts(data.data || []);
+    } catch (e) {
+      console.error("Failed to fetch products", e);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       await fetchStores();
       await fetchCategories();
     })();
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      if (user?.selectedStoreId) {
+        await fetchProducts(user.selectedStoreId);
+      }
+    })();
+  }, [user?.selectedStoreId]);
+
+  const handleRefresh = async (e: CustomEvent) => {
+    const promises = [fetchStores(), fetchCategories()];
+    if (user?.selectedStoreId) {
+      promises.push(fetchProducts(user.selectedStoreId));
+    }
+    await Promise.all(promises);
+    e.detail.complete();
+  };
 
   const currentStore = stores.find((s) => s.id === user?.selectedStoreId) || {
     address: "Неактивний магазин",
@@ -87,99 +130,6 @@ const ShopScreen: React.FC = () => {
       });
     }
   };
-
-  const products = [
-    {
-      id: 1,
-      name: "Кава в зернах Lavazza Qualita Oro, 1 кг",
-      price: 450,
-      pricePromo: 350,
-      unitsOfMeasurments: "кг",
-      isPromo: true,
-    },
-    {
-      id: 2,
-      name: "Молоко 1л",
-      price: 25,
-      pricePromo: 20,
-      unitsOfMeasurments: "л",
-      isPromo: true,
-    },
-    {
-      id: 3,
-      name: "Сир 1 кг",
-      price: 120,
-      pricePromo: 100,
-      unitsOfMeasurments: "кг",
-      isPromo: true,
-    },
-    {
-      id: 4,
-      name: "Хліб 500г",
-      price: 20,
-      unitsOfMeasurments: "шт",
-      isPromo: false,
-    },
-    {
-      id: 5,
-      name: "Яйця 10 шт",
-      price: 40,
-      unitsOfMeasurments: "шт",
-      isPromo: false,
-    },
-    {
-      id: 6,
-      name: "Масло вершкове 200г",
-      price: 35,
-      pricePromo: 25,
-      unitsOfMeasurments: "шт",
-      isPromo: true,
-    },
-    {
-      id: 7,
-      name: "Сік апельсиновий 1л",
-      price: 30,
-      unitsOfMeasurments: "л",
-      isPromo: false,
-    },
-    {
-      id: 8,
-      name: "Печиво 200г",
-      price: 15,
-      unitsOfMeasurments: "шт",
-      isPromo: false,
-    },
-    {
-      id: 9,
-      name: "Шоколад 100г",
-      price: 20,
-      unitsOfMeasurments: "шт",
-      isPromo: false,
-    },
-    {
-      id: 10,
-      name: "Кава розчинна Nescafe Classic, 200г",
-      price: 150,
-      pricePromo: 120,
-      unitsOfMeasurments: "шт",
-      isPromo: true,
-    },
-    {
-      id: 11,
-      name: "Молоко 2л",
-      price: 45,
-      unitsOfMeasurments: "шт",
-      isPromo: false,
-    },
-    {
-      id: 12,
-      name: "Сир 500г",
-      price: 120,
-      pricePromo: 100,
-      unitsOfMeasurments: "шт",
-      isPromo: true,
-    },
-  ];
 
   return (
     <IonPage>
@@ -250,10 +200,7 @@ const ShopScreen: React.FC = () => {
       </IonHeader>
 
       <IonContent className="bg-gray-50" fullscreen>
-        <IonRefresher
-          slot="fixed"
-          onIonRefresh={(e) => setTimeout(() => e.detail.complete(), 1000)}
-        >
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent />
         </IonRefresher>
 
@@ -339,8 +286,14 @@ const ShopScreen: React.FC = () => {
                   price={product.isPromo ? product.pricePromo! : product.price}
                   oldPrice={product.isPromo ? product.price : undefined}
                   unit={product.unitsOfMeasurments}
+                  image={product.imagePath}
                 />
               ))}
+              {products.length === 0 && (
+                <div className="col-span-full text-center py-10 text-gray-400">
+                  Товарів не знайдено
+                </div>
+              )}
             </div>
           </div>
         </div>
