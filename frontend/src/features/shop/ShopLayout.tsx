@@ -8,6 +8,7 @@ import {
   IonPage,
   IonLabel,
   IonContent,
+  useIonToast,
 } from "@ionic/react";
 import { Route, Redirect, useLocation } from "react-router-dom";
 import {
@@ -25,6 +26,7 @@ import type { Store } from "./components/StoreSelectorModal";
 import api from "../../config/api";
 
 const ShopLayout: React.FC = () => {
+  const [presentToast] = useIonToast();
   const location = useLocation();
   const { user, setSelectedStore } = useAuthStore();
 
@@ -42,10 +44,15 @@ const ShopLayout: React.FC = () => {
         setStores(Array.isArray(data) ? data : data.data || []);
       } catch (e) {
         console.error("Layout: Failed to fetch stores", e);
+        presentToast({
+          message: "Не вдалося завантажити магазини",
+          color: "danger",
+          duration: 2000,
+        });
       }
     };
     fetchStores();
-  }, []);
+  }, [presentToast]);
 
   const currentStore = stores.find((s) => s.id === user?.selectedStoreId) ||
     stores[0] || { address: "Невідомий магазин", id: 0 };
@@ -63,9 +70,26 @@ const ShopLayout: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleStoreSelect = (id: number) => {
-    setSelectedStore(id);
-    setIsDropdownOpen(false);
+  const handleStoreSelect = async (id: number) => {
+    try {
+      await api.post(`/auth/store/${id}`);
+
+      setSelectedStore(id);
+      setIsDropdownOpen(false);
+
+      presentToast({
+        message: "Магазин успішно змінено!",
+        duration: 1500,
+        color: "success",
+      });
+    } catch (error) {
+      console.error("Failed to update store:", error);
+      presentToast({
+        message: "Не вдалося змінити магазин",
+        duration: 2000,
+        color: "danger",
+      });
+    }
   };
 
   return (
