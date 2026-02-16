@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useRef } from "react";
 import {
   IonTabs,
@@ -8,8 +9,9 @@ import {
   IonPage,
   IonLabel,
   IonContent,
+  useIonToast,
 } from "@ionic/react";
-import { Route, Redirect, useLocation } from "react-router-dom";
+import { Route, Redirect, useLocation, useHistory } from "react-router-dom";
 import {
   homeOutline,
   basketOutline,
@@ -21,17 +23,35 @@ import {
 } from "ionicons/icons";
 import ShopScreen from "./ShopScreen";
 import { useAuthStore } from "../auth/auth.store";
-import { MOCK_STORES } from "./shop.data";
+import api from "../../config/api";
+import { type Store } from "./components/StoreSelectorModal";
 
 const ShopLayout: React.FC = () => {
+  const [presentToast] = useIonToast();
   const location = useLocation();
-  const { user, setChosenStore } = useAuthStore();
+  const history = useHistory();
+  const { user, setSelectedStore, token, logout } = useAuthStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [stores, setStores] = useState<Store[]>([]);
 
-  const currentStore =
-    MOCK_STORES.find((s) => s.id === user?.chosenStoreId) || MOCK_STORES[0];
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        const { data } = await api.get(
+          "/store?limit=0&showInactive=0&showDeleted=0",
+        );
+        setStores(Array.isArray(data) ? data : data.data || []);
+      } catch (e) {
+        console.error("Layout: Failed to fetch stores", e);
+      }
+    };
+    if (token) fetchStores();
+  }, [token]);
+
+  const currentStore = stores.find((s) => s.id === user?.selectedStoreId) ||
+    stores[0] || { address: "Магазин", id: 0 };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -46,16 +66,35 @@ const ShopLayout: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleStoreSelect = (id: number) => {
-    setChosenStore(id);
-    setIsDropdownOpen(false);
+  const handleStoreSelect = async (id: number) => {
+    try {
+      await api.post(`/auth/store/${id}`);
+      setSelectedStore(id);
+      setIsDropdownOpen(false);
+      presentToast({
+        message: "Магазин успішно змінено!",
+        duration: 1500,
+        color: "success",
+      });
+    } catch (error: any) {
+      console.error("Failed to update store:", error);
+      if (error.response && error.response.status === 401) {
+        logout();
+        history.replace("/login");
+      } else {
+        presentToast({
+          message: "Не вдалося змінити магазин",
+          duration: 2000,
+          color: "danger",
+        });
+      }
+    }
   };
 
   return (
     <IonTabs>
       <IonRouterOutlet>
         <Route exact path="/app/shop" component={ShopScreen} />
-
         <Route
           exact
           path="/app/cart"
@@ -69,7 +108,6 @@ const ShopLayout: React.FC = () => {
             </IonPage>
           )}
         />
-
         <Route
           exact
           path="/app/purchases"
@@ -83,7 +121,6 @@ const ShopLayout: React.FC = () => {
             </IonPage>
           )}
         />
-
         <Route
           exact
           path="/app/profile"
@@ -97,7 +134,6 @@ const ShopLayout: React.FC = () => {
             </IonPage>
           )}
         />
-
         <Route exact path="/app">
           <Redirect to="/app/shop" />
         </Route>
@@ -158,8 +194,8 @@ const ShopLayout: React.FC = () => {
                   Оберіть магазин
                 </div>
                 <div className="max-h-[400px] overflow-y-auto pr-1">
-                  {MOCK_STORES.map((store) => {
-                    const isSelected = user?.chosenStoreId === store.id;
+                  {stores.map((store) => {
+                    const isSelected = user?.selectedStoreId === store.id;
                     return (
                       <div
                         key={store.id}
@@ -177,7 +213,9 @@ const ShopLayout: React.FC = () => {
                           <p
                             className={`text-[10px] ${store.isActive ? "text-green-500" : "text-red-400"}`}
                           >
-                            {store.isActive ? "Відчинено" : "Зачинено"}
+                            {store.isActive
+                              ? "Магазин доступний"
+                              : "Магащин недоступний"}
                           </p>
                         </div>
 

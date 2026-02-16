@@ -42,7 +42,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           {name}
         </h3>
 
-        <p className="text-[10px] text-gray-400 font-medium mb-2">за {unit}</p>
+        <p className="text-[10px] text-gray-400 font-medium mb-2">{unit}</p>
 
         <div className="mt-auto flex items-center justify-between">
           <div className="flex flex-col">

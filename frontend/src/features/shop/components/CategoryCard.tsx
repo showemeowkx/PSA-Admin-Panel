@@ -18,17 +18,22 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
     >
       <div
         className={`
-          w-[80px] h-[80px] rounded-[20px] flex items-center justify-center transition-all duration-300 border bg-white
-          
-          border-gray-100 text-gray-400
-          group-hover:border-orange-200 group-hover:text-orange-400
+    w-[80px] h-[80px] rounded-[20px] flex items-center justify-center transition-all duration-300 border
 
-          md:group-hover:border-gray-100 md:group-hover:text-gray-400
-          md:hover:!border-orange-200 md:hover:!text-orange-400 md:hover:shadow-md
-        `}
+    bg-orange-500 border-orange-500 text-white
+    shadow-[0_4px_12px_rgba(0,0,0,0.15)]
+    md:hover:!bg-orange-400 md:hover:!border-orange-400 md:hover:shadow-md
+
+    group-hover:bg-orange-400 group-hover:border-orange-400
+    md:group-hover:bg-orange-500 md:group-hover:border-orange-500
+  `}
       >
         {image ? (
-          <img src={image} alt={name} className="w-10 h-10 object-contain" />
+          <img
+            src={image}
+            alt={name}
+            className="w-10 h-10 object-contain brightness-0 invert"
+          />
         ) : (
           <span className="text-2xl font-bold">{name[0]}</span>
         )}

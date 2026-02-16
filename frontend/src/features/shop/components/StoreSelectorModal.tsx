@@ -7,28 +7,35 @@ import {
   searchOutline,
 } from "ionicons/icons";
 import { useAuthStore } from "../../auth/auth.store";
-import { MOCK_STORES } from "../shop.data";
+
+export interface Store {
+  id: number;
+  address: string;
+  isActive: boolean;
+}
 
 interface StoreSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  stores: Store[];
 }
 
 const StoreSelectorModal: React.FC<StoreSelectorModalProps> = ({
   isOpen,
   onClose,
+  stores,
 }) => {
-  const { user, setChosenStore } = useAuthStore();
+  const { user, setSelectedStore } = useAuthStore();
   const [searchText, setSearchText] = useState("");
 
   const filteredStores = useMemo(() => {
-    return MOCK_STORES.filter((store) =>
+    return stores.filter((store) =>
       store.address.toLowerCase().includes(searchText.toLowerCase()),
     );
-  }, [searchText]);
+  }, [stores, searchText]);
 
   const handleSelect = (id: number) => {
-    setChosenStore(id);
+    setSelectedStore(id);
     onClose();
   };
 
@@ -67,7 +74,7 @@ const StoreSelectorModal: React.FC<StoreSelectorModalProps> = ({
 
           <div className="flex flex-col gap-3 pb-10 overflow-y-auto">
             {filteredStores.map((store) => {
-              const isSelected = user?.chosenStoreId === store.id;
+              const isSelected = user?.selectedStoreId === store.id;
 
               return (
                 <div
@@ -105,7 +112,9 @@ const StoreSelectorModal: React.FC<StoreSelectorModalProps> = ({
                       <span
                         className={`text-[10px] font-medium ${store.isActive ? "text-green-500" : "text-red-400"}`}
                       >
-                        {store.isActive ? "Відчинено" : "Тимчасово зачинено"}
+                        {store.isActive
+                          ? "Магазин доступний"
+                          : "Магазин недоступний"}
                       </span>
                     </div>
                   </div>

@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+import React, { useState, useRef, useEffect } from "react";
 import {
   IonPage,
   IonContent,
@@ -8,6 +9,8 @@ import {
   IonIcon,
   IonRefresher,
   IonRefresherContent,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
 } from "@ionic/react";
 import {
   searchOutline,
@@ -22,18 +25,139 @@ import { useHistory } from "react-router-dom";
 import CategoryCard from "./components/CategoryCard";
 import ProductCard from "./components/ProductCard";
 import { useAuthStore } from "../auth/auth.store";
-import StoreSelectorModal from "./components/StoreSelectorModal";
-import { MOCK_STORES } from "./shop.data";
+import StoreSelectorModal, {
+  type Store,
+} from "./components/StoreSelectorModal";
+import api from "../../config/api";
+
+interface Product {
+  id: number;
+  ukrskladId: number;
+  name: string;
+  description?: string;
+  categoryId: number;
+  price: number;
+  pricePromo: number | null;
+  unitsOfMeasurments: string;
+  imagePath: string;
+  isActive: boolean;
+  isPromo: boolean;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  iconPath: string;
+}
 
 const ShopScreen: React.FC = () => {
   const history = useHistory();
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+
+  const [stores, setStores] = useState<Store[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
 
-  const currentStore =
-    MOCK_STORES.find((s) => s.id === user?.chosenStoreId) || MOCK_STORES[0];
+  const fetchStores = async () => {
+    try {
+      const { data } = await api.get(
+        "/store?limit=0&showInactive=0&showDeleted=0",
+      );
+      setStores(Array.isArray(data) ? data : data.data || []);
+    } catch (e) {
+      console.error("Failed to fetch stores", e);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data } = await api.get(
+        "/categories?limit=0&showInactive=0&showDeleted=0",
+      );
+      setCategories(data.data || []);
+    } catch (e) {
+      console.error("Failed to fetch categories", e);
+    }
+  };
+
+  const fetchProducts = async (
+    storeId: number,
+    pageNum: number,
+    isLoadMore: boolean = false,
+  ) => {
+    try {
+      const { data } = await api.get(
+        `/products?limit=24&page=${pageNum}&showAll=0&showDeleted=0&showInactive=0&storeId=${storeId}`,
+      );
+
+      const newProducts = data.data || [];
+
+      if (isLoadMore) {
+        setProducts((prev) => [...prev, ...newProducts]);
+      } else {
+        setProducts(newProducts);
+      }
+
+      if (newProducts.length < 24) {
+        setHasMore(false);
+      } else {
+        setHasMore(true);
+      }
+    } catch (e) {
+      console.error("Failed to fetch products", e);
+      setHasMore(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchStores();
+      fetchCategories();
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (user?.selectedStoreId && token) {
+      fetchProducts(user.selectedStoreId, 1, false);
+    }
+  }, [user?.selectedStoreId, token]);
+
+  const handleRefresh = async (e: CustomEvent) => {
+    setPage(1);
+    setHasMore(true);
+
+    const promises = [fetchStores(), fetchCategories()];
+
+    if (user?.selectedStoreId) {
+      promises.push(fetchProducts(user.selectedStoreId, 1, false));
+    }
+
+    await Promise.all(promises);
+    e.detail.complete();
+  };
+
+  const handleInfinite = async (ev: CustomEvent<void>) => {
+    if (!user?.selectedStoreId) {
+      (ev.target as HTMLIonInfiniteScrollElement).complete();
+      return;
+    }
+
+    const nextPage = page + 1;
+    await fetchProducts(user.selectedStoreId, nextPage, true);
+    setPage(nextPage);
+
+    (ev.target as HTMLIonInfiniteScrollElement).complete();
+  };
+
+  const currentStore = stores.find((s) => s.id === user?.selectedStoreId) || {
+    address: "Неактивний магазин",
+  };
 
   const scrollCategories = (direction: "left" | "right") => {
     if (categoriesRef.current) {
@@ -45,124 +169,12 @@ const ShopScreen: React.FC = () => {
     }
   };
 
-  // MOCK DATA
-  const categories = [
-    { id: 1, name: "Продукти" },
-    { id: 2, name: "Напої" },
-    { id: 3, name: "Солодощі" },
-    { id: 4, name: "Косметика" },
-    { id: 5, name: "Побутова хімія" },
-    { id: 6, name: "Товари для дому" },
-    { id: 7, name: "Електроніка" },
-    { id: 8, name: "Одяг" },
-    { id: 9, name: "Взуття" },
-    { id: 10, name: "Іграшки" },
-    { id: 11, name: "Спорт" },
-    { id: 12, name: "Автотовари" },
-    { id: 13, name: "Книги" },
-    { id: 14, name: "Меблі" },
-    { id: 15, name: "Сад та город" },
-    { id: 16, name: "Товари для тварин" },
-  ];
-
-  const products = [
-    {
-      id: 1,
-      name: "Кава в зернах Lavazza Qualita Oro, 1 кг",
-      price: 450,
-      pricePromo: 350,
-      unitsOfMeasurments: "кг",
-      isPromo: true,
-    },
-    {
-      id: 2,
-      name: "Молоко 1л",
-      price: 25,
-      pricePromo: 20,
-      unitsOfMeasurments: "л",
-      isPromo: true,
-    },
-    {
-      id: 3,
-      name: "Сир 1 кг",
-      price: 120,
-      pricePromo: 100,
-      unitsOfMeasurments: "кг",
-      isPromo: true,
-    },
-    {
-      id: 4,
-      name: "Хліб 500г",
-      price: 20,
-      unitsOfMeasurments: "шт",
-      isPromo: false,
-    },
-    {
-      id: 5,
-      name: "Яйця 10 шт",
-      price: 40,
-      unitsOfMeasurments: "шт",
-      isPromo: false,
-    },
-    {
-      id: 6,
-      name: "Масло вершкове 200г",
-      price: 35,
-      pricePromo: 25,
-      unitsOfMeasurments: "шт",
-      isPromo: true,
-    },
-    {
-      id: 7,
-      name: "Сік апельсиновий 1л",
-      price: 30,
-      unitsOfMeasurments: "л",
-      isPromo: false,
-    },
-    {
-      id: 8,
-      name: "Печиво 200г",
-      price: 15,
-      unitsOfMeasurments: "шт",
-      isPromo: false,
-    },
-    {
-      id: 9,
-      name: "Шоколад 100г",
-      price: 20,
-      unitsOfMeasurments: "шт",
-      isPromo: false,
-    },
-    {
-      id: 10,
-      name: "Кава розчинна Nescafe Classic, 200г",
-      price: 150,
-      pricePromo: 120,
-      unitsOfMeasurments: "шт",
-      isPromo: true,
-    },
-    {
-      id: 11,
-      name: "Молоко 2л",
-      price: 45,
-      unitsOfMeasurments: "шт",
-      isPromo: false,
-    },
-    {
-      id: 12,
-      name: "Сир 500г",
-      price: 120,
-      pricePromo: 100,
-      unitsOfMeasurments: "шт",
-      isPromo: true,
-    },
-  ];
-
   return (
     <IonPage>
       <StoreSelectorModal
         isOpen={isStoreModalOpen}
         onClose={() => setIsStoreModalOpen(false)}
+        stores={stores}
       />
 
       <IonHeader className="ion-no-border shadow-sm z-40 bg-white md:hidden">
@@ -226,10 +238,7 @@ const ShopScreen: React.FC = () => {
       </IonHeader>
 
       <IonContent className="bg-gray-50" fullscreen>
-        <IonRefresher
-          slot="fixed"
-          onIonRefresh={(e) => setTimeout(() => e.detail.complete(), 1000)}
-        >
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent />
         </IonRefresher>
 
@@ -273,13 +282,33 @@ const ShopScreen: React.FC = () => {
               </div>
             </div>
 
-            <div
-              ref={categoriesRef}
-              className="flex overflow-x-auto pb-4 hide-scrollbar pr-4 gap-3 md:gap-5 scroll-smooth py-2"
-            >
-              {categories.map((cat) => (
-                <CategoryCard key={cat.id} name={cat.name} />
-              ))}
+            <div className="relative">
+              <div className="absolute left-0 top-0 bottom-4 z-10 w-8 bg-gradient-to-r from-gray-50 to-transparent md:hidden flex items-center justify-start pointer-events-none opacity-50">
+                <IonIcon
+                  icon={chevronBackOutline}
+                  className="text-gray-400 text-lg"
+                />
+              </div>
+
+              <div
+                ref={categoriesRef}
+                className="flex overflow-x-auto pb-4 hide-scrollbar pr-4 gap-3 md:gap-5 scroll-smooth py-2 relative z-0"
+              >
+                {categories.map((cat) => (
+                  <CategoryCard
+                    key={cat.id}
+                    name={cat.name}
+                    image={cat.iconPath}
+                  />
+                ))}
+              </div>
+
+              <div className="absolute right-0 top-0 bottom-4 z-10 w-12 bg-gradient-to-l from-gray-50 via-gray-50/80 to-transparent md:hidden flex items-center justify-end pr-1 pointer-events-none">
+                <IonIcon
+                  icon={chevronForwardOutline}
+                  className="text-orange-400 text-2xl animate-pulse drop-shadow-sm"
+                />
+              </div>
             </div>
           </div>
 
@@ -295,10 +324,26 @@ const ShopScreen: React.FC = () => {
                   price={product.isPromo ? product.pricePromo! : product.price}
                   oldPrice={product.isPromo ? product.price : undefined}
                   unit={product.unitsOfMeasurments}
+                  image={product.imagePath}
                 />
               ))}
+              {products.length === 0 && (
+                <div className="col-span-full text-center py-10 text-gray-400">
+                  Товарів не знайдено
+                </div>
+              )}
             </div>
           </div>
+          <IonInfiniteScroll
+            onIonInfinite={handleInfinite}
+            threshold="100px"
+            disabled={!hasMore}
+          >
+            <IonInfiniteScrollContent
+              loadingSpinner="bubbles"
+              loadingText="Завантаження товарів..."
+            />
+          </IonInfiniteScroll>
         </div>
       </IonContent>
     </IonPage>
