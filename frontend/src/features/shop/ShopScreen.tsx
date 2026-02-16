@@ -27,11 +27,19 @@ import StoreSelectorModal, {
 } from "./components/StoreSelectorModal";
 import api from "../../config/api";
 
+interface Category {
+  id: number;
+  name: string;
+  iconPath: string;
+}
+
 const ShopScreen: React.FC = () => {
   const history = useHistory();
   const { user } = useAuthStore();
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
+
   const [stores, setStores] = useState<Store[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const categoriesRef = useRef<HTMLDivElement>(null);
 
@@ -47,9 +55,22 @@ const ShopScreen: React.FC = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const { data } = await api.get(
+        "/categories?limit=0&showInactive=0&showDeleted=0",
+      );
+      const list = data.data || [];
+      setCategories(list);
+    } catch (e) {
+      console.error("Failed to fetch categories", e);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       await fetchStores();
+      await fetchCategories();
     })();
   }, []);
 
@@ -66,26 +87,6 @@ const ShopScreen: React.FC = () => {
       });
     }
   };
-
-  // MOCK DATA
-  const categories = [
-    { id: 1, name: "Продукти" },
-    { id: 2, name: "Напої" },
-    { id: 3, name: "Солодощі" },
-    { id: 4, name: "Косметика" },
-    { id: 5, name: "Побутова хімія" },
-    { id: 6, name: "Товари для дому" },
-    { id: 7, name: "Електроніка" },
-    { id: 8, name: "Одяг" },
-    { id: 9, name: "Взуття" },
-    { id: 10, name: "Іграшки" },
-    { id: 11, name: "Спорт" },
-    { id: 12, name: "Автотовари" },
-    { id: 13, name: "Книги" },
-    { id: 14, name: "Меблі" },
-    { id: 15, name: "Сад та город" },
-    { id: 16, name: "Товари для тварин" },
-  ];
 
   const products = [
     {
@@ -296,9 +297,7 @@ const ShopScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* Обгортка для позиціонування мобільних стрілок */}
             <div className="relative">
-              {/* --- MOBILE LEFT ARROW (Hint) --- */}
               <div className="absolute left-0 top-0 bottom-4 z-10 w-8 bg-gradient-to-r from-gray-50 to-transparent md:hidden flex items-center justify-start pointer-events-none opacity-50">
                 <IonIcon
                   icon={chevronBackOutline}
@@ -306,17 +305,19 @@ const ShopScreen: React.FC = () => {
                 />
               </div>
 
-              {/* --- LIST --- */}
               <div
                 ref={categoriesRef}
                 className="flex overflow-x-auto pb-4 hide-scrollbar pr-4 gap-3 md:gap-5 scroll-smooth py-2 relative z-0"
               >
                 {categories.map((cat) => (
-                  <CategoryCard key={cat.id} name={cat.name} />
+                  <CategoryCard
+                    key={cat.id}
+                    name={cat.name}
+                    image={cat.iconPath}
+                  />
                 ))}
               </div>
 
-              {/* --- MOBILE RIGHT ARROW (Animated Hint) --- */}
               <div className="absolute right-0 top-0 bottom-4 z-10 w-12 bg-gradient-to-l from-gray-50 via-gray-50/80 to-transparent md:hidden flex items-center justify-end pr-1 pointer-events-none">
                 <IonIcon
                   icon={chevronForwardOutline}
