@@ -20,6 +20,8 @@ import {
   storefrontOutline,
   chevronDownOutline,
   checkmarkOutline,
+  clipboardOutline,
+  syncOutline,
 } from "ionicons/icons";
 import ShopScreen from "./ShopScreen";
 import { useAuthStore } from "../auth/auth.store";
@@ -163,6 +165,32 @@ const ShopLayout: React.FC = () => {
             </IonPage>
           )}
         />
+        <Route
+          exact
+          path={`${basePath}/orders`}
+          render={() => (
+            <IonPage className="bg-white">
+              <IonContent>
+                <div className="flex h-full items-center justify-center font-bold text-gray-300">
+                  Замовлення (Admin)
+                </div>
+              </IonContent>
+            </IonPage>
+          )}
+        />
+        <Route
+          exact
+          path={`${basePath}/sync`}
+          render={() => (
+            <IonPage className="bg-white">
+              <IonContent>
+                <div className="flex h-full items-center justify-center font-bold text-gray-300">
+                  Синхронізація (Admin)
+                </div>
+              </IonContent>
+            </IonPage>
+          )}
+        />
         <Route exact path={`${basePath}`}>
           <Redirect to={`${basePath}/shop`} />
         </Route>
@@ -192,6 +220,22 @@ const ShopLayout: React.FC = () => {
               active={location.pathname.includes("purchases")}
               href={`${basePath}/purchases`}
             />
+            {isAdminRoute && (
+              <>
+                <NavButton
+                  label="Замовлення"
+                  icon={clipboardOutline}
+                  active={location.pathname.includes("orders")}
+                  href={`${basePath}/orders`}
+                />
+                <NavButton
+                  label="Синхронізація"
+                  icon={syncOutline}
+                  active={location.pathname.includes("sync")}
+                  href={`${basePath}/sync`}
+                />
+              </>
+            )}
           </nav>
         </div>
 
@@ -270,7 +314,7 @@ const ShopLayout: React.FC = () => {
           </div>
 
           <a
-            href="/app/profile"
+            href={`${basePath}/profile`}
             className="flex items-center gap-3 hover:bg-gray-50 px-3 py-2 rounded-xl transition-colors"
           >
             <div className="text-right hidden lg:block">
@@ -288,7 +332,7 @@ const ShopLayout: React.FC = () => {
         slot="bottom"
         className="md:hidden border-t border-gray-100 shadow-lg h-[70px] pb-2 bg-white"
       >
-        <IonTabButton tab="shop" href="/app/shop" className="bg-white">
+        <IonTabButton tab="shop" href={`${basePath}/shop`} className="bg-white">
           <IonIcon
             icon={homeOutline}
             className={
@@ -304,7 +348,7 @@ const ShopLayout: React.FC = () => {
           </IonLabel>
         </IonTabButton>
 
-        <IonTabButton tab="cart" href="/app/cart" className="bg-white">
+        <IonTabButton tab="cart" href={`${basePath}/cart`} className="bg-white">
           <div className="relative flex justify-center items-center">
             <IonIcon
               icon={basketOutline}
@@ -320,7 +364,7 @@ const ShopLayout: React.FC = () => {
 
         <IonTabButton
           tab="purchases"
-          href="/app/purchases"
+          href={`${basePath}/purchases`}
           className="bg-white"
         >
           <IonIcon
