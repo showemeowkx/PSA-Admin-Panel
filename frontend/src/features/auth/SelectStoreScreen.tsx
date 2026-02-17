@@ -134,9 +134,6 @@ const SelectStoreScreen: React.FC = () => {
                       }
                       className="bg-white rounded-[20px] p-4 border border-gray-100 shadow-sm active:scale-95 transition-all flex items-center gap-4 cursor-pointer hover:border-orange-300 hover:shadow-md"
                     >
-                      <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 font-bold text-xs border border-orange-100">
-                        {store.id}
-                      </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-gray-800 text-sm leading-tight">
                           {store.address}
