@@ -1,33 +1,51 @@
 import React from "react";
+import { IonIcon } from "@ionic/react";
+import { createOutline } from "ionicons/icons";
 
 interface CategoryCardProps {
   name: string;
   image?: string;
   onClick?: () => void;
+  isAdmin?: boolean;
+  onEdit?: (e: React.MouseEvent) => void;
 }
 
 const CategoryCard: React.FC<CategoryCardProps> = ({
   name,
   image,
   onClick,
+  isAdmin,
+  onEdit,
 }) => {
   return (
     <div
       onClick={onClick}
-      className="flex flex-col items-center gap-2 cursor-pointer min-w-[80px] select-none transition-all duration-300 z-0"
+      className="group flex flex-col items-center gap-2 cursor-pointer min-w-[80px] select-none transition-all duration-300 z-0"
     >
       <div
         className={`
-    w-[80px] h-[80px] rounded-[20px] flex items-center justify-center transition-all duration-300 border
+          relative w-[80px] h-[80px] rounded-[20px] flex items-center justify-center transition-all duration-300 border
 
-    bg-orange-500 border-orange-500 text-white
-    shadow-[0_4px_12px_rgba(0,0,0,0.15)]
-    md:hover:!bg-orange-400 md:hover:!border-orange-400 md:hover:shadow-md
+          bg-orange-500 border-orange-500 text-white
+          shadow-[0_4px_12px_rgba(0,0,0,0.15)]
+          
+          /* Desktop Hover Effects */
+          md:hover:!bg-orange-400 md:hover:!border-orange-400 md:hover:shadow-md
 
-    group-hover:bg-orange-400 group-hover:border-orange-400
-    md:group-hover:bg-orange-500 md:group-hover:border-orange-500
-  `}
+          /* Group Hover Effects */
+          group-hover:bg-orange-400 group-hover:border-orange-400
+          md:group-hover:bg-orange-500 md:group-hover:border-orange-500
+        `}
       >
+        {isAdmin && (
+          <button
+            onClick={onEdit}
+            className="hidden md:flex absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full shadow-lg items-center justify-center text-gray-600 hover:text-orange-600 hover:scale-110 transition-all z-20 border border-gray-100"
+          >
+            <IonIcon icon={createOutline} className="text-sm" />
+          </button>
+        )}
+
         {image ? (
           <img
             src={image}

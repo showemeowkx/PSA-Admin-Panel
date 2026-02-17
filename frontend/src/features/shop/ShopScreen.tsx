@@ -62,6 +62,9 @@ const ShopScreen: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
+  const isAdminRoute = location.pathname.startsWith("/admin");
+  const basePath = isAdminRoute ? "/admin" : "/app";
+
   const categoriesRef = useRef<HTMLDivElement>(null);
 
   const fetchStores = async () => {
@@ -209,7 +212,7 @@ const ShopScreen: React.FC = () => {
 
               <IonButton
                 fill="clear"
-                onClick={() => history.push("/app/profile")}
+                onClick={() => history.push(`${basePath}/profile`)}
                 className="m-0 h-8"
               >
                 <IonIcon
@@ -299,6 +302,8 @@ const ShopScreen: React.FC = () => {
                     key={cat.id}
                     name={cat.name}
                     image={cat.iconPath}
+                    isAdmin={user?.isAdmin}
+                    onEdit={() => {}} // PLACEHOLDER
                   />
                 ))}
               </div>
