@@ -36,6 +36,9 @@ const ShopLayout: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [stores, setStores] = useState<Store[]>([]);
 
+  const isAdminRoute = location.pathname.startsWith("/admin");
+  const basePath = isAdminRoute ? "/admin" : "/app";
+
   useEffect(() => {
     const refreshUserProfile = async () => {
       if (!token) return;
@@ -120,10 +123,10 @@ const ShopLayout: React.FC = () => {
   return (
     <IonTabs>
       <IonRouterOutlet>
-        <Route exact path="/app/shop" component={ShopScreen} />
+        <Route exact path={`${basePath}/shop`} component={ShopScreen} />
         <Route
           exact
-          path="/app/cart"
+          path={`${basePath}/cart`}
           render={() => (
             <IonPage className="bg-white">
               <IonContent>
@@ -136,7 +139,7 @@ const ShopLayout: React.FC = () => {
         />
         <Route
           exact
-          path="/app/purchases"
+          path={`${basePath}/purchases`}
           render={() => (
             <IonPage className="bg-white">
               <IonContent>
@@ -149,7 +152,7 @@ const ShopLayout: React.FC = () => {
         />
         <Route
           exact
-          path="/app/profile"
+          path={`${basePath}/profile`}
           render={() => (
             <IonPage className="bg-white">
               <IonContent>
@@ -160,8 +163,8 @@ const ShopLayout: React.FC = () => {
             </IonPage>
           )}
         />
-        <Route exact path="/app">
-          <Redirect to="/app/shop" />
+        <Route exact path={`${basePath}`}>
+          <Redirect to={`${basePath}/shop`} />
         </Route>
       </IonRouterOutlet>
 
@@ -175,19 +178,19 @@ const ShopLayout: React.FC = () => {
               label="Головна"
               icon={homeOutline}
               active={location.pathname.includes("shop")}
-              href="/app/shop"
+              href={`${basePath}/shop`}
             />
             <NavButton
               label="Кошик"
               icon={basketOutline}
               active={location.pathname.includes("cart")}
-              href="/app/cart"
+              href={`${basePath}/cart`}
             />
             <NavButton
               label="Покупки"
               icon={bagHandleOutline}
               active={location.pathname.includes("purchases")}
-              href="/app/purchases"
+              href={`${basePath}/purchases`}
             />
           </nav>
         </div>
