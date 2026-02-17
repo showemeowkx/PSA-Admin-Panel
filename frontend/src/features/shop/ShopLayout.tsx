@@ -10,6 +10,7 @@ import {
   IonLabel,
   IonContent,
   useIonToast,
+  isPlatform,
 } from "@ionic/react";
 import { Route, Redirect, useLocation, useHistory } from "react-router-dom";
 import {
@@ -70,8 +71,12 @@ const ShopLayout: React.FC = () => {
   useEffect(() => {
     const fetchStores = async () => {
       try {
+        const isAdminOnDesktop =
+          (user?.isAdmin || isAdminRoute) && isPlatform("desktop");
+        const showInactive = isAdminOnDesktop ? 1 : 0;
+
         const { data } = await api.get(
-          "/store?limit=0&showInactive=0&showDeleted=0",
+          `/store?limit=0&showInactive=${showInactive}&showDeleted=0`,
         );
         setStores(Array.isArray(data) ? data : data.data || []);
       } catch (e) {
@@ -79,7 +84,7 @@ const ShopLayout: React.FC = () => {
       }
     };
     if (token) fetchStores();
-  }, [token]);
+  }, [token, user?.isAdmin, isAdminRoute]);
 
   const currentStore = stores.find((s) => s.id === user?.selectedStoreId) ||
     stores[0] || { address: "Магазин", id: 0 };
@@ -288,7 +293,7 @@ const ShopLayout: React.FC = () => {
                           >
                             {store.isActive
                               ? "Магазин доступний"
-                              : "Магащин недоступний"}
+                              : "Магазин недоступний"}
                           </p>
                         </div>
 
