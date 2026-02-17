@@ -10,6 +10,7 @@ import {
   IonLabel,
   IonContent,
   useIonToast,
+  isPlatform,
 } from "@ionic/react";
 import { Route, Redirect, useLocation, useHistory } from "react-router-dom";
 import {
@@ -20,6 +21,8 @@ import {
   storefrontOutline,
   chevronDownOutline,
   checkmarkOutline,
+  clipboardOutline,
+  syncOutline,
 } from "ionicons/icons";
 import ShopScreen from "./ShopScreen";
 import { useAuthStore } from "../auth/auth.store";
@@ -35,6 +38,10 @@ const ShopLayout: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [stores, setStores] = useState<Store[]>([]);
+
+  const isAdminOnDesktop = user?.isAdmin && isPlatform("desktop");
+  const isAdminRoute = location.pathname.startsWith("/admin");
+  const basePath = isAdminRoute ? "/admin" : "/app";
 
   useEffect(() => {
     const refreshUserProfile = async () => {
@@ -65,8 +72,10 @@ const ShopLayout: React.FC = () => {
   useEffect(() => {
     const fetchStores = async () => {
       try {
+        const showInactive = isAdminOnDesktop ? 1 : 0;
+
         const { data } = await api.get(
-          "/store?limit=0&showInactive=0&showDeleted=0",
+          `/store?limit=0&showInactive=${showInactive}&showDeleted=0`,
         );
         setStores(Array.isArray(data) ? data : data.data || []);
       } catch (e) {
@@ -74,7 +83,7 @@ const ShopLayout: React.FC = () => {
       }
     };
     if (token) fetchStores();
-  }, [token]);
+  }, [token, isAdminOnDesktop]);
 
   const currentStore = stores.find((s) => s.id === user?.selectedStoreId) ||
     stores[0] || { address: "Магазин", id: 0 };
@@ -120,10 +129,10 @@ const ShopLayout: React.FC = () => {
   return (
     <IonTabs>
       <IonRouterOutlet>
-        <Route exact path="/app/shop" component={ShopScreen} />
+        <Route exact path={`${basePath}/shop`} component={ShopScreen} />
         <Route
           exact
-          path="/app/cart"
+          path={`${basePath}/cart`}
           render={() => (
             <IonPage className="bg-white">
               <IonContent>
@@ -136,7 +145,7 @@ const ShopLayout: React.FC = () => {
         />
         <Route
           exact
-          path="/app/purchases"
+          path={`${basePath}/purchases`}
           render={() => (
             <IonPage className="bg-white">
               <IonContent>
@@ -149,7 +158,7 @@ const ShopLayout: React.FC = () => {
         />
         <Route
           exact
-          path="/app/profile"
+          path={`${basePath}/profile`}
           render={() => (
             <IonPage className="bg-white">
               <IonContent>
@@ -160,35 +169,89 @@ const ShopLayout: React.FC = () => {
             </IonPage>
           )}
         />
-        <Route exact path="/app">
-          <Redirect to="/app/shop" />
+        <Route
+          exact
+          path={`${basePath}/orders`}
+          render={() => (
+            <IonPage className="bg-white">
+              <IonContent>
+                <div className="flex h-full items-center justify-center font-bold text-gray-300">
+                  Замовлення (Admin)
+                </div>
+              </IonContent>
+            </IonPage>
+          )}
+        />
+        <Route
+          exact
+          path={`${basePath}/sync`}
+          render={() => (
+            <IonPage className="bg-white">
+              <IonContent>
+                <div className="flex h-full items-center justify-center font-bold text-gray-300">
+                  Синхронізація (Admin)
+                </div>
+              </IonContent>
+            </IonPage>
+          )}
+        />
+        <Route exact path={`${basePath}`}>
+          <Redirect to={`${basePath}/shop`} />
         </Route>
       </IonRouterOutlet>
 
       <div className="hidden md:flex fixed top-0 left-0 right-0 h-20 bg-white/90 backdrop-blur-md border-b border-gray-200 z-50 px-8 items-center justify-between">
         <div className="flex items-center gap-12">
-          <h1 className="text-3xl font-black text-orange-600 tracking-tighter cursor-pointer">
-            ВІКТЕ
-          </h1>
+          <div
+            onClick={() => history.push(`${basePath}/shop`)}
+            className="flex flex-col items-start cursor-pointer group"
+          >
+            <h1 className="text-3xl font-black text-orange-600 tracking-tighter leading-none transition-transform group-hover:scale-105">
+              ВІКТЕ
+            </h1>
+            {isAdminOnDesktop && (
+              <span className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.2em] leading-none mt-1 ml-0.5">
+                Admin
+              </span>
+            )}
+          </div>
           <nav className="flex gap-2">
             <NavButton
               label="Головна"
               icon={homeOutline}
               active={location.pathname.includes("shop")}
-              href="/app/shop"
+              href={`${basePath}/shop`}
             />
             <NavButton
               label="Кошик"
               icon={basketOutline}
               active={location.pathname.includes("cart")}
-              href="/app/cart"
+              href={`${basePath}/cart`}
             />
             <NavButton
               label="Покупки"
               icon={bagHandleOutline}
               active={location.pathname.includes("purchases")}
-              href="/app/purchases"
+              href={`${basePath}/purchases`}
             />
+            {isAdminOnDesktop && (
+              <>
+                <NavButton
+                  label="Замовлення"
+                  icon={clipboardOutline}
+                  active={location.pathname.includes("orders")}
+                  href={`${basePath}/orders`}
+                  className="text-orange-600 hover:bg-gray-50"
+                />
+                <NavButton
+                  label="Синхронізація"
+                  icon={syncOutline}
+                  active={location.pathname.includes("sync")}
+                  href={`${basePath}/sync`}
+                  className="text-orange-600 hover:bg-gray-50"
+                />
+              </>
+            )}
           </nav>
         </div>
 
@@ -219,16 +282,16 @@ const ShopLayout: React.FC = () => {
                 <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
                   Оберіть магазин
                 </div>
-                <div className="max-h-[400px] overflow-y-auto pr-1">
+                <div className="max-h-[400px] overflow-y-auto overflow-x-hidden pr-1">
                   {stores.map((store) => {
                     const isSelected = user?.selectedStoreId === store.id;
                     return (
                       <div
                         key={store.id}
                         className={`
-                        w-full flex items-center justify-between px-3 py-3 rounded-xl transition-colors mb-1 border border-transparent
-                        ${isSelected ? "bg-orange-50 border-orange-100" : "hover:bg-gray-50"}
-                      `}
+      w-full flex items-center justify-between px-3 py-3 rounded-xl transition-colors mb-1 border border-transparent
+      ${isSelected ? "bg-orange-50 border-orange-100" : "hover:bg-gray-50"}
+    `}
                       >
                         <div className="flex-1 pr-4">
                           <p
@@ -241,23 +304,34 @@ const ShopLayout: React.FC = () => {
                           >
                             {store.isActive
                               ? "Магазин доступний"
-                              : "Магащин недоступний"}
+                              : "Магазин недоступний"}
                           </p>
                         </div>
 
-                        {isSelected ? (
-                          <div className="flex items-center gap-2 text-orange-600 px-3 py-1.5 bg-white rounded-lg border border-orange-100 shadow-sm">
-                            <span className="text-xs font-bold">Обрано</span>
-                            <IonIcon icon={checkmarkOutline} />
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleStoreSelect(store.id)}
-                            className="px-4 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-orange-600 transition-colors shadow-sm active:scale-95"
-                          >
-                            Обрати
-                          </button>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {isAdminOnDesktop && (
+                            <button
+                              onClick={() => {}}
+                              className="text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors px-2 py-1 active:scale-95"
+                            >
+                              Редагувати
+                            </button>
+                          )}
+
+                          {isSelected ? (
+                            <div className="flex items-center gap-2 text-orange-600 px-3 py-1.5 bg-white rounded-lg border border-orange-100 shadow-sm">
+                              <span className="text-xs font-bold">Обрано</span>
+                              <IonIcon icon={checkmarkOutline} />
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleStoreSelect(store.id)}
+                              className="px-4 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-orange-600 transition-colors shadow-sm active:scale-95"
+                            >
+                              Обрати
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -267,7 +341,7 @@ const ShopLayout: React.FC = () => {
           </div>
 
           <a
-            href="/app/profile"
+            href={`${basePath}/profile`}
             className="flex items-center gap-3 hover:bg-gray-50 px-3 py-2 rounded-xl transition-colors"
           >
             <div className="text-right hidden lg:block">
@@ -285,7 +359,7 @@ const ShopLayout: React.FC = () => {
         slot="bottom"
         className="md:hidden border-t border-gray-100 shadow-lg h-[70px] pb-2 bg-white"
       >
-        <IonTabButton tab="shop" href="/app/shop" className="bg-white">
+        <IonTabButton tab="shop" href={`${basePath}/shop`} className="bg-white">
           <IonIcon
             icon={homeOutline}
             className={
@@ -301,7 +375,7 @@ const ShopLayout: React.FC = () => {
           </IonLabel>
         </IonTabButton>
 
-        <IonTabButton tab="cart" href="/app/cart" className="bg-white">
+        <IonTabButton tab="cart" href={`${basePath}/cart`} className="bg-white">
           <div className="relative flex justify-center items-center">
             <IonIcon
               icon={basketOutline}
@@ -317,7 +391,7 @@ const ShopLayout: React.FC = () => {
 
         <IonTabButton
           tab="purchases"
-          href="/app/purchases"
+          href={`${basePath}/purchases`}
           className="bg-white"
         >
           <IonIcon
@@ -344,14 +418,22 @@ interface NavButtonProps {
   icon: string;
   active: boolean;
   href: string;
+  className?: string;
 }
 
-const NavButton = ({ label, icon, active, href }: NavButtonProps) => (
+const NavButton = ({
+  label,
+  icon,
+  active,
+  href,
+  className = "",
+}: NavButtonProps) => (
   <a
     href={href}
     className={`
       flex items-center px-4 py-2 rounded-full transition-all duration-200 text-sm font-bold
       ${active ? "bg-orange-50 text-orange-600" : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"}
+      ${className} 
     `}
   >
     <IonIcon icon={icon} className="mr-2 text-xl" />

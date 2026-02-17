@@ -238,7 +238,7 @@ export class AuthService {
   async chooseStore(user: User, storeId: number): Promise<void> {
     const store = await this.storeService.findOne(storeId);
 
-    if (!store.isActive) {
+    if (!store.isActive && !user.isAdmin) {
       this.logger.error(`Store with ID ${storeId} is not active`);
       throw new Error(`Store is not active`);
     }

@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   IonPage,
   IonContent,
@@ -11,6 +11,7 @@ import {
   IonRefresherContent,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
+  isPlatform,
 } from "@ionic/react";
 import {
   searchOutline,
@@ -21,7 +22,7 @@ import {
   storefrontOutline,
   chevronDownOutline,
 } from "ionicons/icons";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import CategoryCard from "./components/CategoryCard";
 import ProductCard from "./components/ProductCard";
 import { useAuthStore } from "../auth/auth.store";
@@ -52,6 +53,7 @@ interface Category {
 
 const ShopScreen: React.FC = () => {
   const history = useHistory();
+  const location = useLocation();
   const { user, token } = useAuthStore();
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
 
@@ -62,20 +64,27 @@ const ShopScreen: React.FC = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
+  const isAdminRoute = location.pathname.startsWith("/admin");
+  const basePath = isAdminRoute ? "/admin" : "/app";
+
   const categoriesRef = useRef<HTMLDivElement>(null);
 
-  const fetchStores = async () => {
+  const fetchStores = useCallback(async () => {
     try {
+      const isAdminOnDesktop =
+        (user?.isAdmin || isAdminRoute) && isPlatform("desktop");
+      const showInactive = isAdminOnDesktop ? 1 : 0;
+
       const { data } = await api.get(
-        "/store?limit=0&showInactive=0&showDeleted=0",
+        `/store?limit=0&showInactive=${showInactive}&showDeleted=0`,
       );
       setStores(Array.isArray(data) ? data : data.data || []);
     } catch (e) {
       console.error("Failed to fetch stores", e);
     }
-  };
+  }, [user, isAdminRoute]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const { data } = await api.get(
         "/categories?limit=0&showInactive=0&showDeleted=0",
@@ -84,49 +93,48 @@ const ShopScreen: React.FC = () => {
     } catch (e) {
       console.error("Failed to fetch categories", e);
     }
-  };
+  }, []);
 
-  const fetchProducts = async (
-    storeId: number,
-    pageNum: number,
-    isLoadMore: boolean = false,
-  ) => {
-    try {
-      const { data } = await api.get(
-        `/products?limit=24&page=${pageNum}&showAll=0&showDeleted=0&showInactive=0&storeId=${storeId}`,
-      );
+  const fetchProducts = useCallback(
+    async (storeId: number, pageNum: number, isLoadMore: boolean = false) => {
+      try {
+        const { data } = await api.get(
+          `/products?limit=24&page=${pageNum}&showAll=0&showDeleted=0&showInactive=0&storeId=${storeId}`,
+        );
 
-      const newProducts = data.data || [];
+        const newProducts = data.data || [];
 
-      if (isLoadMore) {
-        setProducts((prev) => [...prev, ...newProducts]);
-      } else {
-        setProducts(newProducts);
-      }
+        if (isLoadMore) {
+          setProducts((prev) => [...prev, ...newProducts]);
+        } else {
+          setProducts(newProducts);
+        }
 
-      if (newProducts.length < 24) {
+        if (newProducts.length < 24) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+        }
+      } catch (e) {
+        console.error("Failed to fetch products", e);
         setHasMore(false);
-      } else {
-        setHasMore(true);
       }
-    } catch (e) {
-      console.error("Failed to fetch products", e);
-      setHasMore(false);
-    }
-  };
+    },
+    [],
+  );
 
   useEffect(() => {
     if (token) {
       fetchStores();
       fetchCategories();
     }
-  }, [token]);
+  }, [token, fetchStores, fetchCategories]);
 
   useEffect(() => {
     if (user?.selectedStoreId && token) {
       fetchProducts(user.selectedStoreId, 1, false);
     }
-  }, [user?.selectedStoreId, token]);
+  }, [user?.selectedStoreId, token, fetchProducts]);
 
   const handleRefresh = async (e: CustomEvent) => {
     setPage(1);
@@ -209,7 +217,7 @@ const ShopScreen: React.FC = () => {
 
               <IonButton
                 fill="clear"
-                onClick={() => history.push("/app/profile")}
+                onClick={() => history.push(`${basePath}/profile`)}
                 className="m-0 h-8"
               >
                 <IonIcon
@@ -299,6 +307,8 @@ const ShopScreen: React.FC = () => {
                     key={cat.id}
                     name={cat.name}
                     image={cat.iconPath}
+                    isAdminOnDesktop={isAdminRoute && isPlatform("desktop")}
+                    onEdit={() => {}} // PLACEHOLDER
                   />
                 ))}
               </div>

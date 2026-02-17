@@ -23,12 +23,6 @@ import ForgotPasswordScreen from "./features/auth/RestorePasswordScreen";
 import ShopLayout from "./features/shop/ShopLayout";
 import SelectStoreScreen from "./features/auth/SelectStoreScreen";
 
-const AdminLayout: React.FC = () => (
-  <div className="p-10">
-    <h1>Admin Panel</h1>
-  </div>
-);
-
 setupIonicReact();
 
 const App: React.FC = () => {
@@ -70,7 +64,7 @@ const App: React.FC = () => {
 
           <Route path="/admin">
             {isAuthenticated && user?.isAdmin ? (
-              <AdminLayout />
+              <ShopLayout />
             ) : (
               <Redirect to="/login" />
             )}
