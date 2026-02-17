@@ -11,11 +11,12 @@ import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Store } from './entities/store.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { GetStoresFiltersDto } from './dto/get-stores-filters.dto';
 import { AutoClearCache } from 'src/common/decorators/auto-clear-cache.decorator';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
+import { User } from 'src/auth/entities/user.entity';
 
 @Injectable()
 export class StoreService {
@@ -25,6 +26,7 @@ export class StoreService {
     @InjectRepository(Store)
     private readonly storeRepository: Repository<Store>,
     @Inject(CACHE_MANAGER) public cacheManager: Cache,
+    private readonly dataSource: DataSource,
   ) {}
 
   @AutoClearCache('/store')
@@ -103,6 +105,10 @@ export class StoreService {
   async update(id: number, updateStoreDto: UpdateStoreDto): Promise<Store> {
     const store = await this.findOne(id);
 
+    if (updateStoreDto.isActive === false && store.isActive) {
+      await this._deactivate(store.id);
+    }
+
     this.storeRepository.merge(store, {
       ...updateStoreDto,
       updatedAt: new Date(),
@@ -136,5 +142,16 @@ export class StoreService {
     if (store && store.deletedAt) {
       await this.storeRepository.restore(store.id);
     }
+  }
+
+  private async _deactivate(storeId: number): Promise<void> {
+    await this.dataSource
+      .createQueryBuilder()
+      .update(User)
+      .set({ selectedStoreId: null })
+      .where('selectedStoreId = :id', { id: storeId })
+      .execute();
+
+    this.logger.log(`Deactivated store ${storeId} and reset users' selection`);
   }
 }
