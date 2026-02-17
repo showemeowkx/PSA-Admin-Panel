@@ -6,7 +6,7 @@ interface CategoryCardProps {
   name: string;
   image?: string;
   onClick?: () => void;
-  isAdmin?: boolean;
+  isAdminOnDesktop?: boolean;
   onEdit?: (e: React.MouseEvent) => void;
 }
 
@@ -14,7 +14,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   name,
   image,
   onClick,
-  isAdmin,
+  isAdminOnDesktop,
   onEdit,
 }) => {
   return (
@@ -37,7 +37,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           md:group-hover:bg-orange-500 md:group-hover:border-orange-500
         `}
       >
-        {isAdmin && (
+        {isAdminOnDesktop && (
           <button
             onClick={onEdit}
             className="hidden md:flex absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full shadow-lg items-center justify-center text-gray-600 hover:text-orange-600 hover:scale-110 transition-all z-20 border border-gray-100"

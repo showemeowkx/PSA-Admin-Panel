@@ -307,7 +307,7 @@ const ShopScreen: React.FC = () => {
                     key={cat.id}
                     name={cat.name}
                     image={cat.iconPath}
-                    isAdmin={user?.isAdmin}
+                    isAdminOnDesktop={isAdminRoute && isPlatform("desktop")}
                     onEdit={() => {}} // PLACEHOLDER
                   />
                 ))}
