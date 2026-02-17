@@ -202,9 +202,19 @@ const ShopLayout: React.FC = () => {
 
       <div className="hidden md:flex fixed top-0 left-0 right-0 h-20 bg-white/90 backdrop-blur-md border-b border-gray-200 z-50 px-8 items-center justify-between">
         <div className="flex items-center gap-12">
-          <h1 className="text-3xl font-black text-orange-600 tracking-tighter cursor-pointer">
-            ВІКТЕ
-          </h1>
+          <div
+            onClick={() => history.push(`${basePath}/shop`)}
+            className="flex flex-col items-start cursor-pointer group"
+          >
+            <h1 className="text-3xl font-black text-orange-600 tracking-tighter leading-none transition-transform group-hover:scale-105">
+              ВІКТЕ
+            </h1>
+            {isAdminOnDesktop && (
+              <span className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.2em] leading-none mt-1 ml-0.5">
+                Admin
+              </span>
+            )}
+          </div>
           <nav className="flex gap-2">
             <NavButton
               label="Головна"
@@ -224,19 +234,21 @@ const ShopLayout: React.FC = () => {
               active={location.pathname.includes("purchases")}
               href={`${basePath}/purchases`}
             />
-            {isAdminRoute && (
+            {isAdminOnDesktop && (
               <>
                 <NavButton
                   label="Замовлення"
                   icon={clipboardOutline}
                   active={location.pathname.includes("orders")}
                   href={`${basePath}/orders`}
+                  className="text-orange-600 hover:bg-gray-50"
                 />
                 <NavButton
                   label="Синхронізація"
                   icon={syncOutline}
                   active={location.pathname.includes("sync")}
                   href={`${basePath}/sync`}
+                  className="text-orange-600 hover:bg-gray-50"
                 />
               </>
             )}
@@ -406,14 +418,22 @@ interface NavButtonProps {
   icon: string;
   active: boolean;
   href: string;
+  className?: string;
 }
 
-const NavButton = ({ label, icon, active, href }: NavButtonProps) => (
+const NavButton = ({
+  label,
+  icon,
+  active,
+  href,
+  className = "",
+}: NavButtonProps) => (
   <a
     href={href}
     className={`
       flex items-center px-4 py-2 rounded-full transition-all duration-200 text-sm font-bold
       ${active ? "bg-orange-50 text-orange-600" : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"}
+      ${className} 
     `}
   >
     <IonIcon icon={icon} className="mr-2 text-xl" />
