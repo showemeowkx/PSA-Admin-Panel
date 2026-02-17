@@ -53,7 +53,11 @@ const LoginScreen: React.FC = () => {
       });
 
       if (user.selectedStoreId) {
-        history.replace("/app/shop");
+        if (user.isAdmin) {
+          history.replace("/admin/shop");
+        } else {
+          history.replace("/app/shop");
+        }
       } else {
         history.replace("/select-store");
       }
