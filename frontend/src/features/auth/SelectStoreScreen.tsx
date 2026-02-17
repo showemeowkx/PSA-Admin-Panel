@@ -26,7 +26,7 @@ interface Store {
 
 const SelectStoreScreen: React.FC = () => {
   const history = useHistory();
-  const { setSelectedStore, logout } = useAuthStore();
+  const { user, setSelectedStore, logout } = useAuthStore();
   const [presentToast] = useIonToast();
 
   const [stores, setStores] = useState<Store[]>([]);
@@ -68,7 +68,11 @@ const SelectStoreScreen: React.FC = () => {
         color: "success",
       });
 
-      history.replace("/app/shop");
+      if (user?.isAdmin) {
+        history.replace("/admin/shop");
+      } else {
+        history.replace("/app/shop");
+      }
     } catch (error: any) {
       console.error("Error selecting store:", error);
       presentToast({
