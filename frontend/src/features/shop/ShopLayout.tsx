@@ -39,6 +39,7 @@ const ShopLayout: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [stores, setStores] = useState<Store[]>([]);
 
+  const isAdminOnDesktop = user?.isAdmin && isPlatform("desktop");
   const isAdminRoute = location.pathname.startsWith("/admin");
   const basePath = isAdminRoute ? "/admin" : "/app";
 
@@ -71,8 +72,6 @@ const ShopLayout: React.FC = () => {
   useEffect(() => {
     const fetchStores = async () => {
       try {
-        const isAdminOnDesktop =
-          (user?.isAdmin || isAdminRoute) && isPlatform("desktop");
         const showInactive = isAdminOnDesktop ? 1 : 0;
 
         const { data } = await api.get(
@@ -84,7 +83,7 @@ const ShopLayout: React.FC = () => {
       }
     };
     if (token) fetchStores();
-  }, [token, user?.isAdmin, isAdminRoute]);
+  }, [token, isAdminOnDesktop]);
 
   const currentStore = stores.find((s) => s.id === user?.selectedStoreId) ||
     stores[0] || { address: "Магазин", id: 0 };
@@ -271,16 +270,16 @@ const ShopLayout: React.FC = () => {
                 <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
                   Оберіть магазин
                 </div>
-                <div className="max-h-[400px] overflow-y-auto pr-1">
+                <div className="max-h-[400px] overflow-y-auto overflow-x-hidden pr-1">
                   {stores.map((store) => {
                     const isSelected = user?.selectedStoreId === store.id;
                     return (
                       <div
                         key={store.id}
                         className={`
-                        w-full flex items-center justify-between px-3 py-3 rounded-xl transition-colors mb-1 border border-transparent
-                        ${isSelected ? "bg-orange-50 border-orange-100" : "hover:bg-gray-50"}
-                      `}
+      w-full flex items-center justify-between px-3 py-3 rounded-xl transition-colors mb-1 border border-transparent
+      ${isSelected ? "bg-orange-50 border-orange-100" : "hover:bg-gray-50"}
+    `}
                       >
                         <div className="flex-1 pr-4">
                           <p
@@ -297,19 +296,30 @@ const ShopLayout: React.FC = () => {
                           </p>
                         </div>
 
-                        {isSelected ? (
-                          <div className="flex items-center gap-2 text-orange-600 px-3 py-1.5 bg-white rounded-lg border border-orange-100 shadow-sm">
-                            <span className="text-xs font-bold">Обрано</span>
-                            <IonIcon icon={checkmarkOutline} />
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleStoreSelect(store.id)}
-                            className="px-4 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-orange-600 transition-colors shadow-sm active:scale-95"
-                          >
-                            Обрати
-                          </button>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {isAdminOnDesktop && (
+                            <button
+                              onClick={() => {}}
+                              className="text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors px-2 py-1 active:scale-95"
+                            >
+                              Редагувати
+                            </button>
+                          )}
+
+                          {isSelected ? (
+                            <div className="flex items-center gap-2 text-orange-600 px-3 py-1.5 bg-white rounded-lg border border-orange-100 shadow-sm">
+                              <span className="text-xs font-bold">Обрано</span>
+                              <IonIcon icon={checkmarkOutline} />
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleStoreSelect(store.id)}
+                              className="px-4 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-orange-600 transition-colors shadow-sm active:scale-95"
+                            >
+                              Обрати
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
