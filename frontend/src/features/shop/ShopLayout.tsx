@@ -30,11 +30,37 @@ const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
   const location = useLocation();
   const history = useHistory();
-  const { user, setSelectedStore, token, logout } = useAuthStore();
+  const { user, setSelectedStore, token, logout, setUser } = useAuthStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [stores, setStores] = useState<Store[]>([]);
+
+  useEffect(() => {
+    const refreshUserProfile = async () => {
+      if (!token) return;
+
+      try {
+        const { data: freshUser } = await api.get("/auth");
+        if (setUser) {
+          setUser(freshUser);
+        }
+
+        if (!freshUser.selectedStoreId) {
+          presentToast({
+            message: "Будь ласка, оберіть магазин для продовження",
+            duration: 3000,
+            color: "warning",
+          });
+          history.replace("/select-store");
+        }
+      } catch (error) {
+        console.error("Failed to refresh user profile", error);
+      }
+    };
+
+    refreshUserProfile();
+  }, [token, history, setUser, presentToast]);
 
   useEffect(() => {
     const fetchStores = async () => {
