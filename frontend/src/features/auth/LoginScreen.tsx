@@ -39,12 +39,14 @@ const LoginScreen: React.FC = () => {
     setIsLoading(true);
     try {
       const response = await api.post("/auth/signin", { login, password });
+
       const token = response.data.accessToken;
+      const refreshToken = response.data.refreshToken;
 
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       const user = await api.get("/auth").then((res) => res.data);
 
-      setAuth(token, user);
+      setAuth(token, refreshToken, user);
 
       presentToast({
         message: "Вхід успішний!",
