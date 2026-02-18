@@ -31,6 +31,7 @@ import StoreSelectorModal, {
   type Store,
 } from "./components/StoreSelectorModal";
 import api from "../../config/api";
+import SearchProductCard from "./components/SearchProductCard";
 
 interface Product {
   id: number;
@@ -498,19 +499,36 @@ const ShopScreen: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-6">
-                    {mockSearchResults.map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        name={product.name}
-                        price={
-                          product.isPromo ? product.pricePromo! : product.price
-                        }
-                        oldPrice={product.isPromo ? product.price : undefined}
-                        unit={product.unitsOfMeasurments}
-                        image={product.imagePath}
-                      />
-                    ))}
+                  <div className="md:grid md:grid-cols-4 md:gap-6 flex flex-col">
+                    {mockSearchResults.map((product) =>
+                      isPlatform("desktop") ? (
+                        <ProductCard
+                          key={product.id}
+                          name={product.name}
+                          price={
+                            product.isPromo
+                              ? product.pricePromo!
+                              : product.price
+                          }
+                          oldPrice={product.isPromo ? product.price : undefined}
+                          unit={product.unitsOfMeasurments}
+                          image={product.imagePath}
+                        />
+                      ) : (
+                        <SearchProductCard
+                          key={product.id}
+                          name={product.name}
+                          price={
+                            product.isPromo
+                              ? product.pricePromo!
+                              : product.price
+                          }
+                          oldPrice={product.isPromo ? product.price : undefined}
+                          unit={product.unitsOfMeasurments}
+                          image={product.imagePath}
+                        />
+                      ),
+                    )}
                   </div>
                 </>
               )}
