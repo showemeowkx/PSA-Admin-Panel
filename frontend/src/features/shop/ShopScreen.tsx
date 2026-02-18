@@ -12,6 +12,8 @@ import {
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   isPlatform,
+  useIonViewWillEnter,
+  useIonViewWillLeave,
 } from "@ionic/react";
 import {
   searchOutline,
@@ -22,6 +24,7 @@ import {
   storefrontOutline,
   chevronDownOutline,
   closeCircleOutline,
+  basketOutline,
 } from "ionicons/icons";
 import { useHistory, useLocation } from "react-router-dom";
 import CategoryCard from "./components/CategoryCard";
@@ -150,6 +153,20 @@ const ShopScreen: React.FC = () => {
       }
     };
   }, [isSearchActive]);
+
+  useIonViewWillLeave(() => {
+    if (!isPlatform("desktop")) {
+      const tabBar = document.querySelector("ion-tab-bar");
+      if (tabBar) tabBar.style.display = "";
+    }
+  });
+
+  useIonViewWillEnter(() => {
+    if (!isPlatform("desktop") && isSearchActive) {
+      const tabBar = document.querySelector("ion-tab-bar");
+      if (tabBar) tabBar.style.display = "none";
+    }
+  });
 
   const handleRefresh = async (e: CustomEvent) => {
     setPage(1);
@@ -535,6 +552,26 @@ const ShopScreen: React.FC = () => {
             </div>
           )}
         </div>
+
+        {isSearchActive && !isPlatform("desktop") && (
+          <div
+            slot="fixed"
+            className="bottom-6 right-6 z-50 animate-fade-in-up"
+          >
+            <button
+              onClick={() => {
+                history.push(`${basePath}/cart`);
+                setTimeout(() => {
+                  setIsSearchActive(false);
+                  setSearchQuery("");
+                }, 400);
+              }}
+              className="w-14 h-14 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-50 active:bg-gray-800 active:scale-95 transition-all"
+            >
+              <IonIcon icon={basketOutline} className="text-2xl" />
+            </button>
+          </div>
+        )}
       </IonContent>
     </IonPage>
   );
