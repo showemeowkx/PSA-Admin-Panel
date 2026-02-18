@@ -566,7 +566,7 @@ const ShopScreen: React.FC = () => {
                   setSearchQuery("");
                 }, 400);
               }}
-              className="w-14 h-14 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-50 active:bg-gray-800 active:scale-95 transition-all"
+              className="w-14 h-14 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-50 active:bg-orange-600 active:scale-95 transition-all"
             >
               <IonIcon icon={basketOutline} className="text-2xl" />
             </button>
