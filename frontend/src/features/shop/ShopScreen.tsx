@@ -82,16 +82,20 @@ const ShopScreen: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>({
     categories: [],
-    sort: null,
+    sort: "promo",
     priceMin: 0,
     priceMax: 10000,
+    showAll: false,
+    showInactive: false,
   });
 
   const hasActiveFilters =
-    activeFilters.sort !== null ||
+    activeFilters.sort !== "promo" ||
     activeFilters.categories.length > 0 ||
     activeFilters.priceMin > 0 ||
-    activeFilters.priceMax < 10000;
+    activeFilters.priceMax < 10000 ||
+    activeFilters.showAll ||
+    activeFilters.showInactive;
 
   const isAdminRoute = location.pathname.startsWith("/admin");
   const basePath = isAdminRoute ? "/admin" : "/app";

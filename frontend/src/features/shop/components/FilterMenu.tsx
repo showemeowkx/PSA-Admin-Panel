@@ -4,6 +4,7 @@ import {
   IonContent,
   IonIcon,
   IonRange,
+  IonToggle,
   isPlatform,
 } from "@ionic/react";
 import { closeOutline, checkmarkOutline } from "ionicons/icons";
@@ -13,6 +14,8 @@ export interface FilterState {
   sort: "price_asc" | "price_desc" | "promo" | null;
   priceMin: number;
   priceMax: number;
+  showAll: boolean;
+  showInactive: boolean;
 }
 
 interface Category {
@@ -30,6 +33,7 @@ interface FilterMenuProps {
 }
 
 const SORT_OPTIONS = [
+  { value: "promo", label: "Спочатку акційні" },
   { value: "price_asc", label: "Від дешевих до дорогих" },
   { value: "price_desc", label: "Від дорогих до дешевих" },
 ] as const;
@@ -82,9 +86,11 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
   const handleClear = () => {
     setLocalFilters({
       categories: [],
-      sort: null,
+      sort: "promo",
       priceMin: 0,
       priceMax: MAX_PRICE_LIMIT,
+      showAll: false,
+      showInactive: false,
     });
   };
 
@@ -114,6 +120,41 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
 
   const bodyContent = (
     <div className="p-4 space-y-6 pb-6">
+      {isAdmin && (
+        <section className="flex flex-col gap-4 pb-2 border-b border-gray-100/50">
+          <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">
+            Адмін-фільтри
+          </h3>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-orange-600 tracking-wide">
+              Показувати без наявності
+            </span>
+            <IonToggle
+              color="medium"
+              checked={localFilters.showAll}
+              onIonChange={(e) =>
+                setLocalFilters({ ...localFilters, showAll: e.detail.checked })
+              }
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-orange-600 tracking-wide">
+              Показувати неактивні
+            </span>
+            <IonToggle
+              color="medium"
+              checked={localFilters.showInactive}
+              onIonChange={(e) =>
+                setLocalFilters({
+                  ...localFilters,
+                  showInactive: e.detail.checked,
+                })
+              }
+            />
+          </div>
+        </section>
+      )}
+
       <section>
         <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">
           Сортування
@@ -268,9 +309,7 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
       <IonContent className="bg-white">
         <div className="flex flex-col min-h-full">
           <div className="shrink-0 sticky top-0 z-50">{headerContent}</div>
-
           <div className="flex-1">{bodyContent}</div>
-
           <div className="shrink-0 sticky bottom-0 z-50">{footerContent}</div>
         </div>
       </IonContent>
