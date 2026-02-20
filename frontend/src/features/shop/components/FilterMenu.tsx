@@ -120,7 +120,7 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
 
   const bodyContent = (
     <div className="p-4 space-y-6 pb-6">
-      {isAdmin && (
+      {isAdmin && isPlatform("desktop") && (
         <section className="flex flex-col gap-4 pb-2 border-b border-gray-100/50">
           <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">
             Адмін-фільтри
@@ -268,7 +268,7 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
     </div>
   );
 
-  const footerContent = (
+  const footerContent = isPlatform("desktop") ? (
     <div className="p-4 border-t border-gray-100 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
       <button
         onClick={handleApply}
@@ -277,7 +277,7 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
         Застосувати
       </button>
     </div>
-  );
+  ) : null;
 
   if (isPlatform("desktop")) {
     if (!isOpen) return null;
