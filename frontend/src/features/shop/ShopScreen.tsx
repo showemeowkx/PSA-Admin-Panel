@@ -82,7 +82,7 @@ const ShopScreen: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>({
     categories: [],
-    sort: "promo",
+    sort: "PROMO",
     priceMin: 0,
     priceMax: 10000,
     showAll: false,
@@ -90,7 +90,7 @@ const ShopScreen: React.FC = () => {
   });
 
   const hasActiveFilters =
-    activeFilters.sort !== "promo" ||
+    activeFilters.sort !== "PROMO" ||
     activeFilters.categories.length > 0 ||
     activeFilters.priceMin > 0 ||
     activeFilters.priceMax < 10000 ||
@@ -160,8 +160,36 @@ const ShopScreen: React.FC = () => {
       if (!user?.selectedStoreId) return;
 
       try {
+        const filterParams = new URLSearchParams();
+
+        if (activeFilters.sort !== null) {
+          filterParams.append("sortMethod", activeFilters.sort);
+        }
+
+        if (activeFilters.priceMin > 0) {
+          filterParams.append("minPrice", activeFilters.priceMin.toString());
+        }
+        if (activeFilters.priceMax < 10000) {
+          filterParams.append("maxPrice", activeFilters.priceMax.toString());
+        }
+
+        if (activeFilters.categories.length > 0) {
+          filterParams.append(
+            "categoryId",
+            activeFilters.categories[0].toString(),
+          );
+        }
+
+        const showAllParam = user?.isAdmin && activeFilters.showAll ? "1" : "0";
+        const showInactiveParam =
+          user?.isAdmin && activeFilters.showInactive ? "1" : "0";
+
         const { data } = await api.get(
-          `/products?limit=24&page=${pageNum}&search=${encodeURIComponent(query)}&showAll=0&showDeleted=0&showInactive=0&storeId=${user.selectedStoreId}`,
+          `/products?limit=24&page=${pageNum}&search=${encodeURIComponent(
+            query,
+          )}&showAll=${showAllParam}&showInactive=${showInactiveParam}&showDeleted=0&storeId=${
+            user.selectedStoreId
+          }&${filterParams.toString()}`,
         );
 
         const newProducts = data.data || [];
@@ -184,7 +212,7 @@ const ShopScreen: React.FC = () => {
         setIsSearching(false);
       }
     },
-    [user?.selectedStoreId],
+    [user?.selectedStoreId, user?.isAdmin, activeFilters],
   );
 
   useEffect(() => {
@@ -216,7 +244,10 @@ const ShopScreen: React.FC = () => {
   }, [isSearchActive]);
 
   useEffect(() => {
-    if (!isSearchActive || searchQuery.trim().length === 0) {
+    if (
+      !isSearchActive ||
+      (searchQuery.trim().length === 0 && !hasActiveFilters)
+    ) {
       setSearchProducts([]);
       setSearchPage(1);
       setSearchHasMore(false);
@@ -232,7 +263,7 @@ const ShopScreen: React.FC = () => {
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, isSearchActive, fetchSearchResults]);
+  }, [searchQuery, isSearchActive, fetchSearchResults, hasActiveFilters]);
 
   useIonViewWillLeave(() => {
     if (!isPlatform("desktop")) {
@@ -268,7 +299,7 @@ const ShopScreen: React.FC = () => {
       return;
     }
 
-    if (isSearchActive && searchQuery.trim().length > 0) {
+    if (isSearchActive && (searchQuery.trim().length > 0 || hasActiveFilters)) {
       const nextPage = searchPage + 1;
       await fetchSearchResults(searchQuery, nextPage, true);
       setSearchPage(nextPage);
@@ -386,7 +417,6 @@ const ShopScreen: React.FC = () => {
                   className="w-full bg-transparent outline-none text-sm text-gray-700 placeholder:text-gray-400"
                 />
 
-                {/* Search Bar Actions */}
                 <div className="flex items-center gap-1.5 shrink-0">
                   {searchQuery && (
                     <button
@@ -396,7 +426,6 @@ const ShopScreen: React.FC = () => {
                       <IonIcon icon={closeCircleOutline} className="text-xl" />
                     </button>
                   )}
-                  {/* Filter appears ONLY when active */}
                   {isSearchActive && (
                     <button
                       onClick={() => setIsFilterOpen(true)}
@@ -571,7 +600,7 @@ const ShopScreen: React.FC = () => {
             </div>
           ) : (
             <div className="px-3 md:px-0 animate-fade-in-up">
-              {searchQuery.length === 0 ? (
+              {searchQuery.length === 0 && !hasActiveFilters ? (
                 <div className="flex flex-col items-center justify-center text-center py-24 md:py-32">
                   <IonIcon
                     icon={searchOutline}
@@ -588,10 +617,16 @@ const ShopScreen: React.FC = () => {
                 <>
                   <div className="flex items-center justify-between mb-6 pl-1 border-b border-gray-200 pb-3">
                     <h2 className="text-lg md:text-xl font-bold text-gray-800">
-                      Результати:{" "}
-                      <span className="text-orange-600 font-medium ml-1">
-                        "{searchQuery}"
-                      </span>
+                      {searchQuery ? (
+                        <>
+                          Результати:{" "}
+                          <span className="text-orange-600 font-medium ml-1">
+                            "{searchQuery}"
+                          </span>
+                        </>
+                      ) : (
+                        "Результати:"
+                      )}
                     </h2>
                     <span className="text-xs font-bold text-gray-400 bg-gray-200/50 px-2 py-1 rounded-md">
                       {isSearching ? "Шукаємо..." : `${searchTotal} знайдено`}
