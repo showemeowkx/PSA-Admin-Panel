@@ -38,7 +38,7 @@ const SORT_OPTIONS = [
   { value: "DESC", label: "Від дорогих до дешевих" },
 ] as const;
 
-const MAX_PRICE_LIMIT = 10000;
+const MAX_PRICE_LIMIT = Number(import.meta.env.VITE_MAX_PRICE_LIMIT) || 2500;
 
 const FilterMenu: React.FC<FilterMenuProps> = ({
   isOpen,

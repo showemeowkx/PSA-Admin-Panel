@@ -37,6 +37,8 @@ import SearchProductCard from "./components/SearchProductCard";
 import type { FilterState } from "./components/FilterMenu";
 import FilterMenu from "./components/FilterMenu";
 
+const MAX_PRICE_LIMIT = Number(import.meta.env.VITE_MAX_PRICE_LIMIT) || 2500;
+
 interface Product {
   id: number;
   ukrskladId: number;
@@ -92,7 +94,7 @@ const ShopScreen: React.FC = () => {
     categories: [],
     sort: "PROMO",
     priceMin: 0,
-    priceMax: 10000,
+    priceMax: MAX_PRICE_LIMIT,
     showAll: false,
     showInactive: false,
   });
@@ -101,7 +103,7 @@ const ShopScreen: React.FC = () => {
     activeFilters.sort !== "PROMO" ||
     activeFilters.categories.length > 0 ||
     activeFilters.priceMin > 0 ||
-    activeFilters.priceMax < 10000 ||
+    activeFilters.priceMax < MAX_PRICE_LIMIT ||
     activeFilters.showAll ||
     activeFilters.showInactive;
 
@@ -177,7 +179,7 @@ const ShopScreen: React.FC = () => {
         if (activeFilters.priceMin > 0) {
           filterParams.append("minPrice", activeFilters.priceMin.toString());
         }
-        if (activeFilters.priceMax < 10000) {
+        if (activeFilters.priceMax < MAX_PRICE_LIMIT) {
           filterParams.append("maxPrice", activeFilters.priceMax.toString());
         }
 
