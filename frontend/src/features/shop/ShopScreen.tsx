@@ -183,8 +183,8 @@ const ShopScreen: React.FC = () => {
 
         if (activeFilters.categories.length > 0) {
           filterParams.append(
-            "categoryId",
-            activeFilters.categories[0].toString(),
+            "categoryIds",
+            activeFilters.categories.join(","),
           );
         }
 
@@ -322,6 +322,17 @@ const ShopScreen: React.FC = () => {
 
   const currentStore = stores.find((s) => s.id === user?.selectedStoreId) || {
     address: "Неактивний магазин",
+  };
+
+  const handleCategoryClick = (categoryId: number) => {
+    setSearchQuery("");
+
+    setActiveFilters((prev) => ({
+      ...prev,
+      categories: [categoryId],
+    }));
+
+    setIsSearchActive(true);
   };
 
   const scrollCategories = (direction: "left" | "right") => {
@@ -575,6 +586,7 @@ const ShopScreen: React.FC = () => {
                         image={cat.iconPath}
                         isAdminOnDesktop={isAdminRoute && isPlatform("desktop")}
                         isActive={cat.isActive}
+                        onClick={() => handleCategoryClick(cat.id)}
                         onEdit={() => {}} // PLACEHOLDER
                       />
                     ))}
