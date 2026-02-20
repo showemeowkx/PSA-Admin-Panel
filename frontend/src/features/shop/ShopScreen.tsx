@@ -34,6 +34,8 @@ import StoreSelectorModal, {
 } from "./components/StoreSelectorModal";
 import api from "../../config/api";
 import SearchProductCard from "./components/SearchProductCard";
+import type { FilterState } from "./components/FilterMenu";
+import FilterMenu from "./components/FilterMenu";
 
 interface Product {
   id: number;
@@ -75,6 +77,20 @@ const ShopScreen: React.FC = () => {
   const [searchHasMore, setSearchHasMore] = useState(false);
   const [searchTotal, setSearchTotal] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
+
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterState>({
+    categories: [],
+    sort: null,
+    priceMin: 0,
+    priceMax: 10000,
+  });
+
+  const hasActiveFilters =
+    activeFilters.sort !== null ||
+    activeFilters.categories.length > 0 ||
+    activeFilters.priceMin > 0 ||
+    activeFilters.priceMax < 10000;
 
   const isAdminRoute = location.pathname.startsWith("/admin");
   const basePath = isAdminRoute ? "/admin" : "/app";
@@ -284,6 +300,17 @@ const ShopScreen: React.FC = () => {
         stores={stores}
       />
 
+      {!isPlatform("desktop") && (
+        <FilterMenu
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          categories={categories}
+          currentFilters={activeFilters}
+          isAdmin={user?.isAdmin}
+          onApply={setActiveFilters}
+        />
+      )}
+
       <IonHeader className="ion-no-border shadow-sm z-40 bg-white md:hidden transition-all duration-300">
         <IonToolbar
           className="bg-white"
@@ -357,11 +384,20 @@ const ShopScreen: React.FC = () => {
                   >
                     <IonIcon icon={closeCircleOutline} className="text-xl" />
                   </button>
-                ) : (
-                  <button className="text-gray-400 active:text-orange-500">
-                    <IonIcon icon={filterOutline} />
+                  )}
+                  {/* Filter appears ONLY when active */}
+                  {isSearchActive && (
+                    <button
+                      onClick={() => setIsFilterOpen(true)}
+                      className={`relative p-1 transition-colors ${hasActiveFilters ? "text-orange-500" : "text-gray-400 active:text-orange-500"}`}
+                    >
+                      <IonIcon icon={filterOutline} className="text-xl" />
+                      {hasActiveFilters && (
+                        <span className="absolute top-0 right-0.5 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
+                      )}
                   </button>
                 )}
+                </div>
               </div>
             </div>
           </div>
@@ -390,7 +426,7 @@ const ShopScreen: React.FC = () => {
                 </button>
               )}
 
-              <div className="bg-gray-100/80 rounded-xl px-4 py-2.5 w-full flex items-center h-12">
+              <div className="bg-gray-100/80 rounded-xl px-4 py-2.5 w-full flex items-center h-12 relative">
                 <IonIcon
                   icon={searchOutline}
                   className="text-xl text-gray-400 mr-3"
@@ -413,7 +449,23 @@ const ShopScreen: React.FC = () => {
                 ) : null}
                 <button className="text-gray-400 hover:text-orange-500 transition-colors">
                   <IonIcon icon={filterOutline} className="text-xl" />
+                      {hasActiveFilters && (
+                        <span className="absolute top-0 right-0.5 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
+                      )}
                 </button>
+                  )}
+                </div>
+
+                {isPlatform("desktop") && (
+                  <FilterMenu
+                    isOpen={isFilterOpen}
+                    onClose={() => setIsFilterOpen(false)}
+                    categories={categories}
+                    currentFilters={activeFilters}
+                    isAdmin={user?.isAdmin}
+                    onApply={setActiveFilters}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -460,6 +512,7 @@ const ShopScreen: React.FC = () => {
                         name={cat.name}
                         image={cat.iconPath}
                         isAdminOnDesktop={isAdminRoute && isPlatform("desktop")}
+                        isActive={cat.isActive}
                         onEdit={() => {}} // PLACEHOLDER
                       />
                     ))}
