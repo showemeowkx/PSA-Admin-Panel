@@ -1,5 +1,12 @@
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Min, IsEnum } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+  IsEnum,
+  IsArray,
+} from 'class-validator';
 
 export enum SortMethod {
   ASC = 'ASC',
@@ -30,9 +37,20 @@ export class GetProductsFiltersDto {
   search?: string;
 
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  categoryId?: number;
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map((id) => parseInt(id.trim(), 10));
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((id) => parseInt(id, 10));
+    }
+
+    return [parseInt(value as string, 10)];
+  })
+  @IsArray()
+  @IsInt({ each: true })
+  categoryIds?: number[];
 
   @IsOptional()
   @Type(() => Number)
