@@ -8,6 +8,8 @@ interface ProductCardProps {
   unit: string;
   image?: string;
   oldPrice?: number;
+  isActive?: boolean;
+  isOutOfStock?: boolean;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -16,13 +18,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
   unit,
   image,
   oldPrice,
+  isActive,
+  isOutOfStock,
 }) => {
   const discountPercentage = oldPrice
     ? Math.round(((oldPrice - price) / oldPrice) * 100)
     : 0;
 
+  const isUnavailable = !isActive || isOutOfStock;
+
   return (
-    <div className="bg-white rounded-[24px] p-3 shadow-sm border border-gray-100 flex flex-col h-full relative overflow-hidden group">
+    <div
+      className={`bg-white rounded-[24px] p-3 shadow-sm border border-gray-100 flex flex-col h-full relative overflow-hidden group transition-all ${isUnavailable ? "opacity-70 grayscale-[30%]" : ""}`}
+    >
       <div className="aspect-[1/0.9] bg-gray-50 rounded-[18px] mb-2 overflow-hidden flex items-center justify-center relative">
         {image ? (
           <img src={image} alt={name} className="w-full h-full object-cover" />
@@ -30,11 +38,25 @@ const ProductCard: React.FC<ProductCardProps> = ({
           <span className="text-3xl opacity-20">📷</span>
         )}
 
-        {discountPercentage > 0 && (
+        {discountPercentage > 0 && !isUnavailable && (
           <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-sm z-10">
             -{discountPercentage}%
           </div>
         )}
+
+        {!isActive ? (
+          <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 backdrop-blur-[1.5px]">
+            <span className="bg-gray-800 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-sm">
+              Неактивний
+            </span>
+          </div>
+        ) : isOutOfStock ? (
+          <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 backdrop-blur-[1.5px]">
+            <span className="bg-gray-500 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-sm">
+              Немає в наявності
+            </span>
+          </div>
+        ) : null}
       </div>
 
       <div className="flex flex-col flex-grow">
@@ -52,14 +74,21 @@ const ProductCard: React.FC<ProductCardProps> = ({
               </span>
             )}
             <span
-              className={`font-black text-base ${oldPrice ? "text-red-500" : "text-gray-900"}`}
+              className={`font-black text-base ${oldPrice ? "text-red-500" : "text-gray-900"} ${isUnavailable ? "text-gray-500" : ""}`}
             >
               {price}{" "}
               <span className="text-xs font-normal text-gray-400">₴</span>
             </span>
           </div>
 
-          <button className="w-8 h-8 bg-orange-50 rounded-full flex items-center justify-center text-orange-600 active:bg-orange-500 active:text-white transition-colors">
+          <button
+            disabled={isUnavailable}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+              isUnavailable
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                : "bg-orange-50 text-orange-600 active:bg-orange-500 active:text-white"
+            }`}
+          >
             <IonIcon icon={add} className="text-lg" />
           </button>
         </div>

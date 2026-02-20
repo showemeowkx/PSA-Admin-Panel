@@ -123,7 +123,7 @@ export class UkrSkladService {
         SKLAD_ID as STORE_ID,
         KOLVO as QUANTITY
       FROM TOVAR_ZAL
-      WHERE KOLVO >= 0
+      WHERE KOLVO > 0
     `;
 
     if (ids && ids.length > 0) {

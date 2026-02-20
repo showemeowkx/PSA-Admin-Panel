@@ -34,6 +34,10 @@ import StoreSelectorModal, {
 } from "./components/StoreSelectorModal";
 import api from "../../config/api";
 import SearchProductCard from "./components/SearchProductCard";
+import type { FilterState } from "./components/FilterMenu";
+import FilterMenu from "./components/FilterMenu";
+
+const MAX_PRICE_LIMIT = Number(import.meta.env.VITE_MAX_PRICE_LIMIT) || 2500;
 
 interface Product {
   id: number;
@@ -47,12 +51,21 @@ interface Product {
   imagePath: string;
   isActive: boolean;
   isPromo: boolean;
+  stocks: Stock[];
+}
+
+interface Stock {
+  id: number;
+  productId: number;
+  storeId: number;
+  available: number;
 }
 
 interface Category {
   id: number;
   name: string;
   iconPath: string;
+  isActive: boolean;
 }
 
 const ShopScreen: React.FC = () => {
@@ -76,6 +89,24 @@ const ShopScreen: React.FC = () => {
   const [searchTotal, setSearchTotal] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
 
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<FilterState>({
+    categories: [],
+    sort: "PROMO",
+    priceMin: 0,
+    priceMax: MAX_PRICE_LIMIT,
+    showAll: false,
+    showInactive: false,
+  });
+
+  const hasActiveFilters =
+    activeFilters.sort !== "PROMO" ||
+    activeFilters.categories.length > 0 ||
+    activeFilters.priceMin > 0 ||
+    activeFilters.priceMax < MAX_PRICE_LIMIT ||
+    activeFilters.showAll ||
+    activeFilters.showInactive;
+
   const isAdminRoute = location.pathname.startsWith("/admin");
   const basePath = isAdminRoute ? "/admin" : "/app";
 
@@ -98,14 +129,17 @@ const ShopScreen: React.FC = () => {
 
   const fetchCategories = useCallback(async () => {
     try {
+      const isAdminOnDesktop =
+        (user?.isAdmin || isAdminRoute) && isPlatform("desktop");
+      const showInactive = isAdminOnDesktop ? 1 : 0;
       const { data } = await api.get(
-        "/categories?limit=0&showInactive=0&showDeleted=0",
+        `/categories?limit=0&showInactive=${showInactive}&showDeleted=0`,
       );
       setCategories(data.data || []);
     } catch (e) {
       console.error("Failed to fetch categories", e);
     }
-  }, []);
+  }, [user?.isAdmin, isAdminRoute]);
 
   const fetchProducts = useCallback(
     async (storeId: number, pageNum: number, isLoadMore: boolean = false) => {
@@ -136,8 +170,36 @@ const ShopScreen: React.FC = () => {
       if (!user?.selectedStoreId) return;
 
       try {
+        const filterParams = new URLSearchParams();
+
+        if (activeFilters.sort !== null) {
+          filterParams.append("sortMethod", activeFilters.sort);
+        }
+
+        if (activeFilters.priceMin > 0) {
+          filterParams.append("minPrice", activeFilters.priceMin.toString());
+        }
+        if (activeFilters.priceMax < MAX_PRICE_LIMIT) {
+          filterParams.append("maxPrice", activeFilters.priceMax.toString());
+        }
+
+        if (activeFilters.categories.length > 0) {
+          filterParams.append(
+            "categoryIds",
+            activeFilters.categories.join(","),
+          );
+        }
+
+        const showAllParam = user?.isAdmin && activeFilters.showAll ? "1" : "0";
+        const showInactiveParam =
+          user?.isAdmin && activeFilters.showInactive ? "1" : "0";
+
         const { data } = await api.get(
-          `/products?limit=24&page=${pageNum}&search=${encodeURIComponent(query)}&showAll=0&showDeleted=0&showInactive=0&storeId=${user.selectedStoreId}`,
+          `/products?limit=24&page=${pageNum}&search=${encodeURIComponent(
+            query,
+          )}&showAll=${showAllParam}&showInactive=${showInactiveParam}&showDeleted=0&storeId=${
+            user.selectedStoreId
+          }&${filterParams.toString()}`,
         );
 
         const newProducts = data.data || [];
@@ -160,7 +222,7 @@ const ShopScreen: React.FC = () => {
         setIsSearching(false);
       }
     },
-    [user?.selectedStoreId],
+    [user?.selectedStoreId, user?.isAdmin, activeFilters],
   );
 
   useEffect(() => {
@@ -192,7 +254,10 @@ const ShopScreen: React.FC = () => {
   }, [isSearchActive]);
 
   useEffect(() => {
-    if (!isSearchActive || searchQuery.trim().length === 0) {
+    if (
+      !isSearchActive ||
+      (searchQuery.trim().length === 0 && !hasActiveFilters)
+    ) {
       setSearchProducts([]);
       setSearchPage(1);
       setSearchHasMore(false);
@@ -208,7 +273,7 @@ const ShopScreen: React.FC = () => {
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, isSearchActive, fetchSearchResults]);
+  }, [searchQuery, isSearchActive, fetchSearchResults, hasActiveFilters]);
 
   useIonViewWillLeave(() => {
     if (!isPlatform("desktop")) {
@@ -244,7 +309,7 @@ const ShopScreen: React.FC = () => {
       return;
     }
 
-    if (isSearchActive && searchQuery.trim().length > 0) {
+    if (isSearchActive && (searchQuery.trim().length > 0 || hasActiveFilters)) {
       const nextPage = searchPage + 1;
       await fetchSearchResults(searchQuery, nextPage, true);
       setSearchPage(nextPage);
@@ -259,6 +324,17 @@ const ShopScreen: React.FC = () => {
 
   const currentStore = stores.find((s) => s.id === user?.selectedStoreId) || {
     address: "Неактивний магазин",
+  };
+
+  const handleCategoryClick = (categoryId: number) => {
+    setSearchQuery("");
+
+    setActiveFilters((prev) => ({
+      ...prev,
+      categories: [categoryId],
+    }));
+
+    setIsSearchActive(true);
   };
 
   const scrollCategories = (direction: "left" | "right") => {
@@ -276,6 +352,14 @@ const ShopScreen: React.FC = () => {
     setSearchQuery("");
   };
 
+  const checkIsOutOfStock = (product: Product) => {
+    if (!product.stocks || !user?.selectedStoreId) return true;
+    const storeStock = product.stocks.find(
+      (s) => s.storeId === user?.selectedStoreId,
+    );
+    return !storeStock || storeStock.available <= 0;
+  };
+
   return (
     <IonPage>
       <StoreSelectorModal
@@ -283,6 +367,17 @@ const ShopScreen: React.FC = () => {
         onClose={() => setIsStoreModalOpen(false)}
         stores={stores}
       />
+
+      {!isPlatform("desktop") && (
+        <FilterMenu
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          categories={categories}
+          currentFilters={activeFilters}
+          isAdmin={user?.isAdmin}
+          onApply={setActiveFilters}
+        />
+      )}
 
       <IonHeader className="ion-no-border shadow-sm z-40 bg-white md:hidden transition-all duration-300">
         <IonToolbar
@@ -350,18 +445,28 @@ const ShopScreen: React.FC = () => {
                   placeholder="Пошук товарів..."
                   className="w-full bg-transparent outline-none text-sm text-gray-700 placeholder:text-gray-400"
                 />
-                {searchQuery ? (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="text-gray-400 active:text-orange-500"
-                  >
-                    <IonIcon icon={closeCircleOutline} className="text-xl" />
-                  </button>
-                ) : (
-                  <button className="text-gray-400 active:text-orange-500">
-                    <IonIcon icon={filterOutline} />
-                  </button>
-                )}
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="text-gray-400 active:text-orange-500 p-1"
+                    >
+                      <IonIcon icon={closeCircleOutline} className="text-xl" />
+                    </button>
+                  )}
+                  {isSearchActive && (
+                    <button
+                      onClick={() => setIsFilterOpen(true)}
+                      className={`relative p-1 transition-colors ${hasActiveFilters ? "text-orange-500" : "text-gray-400 active:text-orange-500"}`}
+                    >
+                      <IonIcon icon={filterOutline} className="text-xl" />
+                      {hasActiveFilters && (
+                        <span className="absolute top-0 right-0.5 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -390,7 +495,7 @@ const ShopScreen: React.FC = () => {
                 </button>
               )}
 
-              <div className="bg-gray-100/80 rounded-xl px-4 py-2.5 w-full flex items-center h-12">
+              <div className="bg-gray-100/80 rounded-xl px-4 py-2.5 w-full flex items-center h-12 relative">
                 <IonIcon
                   icon={searchOutline}
                   className="text-xl text-gray-400 mr-3"
@@ -403,17 +508,39 @@ const ShopScreen: React.FC = () => {
                   placeholder="Пошук товарів..."
                   className="w-full bg-transparent outline-none text-gray-700 text-base placeholder:text-gray-400"
                 />
-                {searchQuery ? (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="text-gray-400 hover:text-orange-500 transition-colors mr-2"
-                  >
-                    <IonIcon icon={closeCircleOutline} className="text-xl" />
-                  </button>
-                ) : null}
-                <button className="text-gray-400 hover:text-orange-500 transition-colors">
-                  <IonIcon icon={filterOutline} className="text-xl" />
-                </button>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="text-gray-400 hover:text-orange-500 transition-colors p-1"
+                    >
+                      <IonIcon icon={closeCircleOutline} className="text-xl" />
+                    </button>
+                  )}
+                  {isSearchActive && (
+                    <button
+                      onClick={() => setIsFilterOpen(true)}
+                      className={`relative p-1 transition-colors ${hasActiveFilters ? "text-orange-500" : "text-gray-400 hover:text-orange-500"}`}
+                    >
+                      <IonIcon icon={filterOutline} className="text-xl" />
+                      {hasActiveFilters && (
+                        <span className="absolute top-0 right-0.5 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {isPlatform("desktop") && (
+                  <FilterMenu
+                    isOpen={isFilterOpen}
+                    onClose={() => setIsFilterOpen(false)}
+                    categories={categories}
+                    currentFilters={activeFilters}
+                    isAdmin={user?.isAdmin}
+                    onApply={setActiveFilters}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -460,6 +587,8 @@ const ShopScreen: React.FC = () => {
                         name={cat.name}
                         image={cat.iconPath}
                         isAdminOnDesktop={isAdminRoute && isPlatform("desktop")}
+                        isActive={cat.isActive}
+                        onClick={() => handleCategoryClick(cat.id)}
                         onEdit={() => {}} // PLACEHOLDER
                       />
                     ))}
@@ -489,6 +618,8 @@ const ShopScreen: React.FC = () => {
                       oldPrice={product.isPromo ? product.price : undefined}
                       unit={product.unitsOfMeasurments}
                       image={product.imagePath}
+                      isActive={product.isActive}
+                      isOutOfStock={checkIsOutOfStock(product)}
                     />
                   ))}
                   {products.length === 0 && (
@@ -501,7 +632,7 @@ const ShopScreen: React.FC = () => {
             </div>
           ) : (
             <div className="px-3 md:px-0 animate-fade-in-up">
-              {searchQuery.length === 0 ? (
+              {searchQuery.length === 0 && !hasActiveFilters ? (
                 <div className="flex flex-col items-center justify-center text-center py-24 md:py-32">
                   <IonIcon
                     icon={searchOutline}
@@ -518,10 +649,16 @@ const ShopScreen: React.FC = () => {
                 <>
                   <div className="flex items-center justify-between mb-6 pl-1 border-b border-gray-200 pb-3">
                     <h2 className="text-lg md:text-xl font-bold text-gray-800">
-                      Результати:{" "}
-                      <span className="text-orange-600 font-medium ml-1">
-                        "{searchQuery}"
-                      </span>
+                      {searchQuery ? (
+                        <>
+                          Результати:{" "}
+                          <span className="text-orange-600 font-medium ml-1">
+                            "{searchQuery}"
+                          </span>
+                        </>
+                      ) : (
+                        "Результати:"
+                      )}
                     </h2>
                     <span className="text-xs font-bold text-gray-400 bg-gray-200/50 px-2 py-1 rounded-md">
                       {isSearching ? "Шукаємо..." : `${searchTotal} знайдено`}
@@ -555,6 +692,8 @@ const ShopScreen: React.FC = () => {
                             }
                             unit={product.unitsOfMeasurments}
                             image={product.imagePath}
+                            isActive={product.isActive}
+                            isOutOfStock={checkIsOutOfStock(product)}
                           />
                         ) : (
                           <SearchProductCard
@@ -570,6 +709,8 @@ const ShopScreen: React.FC = () => {
                             }
                             unit={product.unitsOfMeasurments}
                             image={product.imagePath}
+                            isActive={product.isActive}
+                            isOutOfStock={checkIsOutOfStock(product)}
                           />
                         ),
                       )}

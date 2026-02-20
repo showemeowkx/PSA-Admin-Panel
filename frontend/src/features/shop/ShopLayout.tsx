@@ -297,7 +297,9 @@ const ShopLayout: React.FC = () => {
                           <p
                             className={`text-sm font-bold truncate ${isSelected ? "text-gray-900" : "text-gray-700"}`}
                           >
-                            {store.address}
+                            {store.address.length <= 15
+                              ? store.address
+                              : `${store.address.substring(0, 15)}...`}
                           </p>
                           <p
                             className={`text-[10px] ${store.isActive ? "text-green-500" : "text-red-400"}`}

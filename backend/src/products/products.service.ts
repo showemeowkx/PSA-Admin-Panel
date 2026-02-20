@@ -121,7 +121,7 @@ export class ProductsService {
       page = 1,
       limit = 10,
       storeId,
-      categoryId,
+      categoryIds,
       search,
       minPrice,
       maxPrice,
@@ -154,8 +154,8 @@ export class ProductsService {
     if (storeId) {
       qb.andWhere('stock.storeId = :storeId', { storeId });
     }
-    if (categoryId) {
-      qb.andWhere('product.categoryId = :categoryId', { categoryId });
+    if (categoryIds && categoryIds.length > 0) {
+      qb.andWhere('product.categoryId IN (:...categoryIds)', { categoryIds });
     }
     if (search) {
       qb.andWhere(

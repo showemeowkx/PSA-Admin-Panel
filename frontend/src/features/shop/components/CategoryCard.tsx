@@ -7,6 +7,7 @@ interface CategoryCardProps {
   image?: string;
   onClick?: () => void;
   isAdminOnDesktop?: boolean;
+  isActive?: boolean;
   onEdit?: (e: React.MouseEvent) => void;
 }
 
@@ -15,6 +16,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   image,
   onClick,
   isAdminOnDesktop,
+  isActive,
   onEdit,
 }) => {
   return (
@@ -26,15 +28,13 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
         className={`
           relative w-[80px] h-[80px] rounded-[20px] flex items-center justify-center transition-all duration-300 border
 
-          bg-orange-500 border-orange-500 text-white
+          ${isActive ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-100 border-gray-200 text-gray-500"}
           shadow-[0_4px_12px_rgba(0,0,0,0.15)]
           
-          /* Desktop Hover Effects */
-          md:hover:!bg-orange-400 md:hover:!border-orange-400 md:hover:shadow-md
+          ${isActive ? "md:hover:!bg-orange-400 md:hover:!border-orange-400 md:hover:shadow-md" : "md:hover:bg-gray-200 md:hover:border-gray-300 md:hover:shadow-sm"}
 
-          /* Group Hover Effects */
-          group-hover:bg-orange-400 group-hover:border-orange-400
-          md:group-hover:bg-orange-500 md:group-hover:border-orange-500
+          ${isActive ? "group-hover:bg-orange-400 group-hover:border-orange-400" : ""}
+          ${isActive ? "md:group-hover:bg-orange-500 md:group-hover:border-orange-500" : ""}
         `}
       >
         {isAdminOnDesktop && (
