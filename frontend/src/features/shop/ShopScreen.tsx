@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   IonPage,
@@ -71,6 +70,12 @@ const ShopScreen: React.FC = () => {
   const [isSearchActive, setIsSearchActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [searchProducts, setSearchProducts] = useState<Product[]>([]);
+  const [searchPage, setSearchPage] = useState(1);
+  const [searchHasMore, setSearchHasMore] = useState(false);
+  const [searchTotal, setSearchTotal] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+
   const isAdminRoute = location.pathname.startsWith("/admin");
   const basePath = isAdminRoute ? "/admin" : "/app";
 
@@ -126,6 +131,38 @@ const ShopScreen: React.FC = () => {
     [],
   );
 
+  const fetchSearchResults = useCallback(
+    async (query: string, pageNum: number, isLoadMore: boolean = false) => {
+      if (!user?.selectedStoreId) return;
+
+      try {
+        const { data } = await api.get(
+          `/products?limit=24&page=${pageNum}&search=${encodeURIComponent(query)}&showAll=0&showDeleted=0&showInactive=0&storeId=${user.selectedStoreId}`,
+        );
+
+        const newProducts = data.data || [];
+        const meta = data.metadata;
+
+        if (isLoadMore) {
+          setSearchProducts((prev) => [...prev, ...newProducts]);
+        } else {
+          setSearchProducts(newProducts);
+        }
+
+        setSearchTotal(meta?.total || 0);
+        setSearchHasMore(
+          meta ? pageNum < meta.totalPages : newProducts.length >= 24,
+        );
+      } catch (e) {
+        console.error("Failed to fetch search results", e);
+        setSearchHasMore(false);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [user?.selectedStoreId],
+  );
+
   useEffect(() => {
     if (token) {
       fetchStores();
@@ -153,6 +190,25 @@ const ShopScreen: React.FC = () => {
       }
     };
   }, [isSearchActive]);
+
+  useEffect(() => {
+    if (!isSearchActive || searchQuery.trim().length === 0) {
+      setSearchProducts([]);
+      setSearchPage(1);
+      setSearchHasMore(false);
+      setSearchTotal(0);
+      return;
+    }
+
+    setIsSearching(true);
+
+    const delayDebounceFn = setTimeout(() => {
+      fetchSearchResults(searchQuery, 1, false);
+      setSearchPage(1);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, isSearchActive, fetchSearchResults]);
 
   useIonViewWillLeave(() => {
     if (!isPlatform("desktop")) {
@@ -188,9 +244,15 @@ const ShopScreen: React.FC = () => {
       return;
     }
 
-    const nextPage = page + 1;
-    await fetchProducts(user.selectedStoreId, nextPage, true);
-    setPage(nextPage);
+    if (isSearchActive && searchQuery.trim().length > 0) {
+      const nextPage = searchPage + 1;
+      await fetchSearchResults(searchQuery, nextPage, true);
+      setSearchPage(nextPage);
+    } else if (!isSearchActive) {
+      const nextPage = page + 1;
+      await fetchProducts(user.selectedStoreId, nextPage, true);
+      setPage(nextPage);
+    }
 
     (ev.target as HTMLIonInfiniteScrollElement).complete();
   };
@@ -213,46 +275,6 @@ const ShopScreen: React.FC = () => {
     setIsSearchActive(false);
     setSearchQuery("");
   };
-
-  // --- MOCK SEARCH DATA ---
-  const mockSearchResults = [
-    {
-      id: 991,
-      ukrskladId: 1,
-      name: "Молоко 2.5%",
-      price: 35,
-      categoryId: 1,
-      unitsOfMeasurments: "шт",
-      imagePath: "",
-      isActive: true,
-      isPromo: false,
-      pricePromo: null,
-    },
-    {
-      id: 992,
-      ukrskladId: 2,
-      name: "Хліб білий",
-      price: 20,
-      categoryId: 1,
-      unitsOfMeasurments: "шт",
-      imagePath: "",
-      isActive: true,
-      isPromo: false,
-      pricePromo: null,
-    },
-    {
-      id: 993,
-      ukrskladId: 3,
-      name: "Сир твердий",
-      price: 150,
-      categoryId: 2,
-      unitsOfMeasurments: "кг",
-      imagePath: "",
-      isActive: true,
-      isPromo: true,
-      pricePromo: 120,
-    },
-  ];
 
   return (
     <IonPage>
@@ -476,16 +498,6 @@ const ShopScreen: React.FC = () => {
                   )}
                 </div>
               </div>
-              <IonInfiniteScroll
-                onIonInfinite={handleInfinite}
-                threshold="100px"
-                disabled={!hasMore}
-              >
-                <IonInfiniteScrollContent
-                  loadingSpinner="bubbles"
-                  loadingText="Завантаження товарів..."
-                />
-              </IonInfiniteScroll>
             </div>
           ) : (
             <div className="px-3 md:px-0 animate-fade-in-up">
@@ -512,46 +524,73 @@ const ShopScreen: React.FC = () => {
                       </span>
                     </h2>
                     <span className="text-xs font-bold text-gray-400 bg-gray-200/50 px-2 py-1 rounded-md">
-                      {mockSearchResults.length} знайдено
+                      {isSearching ? "Шукаємо..." : `${searchTotal} знайдено`}
                     </span>
                   </div>
 
-                  <div className="md:grid md:grid-cols-4 md:gap-6 flex flex-col">
-                    {mockSearchResults.map((product) =>
-                      isPlatform("desktop") ? (
-                        <ProductCard
-                          key={product.id}
-                          name={product.name}
-                          price={
-                            product.isPromo
-                              ? product.pricePromo!
-                              : product.price
-                          }
-                          oldPrice={product.isPromo ? product.price : undefined}
-                          unit={product.unitsOfMeasurments}
-                          image={product.imagePath}
-                        />
-                      ) : (
-                        <SearchProductCard
-                          key={product.id}
-                          name={product.name}
-                          price={
-                            product.isPromo
-                              ? product.pricePromo!
-                              : product.price
-                          }
-                          oldPrice={product.isPromo ? product.price : undefined}
-                          unit={product.unitsOfMeasurments}
-                          image={product.imagePath}
-                        />
-                      ),
-                    )}
-                  </div>
+                  {isSearching && searchProducts.length === 0 ? (
+                    <div className="flex justify-center py-10">
+                      <span className="text-gray-400 font-medium animate-pulse">
+                        Завантаження...
+                      </span>
+                    </div>
+                  ) : searchProducts.length === 0 ? (
+                    <div className="flex justify-center py-10 text-gray-400">
+                      Нічого не знайдено
+                    </div>
+                  ) : (
+                    <div className="md:grid md:grid-cols-4 md:gap-6 flex flex-col">
+                      {searchProducts.map((product) =>
+                        isPlatform("desktop") ? (
+                          <ProductCard
+                            key={product.id}
+                            name={product.name}
+                            price={
+                              product.isPromo
+                                ? product.pricePromo!
+                                : product.price
+                            }
+                            oldPrice={
+                              product.isPromo ? product.price : undefined
+                            }
+                            unit={product.unitsOfMeasurments}
+                            image={product.imagePath}
+                          />
+                        ) : (
+                          <SearchProductCard
+                            key={product.id}
+                            name={product.name}
+                            price={
+                              product.isPromo
+                                ? product.pricePromo!
+                                : product.price
+                            }
+                            oldPrice={
+                              product.isPromo ? product.price : undefined
+                            }
+                            unit={product.unitsOfMeasurments}
+                            image={product.imagePath}
+                          />
+                        ),
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>
           )}
         </div>
+
+        <IonInfiniteScroll
+          onIonInfinite={handleInfinite}
+          threshold="100px"
+          disabled={isSearchActive ? !searchHasMore : !hasMore}
+        >
+          <IonInfiniteScrollContent
+            loadingSpinner="bubbles"
+            loadingText="Завантаження товарів..."
+          />
+        </IonInfiniteScroll>
 
         {isSearchActive && !isPlatform("desktop") && (
           <div
