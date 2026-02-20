@@ -55,6 +55,7 @@ interface Category {
   id: number;
   name: string;
   iconPath: string;
+  isActive: boolean;
 }
 
 const ShopScreen: React.FC = () => {
@@ -114,14 +115,17 @@ const ShopScreen: React.FC = () => {
 
   const fetchCategories = useCallback(async () => {
     try {
+      const isAdminOnDesktop =
+        (user?.isAdmin || isAdminRoute) && isPlatform("desktop");
+      const showInactive = isAdminOnDesktop ? 1 : 0;
       const { data } = await api.get(
-        "/categories?limit=0&showInactive=0&showDeleted=0",
+        `/categories?limit=0&showInactive=${showInactive}&showDeleted=0`,
       );
       setCategories(data.data || []);
     } catch (e) {
       console.error("Failed to fetch categories", e);
     }
-  }, []);
+  }, [user?.isAdmin, isAdminRoute]);
 
   const fetchProducts = useCallback(
     async (storeId: number, pageNum: number, isLoadMore: boolean = false) => {
@@ -377,13 +381,16 @@ const ShopScreen: React.FC = () => {
                   placeholder="Пошук товарів..."
                   className="w-full bg-transparent outline-none text-sm text-gray-700 placeholder:text-gray-400"
                 />
-                {searchQuery ? (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="text-gray-400 active:text-orange-500"
-                  >
-                    <IonIcon icon={closeCircleOutline} className="text-xl" />
-                  </button>
+
+                {/* Search Bar Actions */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="text-gray-400 active:text-orange-500 p-1"
+                    >
+                      <IonIcon icon={closeCircleOutline} className="text-xl" />
+                    </button>
                   )}
                   {/* Filter appears ONLY when active */}
                   {isSearchActive && (
@@ -395,8 +402,8 @@ const ShopScreen: React.FC = () => {
                       {hasActiveFilters && (
                         <span className="absolute top-0 right-0.5 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
                       )}
-                  </button>
-                )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -439,20 +446,26 @@ const ShopScreen: React.FC = () => {
                   placeholder="Пошук товарів..."
                   className="w-full bg-transparent outline-none text-gray-700 text-base placeholder:text-gray-400"
                 />
-                {searchQuery ? (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="text-gray-400 hover:text-orange-500 transition-colors mr-2"
-                  >
-                    <IonIcon icon={closeCircleOutline} className="text-xl" />
-                  </button>
-                ) : null}
-                <button className="text-gray-400 hover:text-orange-500 transition-colors">
-                  <IonIcon icon={filterOutline} className="text-xl" />
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="text-gray-400 hover:text-orange-500 transition-colors p-1"
+                    >
+                      <IonIcon icon={closeCircleOutline} className="text-xl" />
+                    </button>
+                  )}
+                  {isSearchActive && (
+                    <button
+                      onClick={() => setIsFilterOpen(true)}
+                      className={`relative p-1 transition-colors ${hasActiveFilters ? "text-orange-500" : "text-gray-400 hover:text-orange-500"}`}
+                    >
+                      <IonIcon icon={filterOutline} className="text-xl" />
                       {hasActiveFilters && (
                         <span className="absolute top-0 right-0.5 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
                       )}
-                </button>
+                    </button>
                   )}
                 </div>
 
