@@ -49,6 +49,14 @@ interface Product {
   imagePath: string;
   isActive: boolean;
   isPromo: boolean;
+  stocks: Stock[];
+}
+
+interface Stock {
+  id: number;
+  productId: number;
+  storeId: number;
+  available: number;
 }
 
 interface Category {
@@ -331,6 +339,14 @@ const ShopScreen: React.FC = () => {
     setSearchQuery("");
   };
 
+  const checkIsOutOfStock = (product: Product) => {
+    if (!product.stocks || !user?.selectedStoreId) return true;
+    const storeStock = product.stocks.find(
+      (s) => s.storeId === user?.selectedStoreId,
+    );
+    return !storeStock || storeStock.available <= 0;
+  };
+
   return (
     <IonPage>
       <StoreSelectorModal
@@ -588,6 +604,8 @@ const ShopScreen: React.FC = () => {
                       oldPrice={product.isPromo ? product.price : undefined}
                       unit={product.unitsOfMeasurments}
                       image={product.imagePath}
+                      isActive={product.isActive}
+                      isOutOfStock={checkIsOutOfStock(product)}
                     />
                   ))}
                   {products.length === 0 && (
@@ -660,6 +678,8 @@ const ShopScreen: React.FC = () => {
                             }
                             unit={product.unitsOfMeasurments}
                             image={product.imagePath}
+                            isActive={product.isActive}
+                            isOutOfStock={checkIsOutOfStock(product)}
                           />
                         ) : (
                           <SearchProductCard
@@ -675,6 +695,8 @@ const ShopScreen: React.FC = () => {
                             }
                             unit={product.unitsOfMeasurments}
                             image={product.imagePath}
+                            isActive={product.isActive}
+                            isOutOfStock={checkIsOutOfStock(product)}
                           />
                         ),
                       )}

@@ -8,6 +8,8 @@ interface SearchProductCardProps {
   unit: string;
   image?: string;
   oldPrice?: number;
+  isActive?: boolean;
+  isOutOfStock?: boolean;
 }
 
 const SearchProductCard: React.FC<SearchProductCardProps> = ({
@@ -16,20 +18,31 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
   unit,
   image,
   oldPrice,
+  isActive,
+  isOutOfStock,
 }) => {
   const discountPercentage = oldPrice
     ? Math.round(((oldPrice - price) / oldPrice) * 100)
     : 0;
 
+  const isUnavailable = !isActive || isOutOfStock;
+
   return (
-    <div className="flex items-center p-2.5 bg-white rounded-2xl border border-gray-100 shadow-sm mb-2.5 gap-3">
+    <div
+      className={`flex items-center p-2.5 bg-white rounded-2xl border border-gray-100 shadow-sm mb-2.5 gap-3 transition-all ${isUnavailable ? "opacity-75 grayscale-[30%]" : ""}`}
+    >
       <div className="w-14 h-14 shrink-0 rounded-xl bg-gray-50 flex items-center justify-center relative overflow-hidden">
         {image ? (
           <img src={image} alt={name} className="w-full h-full object-cover" />
         ) : (
           <span className="text-lg opacity-20">📷</span>
         )}
-        {discountPercentage > 0 && (
+
+        {isUnavailable && (
+          <div className="absolute inset-0 bg-white/40 z-10 backdrop-blur-[0.5px]"></div>
+        )}
+
+        {discountPercentage > 0 && !isUnavailable && (
           <div className="absolute top-0 left-0 bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-br-lg z-10">
             -{discountPercentage}%
           </div>
@@ -40,10 +53,24 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
         <h3 className="font-bold text-sm text-gray-800 truncate leading-tight">
           {name}
         </h3>
-        <p className="text-[10px] text-gray-400 font-medium mb-1">{unit}</p>
+
+        <div className="flex items-center gap-1.5 mb-1">
+          <p className="text-[10px] text-gray-400 font-medium">{unit}</p>
+
+          {!isActive ? (
+            <span className="text-[8px] font-bold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+              Неактивний
+            </span>
+          ) : isOutOfStock ? (
+            <span className="text-[8px] font-bold bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-md uppercase tracking-wider">
+              Немає в наяв.
+            </span>
+          ) : null}
+        </div>
+
         <div className="flex items-center gap-1.5">
           <span
-            className={`font-black text-sm leading-none ${oldPrice ? "text-red-500" : "text-gray-900"}`}
+            className={`font-black text-sm leading-none ${oldPrice ? "text-red-500" : "text-gray-900"} ${isUnavailable ? "text-gray-500" : ""}`}
           >
             {price}{" "}
             <span className="text-[10px] font-normal text-gray-400">₴</span>
@@ -56,7 +83,14 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
         </div>
       </div>
 
-      <button className="w-9 h-9 shrink-0 bg-orange-50 rounded-full flex items-center justify-center text-orange-600 active:bg-orange-500 active:text-white transition-colors">
+      <button
+        disabled={isUnavailable}
+        className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors ${
+          isUnavailable
+            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+            : "bg-orange-50 text-orange-600 active:bg-orange-500 active:text-white"
+        }`}
+      >
         <IonIcon icon={add} className="text-lg" />
       </button>
     </div>
