@@ -11,7 +11,7 @@ import { closeOutline, checkmarkOutline } from "ionicons/icons";
 
 export interface FilterState {
   categories: number[];
-  sort: "price_asc" | "price_desc" | "promo" | null;
+  sort: "ASC" | "DESC" | "PROMO" | null;
   priceMin: number;
   priceMax: number;
   showAll: boolean;
@@ -33,9 +33,9 @@ interface FilterMenuProps {
 }
 
 const SORT_OPTIONS = [
-  { value: "promo", label: "Спочатку акційні" },
-  { value: "price_asc", label: "Від дешевих до дорогих" },
-  { value: "price_desc", label: "Від дорогих до дешевих" },
+  { value: "PROMO", label: "Спочатку акційні" },
+  { value: "ASC", label: "Від дешевих до дорогих" },
+  { value: "DESC", label: "Від дорогих до дешевих" },
 ] as const;
 
 const MAX_PRICE_LIMIT = 10000;
@@ -86,7 +86,7 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
   const handleClear = () => {
     setLocalFilters({
       categories: [],
-      sort: "promo",
+      sort: "PROMO",
       priceMin: 0,
       priceMax: MAX_PRICE_LIMIT,
       showAll: false,
