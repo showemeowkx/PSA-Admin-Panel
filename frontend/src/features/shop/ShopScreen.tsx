@@ -13,6 +13,10 @@ import {
   isPlatform,
   useIonViewWillEnter,
   useIonViewWillLeave,
+  IonModal,
+  IonAlert,
+  IonToggle,
+  useIonToast,
 } from "@ionic/react";
 import {
   searchOutline,
@@ -24,6 +28,8 @@ import {
   chevronDownOutline,
   closeCircleOutline,
   basketOutline,
+  closeOutline,
+  addOutline,
 } from "ionicons/icons";
 import { useHistory, useLocation } from "react-router-dom";
 import CategoryCard from "./components/CategoryCard";
@@ -72,6 +78,7 @@ const ShopScreen: React.FC = () => {
   const history = useHistory();
   const location = useLocation();
   const { user, token } = useAuthStore();
+  const [presentToast] = useIonToast();
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
 
   const [stores, setStores] = useState<Store[]>([]);
@@ -88,6 +95,26 @@ const ShopScreen: React.FC = () => {
   const [searchHasMore, setSearchHasMore] = useState(false);
   const [searchTotal, setSearchTotal] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
+
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editCatName, setEditCatName] = useState("");
+  const [editCatIsActive, setEditCatIsActive] = useState(true);
+  const [editCatIcon, setEditCatIcon] = useState("");
+
+  const [customIconFile, setCustomIconFile] = useState<File | null>(null);
+  const [customIconPreview, setCustomIconPreview] = useState<string | null>(
+    null,
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isSubmittingCat, setIsSubmittingCat] = useState(false);
+  const [showCatConfirmAlert, setShowCatConfirmAlert] = useState(false);
+
+  const AVAILABLE_ICONS = (
+    (import.meta.env.VITE_CATEGORY_ICON_PATHS as string) || ""
+  )
+    .split(",")
+    .filter(Boolean);
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState<FilterState>({
@@ -360,6 +387,75 @@ const ShopScreen: React.FC = () => {
     return !storeStock || storeStock.available <= 0;
   };
 
+  const handleSaveCategory = async () => {
+    if (!editingCategory) return;
+    if (!editCatName.trim()) {
+      presentToast({
+        message: "Назва не може бути порожньою",
+        duration: 2000,
+        color: "warning",
+      });
+      return;
+    }
+
+    setIsSubmittingCat(true);
+    try {
+      const formData = new FormData();
+      formData.append("name", editCatName);
+      formData.append("isActive", String(editCatIsActive));
+
+      if (customIconFile) {
+        formData.append("icon", customIconFile);
+      } else if (editCatIcon !== editingCategory.iconPath) {
+        formData.append("iconPath", editCatIcon);
+      }
+
+      const { data } = await api.patch(
+        `/categories/${editingCategory.id}`,
+        formData,
+      );
+
+      const updatedIcon = data?.iconPath || customIconPreview || editCatIcon;
+
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === editingCategory.id
+            ? {
+                ...c,
+                name: editCatName,
+                iconPath: updatedIcon,
+                isActive: editCatIsActive,
+              }
+            : c,
+        ),
+      );
+
+      presentToast({
+        message: "Категорію успішно оновлено!",
+        duration: 2000,
+        color: "success",
+      });
+      handleCloseCategoryModal();
+    } catch (error) {
+      console.error("Failed to update category:", error);
+      presentToast({
+        message: "Не вдалося оновити категорію",
+        duration: 2000,
+        color: "danger",
+      });
+    } finally {
+      setIsSubmittingCat(false);
+      setShowCatConfirmAlert(false);
+    }
+  };
+
+  const handleCloseCategoryModal = () => {
+    setEditingCategory(null);
+    setCustomIconFile(null);
+    setCustomIconPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   return (
     <IonPage>
       <StoreSelectorModal
@@ -589,7 +685,15 @@ const ShopScreen: React.FC = () => {
                         isAdminOnDesktop={isAdminRoute && isPlatform("desktop")}
                         isActive={cat.isActive}
                         onClick={() => handleCategoryClick(cat.id)}
-                        onEdit={() => {}} // PLACEHOLDER
+                        onEdit={(e) => {
+                          e.stopPropagation();
+                          setEditingCategory(cat);
+                          setEditCatName(cat.name);
+                          setEditCatIsActive(cat.isActive);
+                          setEditCatIcon(cat.iconPath);
+                          setCustomIconFile(null);
+                          setCustomIconPreview(null);
+                        }}
                       />
                     ))}
                   </div>
@@ -753,6 +857,161 @@ const ShopScreen: React.FC = () => {
           </div>
         )}
       </IonContent>
+
+      <IonModal
+        isOpen={!!editingCategory}
+        onDidDismiss={() => setEditingCategory(null)}
+        style={{
+          "--width": "450px",
+          "--height": "auto",
+          "--border-radius": "24px",
+        }}
+      >
+        <div className="bg-white flex flex-col w-full h-full">
+          <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50/50">
+            <h3 className="font-black text-lg text-gray-800">
+              Редагувати категорію
+            </h3>
+            <button
+              onClick={() => setEditingCategory(null)}
+              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+            >
+              <IonIcon icon={closeOutline} className="text-2xl" />
+            </button>
+          </div>
+
+          <div className="p-5 space-y-6">
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Назва категорії
+              </label>
+              <input
+                type="text"
+                value={editCatName}
+                onChange={(e) => setEditCatName(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all"
+                placeholder="Введіть назву"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Іконка
+              </label>
+
+              <div className="flex gap-3 overflow-x-auto pb-4 pt-1 snap-x [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-orange-300 hover:[&::-webkit-scrollbar-thumb]:bg-orange-500 [&::-webkit-scrollbar-thumb]:rounded-full">
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setCustomIconFile(file);
+                      setCustomIconPreview(URL.createObjectURL(file));
+                      setEditCatIcon("");
+                    }
+                  }}
+                />
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`w-14 h-14 shrink-0 rounded-xl border-2 flex items-center justify-center p-2 transition-all ${
+                    customIconFile
+                      ? "border-orange-500 bg-orange-50 shadow-sm"
+                      : "border-gray-200 border-dashed bg-gray-50 hover:border-orange-300 hover:bg-orange-50/50"
+                  }`}
+                >
+                  {customIconPreview ? (
+                    <img
+                      src={customIconPreview}
+                      alt="custom"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <IonIcon
+                      icon={addOutline}
+                      className="text-2xl text-gray-400"
+                    />
+                  )}
+                </button>
+
+                {AVAILABLE_ICONS.map((iconUrl, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setEditCatIcon(iconUrl);
+                      setCustomIconFile(null);
+                      setCustomIconPreview(null);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    className={`w-14 h-14 shrink-0 rounded-xl border-2 flex items-center justify-center p-2 transition-all ${
+                      !customIconFile && editCatIcon === iconUrl
+                        ? "border-orange-500 bg-orange-50 shadow-sm"
+                        : "border-gray-100 bg-white hover:border-orange-200"
+                    }`}
+                  >
+                    <img
+                      src={iconUrl}
+                      alt={`icon-${idx}`}
+                      className="w-full h-full object-contain brightness-0 opacity-80"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+              <div className="flex flex-col">
+                <span className="text-sm font-bold text-gray-800">
+                  Статус категорії
+                </span>
+                <span className="text-[10px] text-gray-500">
+                  {editCatIsActive ? "Активна" : "Неактивна"}
+                </span>
+              </div>
+              <IonToggle
+                color="medium"
+                checked={editCatIsActive}
+                onIonChange={(e) => setEditCatIsActive(e.detail.checked)}
+              />
+            </div>
+          </div>
+
+          <div className="p-5 border-t border-gray-100 bg-gray-50/50 flex gap-3">
+            <button
+              onClick={() => setEditingCategory(null)}
+              disabled={isSubmittingCat}
+              className="flex-1 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm hover:bg-gray-100 transition-colors"
+            >
+              Скасувати
+            </button>
+            <button
+              onClick={() => setShowCatConfirmAlert(true)}
+              disabled={isSubmittingCat}
+              className="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm hover:bg-orange-700 active:scale-95 transition-all shadow-md shadow-orange-200 disabled:opacity-50 disabled:active:scale-100"
+            >
+              {isSubmittingCat ? "Збереження..." : "Зберегти"}
+            </button>
+          </div>
+        </div>
+      </IonModal>
+
+      <IonAlert
+        isOpen={showCatConfirmAlert}
+        onDidDismiss={() => setShowCatConfirmAlert(false)}
+        header="Підтвердження"
+        message="Зберегти зміни для цієї категорії?"
+        buttons={[
+          { text: "Скасувати", role: "cancel" },
+          {
+            text: "Так, зберегти",
+            role: "confirm",
+            handler: handleSaveCategory,
+          },
+        ]}
+      />
     </IonPage>
   );
 };

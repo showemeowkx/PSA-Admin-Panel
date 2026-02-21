@@ -22,7 +22,7 @@ export class CloudinaryService {
             return reject(error);
           }
           if (result) {
-            this.logger.error('File uploaded seccussfully!');
+            this.logger.verbose('File uploaded successfully!');
             resolve(result);
           } else {
             this.logger.error('Upload failed: Unknown error');

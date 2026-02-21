@@ -27,12 +27,18 @@ import { GetCategoriesFiltersDto } from './dto/get-categories-filters.dto';
 @Controller('categories')
 export class CategoriesController {
   private logger = new Logger(CategoriesController.name);
+  private defaultCategoryIcons: string[];
 
   constructor(
     private readonly categoriesService: CategoriesService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    this.defaultCategoryIcons = this.configService
+      .get<string>('DEFAULT_CATEGORY_ICONS', '')
+      .split(',')
+      .filter(Boolean);
+  }
 
   // @Post()
   @UseGuards(AdminGuard)
@@ -50,9 +56,7 @@ export class CategoriesController {
       createCategoryDto.iconPath = result.secure_url as string;
     } else {
       this.logger.warn('No file uploaded. Using default...');
-      createCategoryDto.iconPath = this.configService.get(
-        'DEFAULT_CATEGORY_ICON',
-      );
+      createCategoryDto.iconPath = this.defaultCategoryIcons[0];
     }
 
     return this.categoriesService.create(createCategoryDto);
@@ -84,10 +88,13 @@ export class CategoriesController {
     this.logger.verbose(`Updating a category... {categoryId: ${id}}`);
 
     let oldIconPath = '';
-    if (file) {
-      const oldCategory = await this.categoriesService.findOne(id);
-      oldIconPath = oldCategory.iconPath;
 
+    if (file || updateCategoryDto.iconPath) {
+      const category = await this.categoriesService.findOne(id);
+      oldIconPath = category.iconPath;
+    }
+
+    if (file) {
       const result = await this.cloudinaryService.uploadFile(file);
       updateCategoryDto.iconPath = result.secure_url as string;
     }
@@ -96,10 +103,7 @@ export class CategoriesController {
       updateCategoryDto,
     );
 
-    if (
-      oldIconPath &&
-      oldIconPath != this.configService.get('DEFAULT_CATEGORY_ICON')
-    ) {
+    if (oldIconPath && !this.defaultCategoryIcons.includes(oldIconPath)) {
       await this.cloudinaryService.deleteFile(oldIconPath);
     }
 
@@ -116,10 +120,7 @@ export class CategoriesController {
 
     await this.categoriesService.remove(id);
 
-    if (
-      category &&
-      iconPath !== this.configService.get('DEFAULT_CATEGORY_ICON')
-    ) {
+    if (category && !this.defaultCategoryIcons.includes(iconPath)) {
       await this.cloudinaryService.deleteFile(iconPath);
     }
   }
