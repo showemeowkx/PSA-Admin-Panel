@@ -13,6 +13,7 @@ import {
   useIonToast,
   isPlatform,
   IonModal,
+  IonAlert,
 } from "@ionic/react";
 import { Route, Redirect, useLocation, useHistory } from "react-router-dom";
 import {
@@ -46,6 +47,7 @@ const ShopLayout: React.FC = () => {
   const [editAddress, setEditAddress] = useState("");
   const [editIsActive, setEditIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmAlert, setShowConfirmAlert] = useState(false);
 
   const isAdminOnDesktop = user?.isAdmin && isPlatform("desktop");
   const isAdminRoute = location.pathname.startsWith("/admin");
@@ -94,7 +96,7 @@ const ShopLayout: React.FC = () => {
   }, [token, isAdminOnDesktop]);
 
   const currentStore = stores.find((s) => s.id === user?.selectedStoreId) ||
-    stores[0] || { address: "Магазин", id: 0 };
+    stores[0] || { address: "Неактивний магазин", id: 0 };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -557,7 +559,7 @@ const ShopLayout: React.FC = () => {
               Скасувати
             </button>
             <button
-              onClick={handleSaveStore}
+              onClick={() => setShowConfirmAlert(true)}
               disabled={isSubmitting}
               className="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm hover:bg-orange-700 active:scale-95 transition-all shadow-md shadow-orange-200 disabled:opacity-50 disabled:active:scale-100"
             >
@@ -566,6 +568,29 @@ const ShopLayout: React.FC = () => {
           </div>
         </div>
       </IonModal>
+
+      <IonAlert
+        isOpen={showConfirmAlert}
+        onDidDismiss={() => setShowConfirmAlert(false)}
+        header="Підтвердження"
+        message="Ви впевнені, що хочете зберегти зміни для цього магазину?"
+        buttons={[
+          {
+            text: "Скасувати",
+            role: "cancel",
+            handler: () => {
+              setShowConfirmAlert(false);
+            },
+          },
+          {
+            text: "Так, зберегти",
+            role: "confirm",
+            handler: () => {
+              handleSaveStore();
+            },
+          },
+        ]}
+      />
     </>
   );
 };
