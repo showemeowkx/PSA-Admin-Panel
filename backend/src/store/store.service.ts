@@ -150,6 +150,7 @@ export class StoreService {
       .update(User)
       .set({ selectedStoreId: null })
       .where('selectedStoreId = :id', { id: storeId })
+      .andWhere('isAdmin = :isAdmin', { isAdmin: false })
       .execute();
 
     this.logger.log(`Deactivated store ${storeId} and reset users' selection`);
