@@ -28,7 +28,8 @@ import {
   chevronDownOutline,
   closeCircleOutline,
   basketOutline,
-  closeOutline, // [NEW]
+  closeOutline,
+  addOutline,
 } from "ionicons/icons";
 import { useHistory, useLocation } from "react-router-dom";
 import CategoryCard from "./components/CategoryCard";
@@ -77,7 +78,7 @@ const ShopScreen: React.FC = () => {
   const history = useHistory();
   const location = useLocation();
   const { user, token } = useAuthStore();
-  const [presentToast] = useIonToast(); // [NEW]
+  const [presentToast] = useIonToast();
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
 
   const [stores, setStores] = useState<Store[]>([]);
@@ -99,6 +100,13 @@ const ShopScreen: React.FC = () => {
   const [editCatName, setEditCatName] = useState("");
   const [editCatIsActive, setEditCatIsActive] = useState(true);
   const [editCatIcon, setEditCatIcon] = useState("");
+
+  const [customIconFile, setCustomIconFile] = useState<File | null>(null);
+  const [customIconPreview, setCustomIconPreview] = useState<string | null>(
+    null,
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [isSubmittingCat, setIsSubmittingCat] = useState(false);
   const [showCatConfirmAlert, setShowCatConfirmAlert] = useState(false);
 
@@ -392,11 +400,22 @@ const ShopScreen: React.FC = () => {
 
     setIsSubmittingCat(true);
     try {
-      await api.patch(`/categories/${editingCategory.id}`, {
-        name: editCatName,
-        iconPath: editCatIcon,
-        isActive: editCatIsActive,
-      });
+      const formData = new FormData();
+      formData.append("name", editCatName);
+      formData.append("isActive", String(editCatIsActive));
+
+      if (customIconFile) {
+        formData.append("icon", customIconFile);
+      } else if (editCatIcon !== editingCategory.iconPath) {
+        formData.append("iconPath", editCatIcon);
+      }
+
+      const { data } = await api.patch(
+        `/categories/${editingCategory.id}`,
+        formData,
+      );
+
+      const updatedIcon = data?.iconPath || customIconPreview || editCatIcon;
 
       setCategories((prev) =>
         prev.map((c) =>
@@ -404,7 +423,7 @@ const ShopScreen: React.FC = () => {
             ? {
                 ...c,
                 name: editCatName,
-                iconPath: editCatIcon,
+                iconPath: updatedIcon,
                 isActive: editCatIsActive,
               }
             : c,
@@ -416,7 +435,7 @@ const ShopScreen: React.FC = () => {
         duration: 2000,
         color: "success",
       });
-      setEditingCategory(null);
+      handleCloseCategoryModal();
     } catch (error) {
       console.error("Failed to update category:", error);
       presentToast({
@@ -428,6 +447,13 @@ const ShopScreen: React.FC = () => {
       setIsSubmittingCat(false);
       setShowCatConfirmAlert(false);
     }
+  };
+
+  const handleCloseCategoryModal = () => {
+    setEditingCategory(null);
+    setCustomIconFile(null);
+    setCustomIconPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -659,11 +685,14 @@ const ShopScreen: React.FC = () => {
                         isAdminOnDesktop={isAdminRoute && isPlatform("desktop")}
                         isActive={cat.isActive}
                         onClick={() => handleCategoryClick(cat.id)}
-                        onEdit={() => {
+                        onEdit={(e) => {
+                          e.stopPropagation();
                           setEditingCategory(cat);
                           setEditCatName(cat.name);
                           setEditCatIsActive(cat.isActive);
                           setEditCatIcon(cat.iconPath);
+                          setCustomIconFile(null);
+                          setCustomIconPreview(null);
                         }}
                       />
                     ))}
@@ -869,31 +898,68 @@ const ShopScreen: React.FC = () => {
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
                 Іконка
               </label>
-              {AVAILABLE_ICONS.length > 0 ? (
-                <div className="flex gap-3 overflow-x-auto pb-4 pt-1 snap-x [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-orange-300 hover:[&::-webkit-scrollbar-thumb]:bg-orange-500 [&::-webkit-scrollbar-thumb]:rounded-full">
-                  {AVAILABLE_ICONS.map((iconUrl, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setEditCatIcon(iconUrl)}
-                      className={`w-14 h-14 shrink-0 rounded-xl border-2 flex items-center justify-center p-2 transition-all ${
-                        editCatIcon === iconUrl
-                          ? "border-orange-500 bg-orange-50 shadow-sm"
-                          : "border-gray-100 bg-white hover:border-orange-200"
-                      }`}
-                    >
-                      <img
-                        src={iconUrl}
-                        alt={`icon-${idx}`}
-                        className="w-full h-full object-contain brightness-0 opacity-80"
-                      />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-xs font-bold text-red-400 bg-red-50 p-3 rounded-lg border border-red-100">
-                  Не вдалося завантажити іконки категорій
-                </div>
-              )}
+
+              <div className="flex gap-3 overflow-x-auto pb-4 pt-1 snap-x [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-orange-300 hover:[&::-webkit-scrollbar-thumb]:bg-orange-500 [&::-webkit-scrollbar-thumb]:rounded-full">
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setCustomIconFile(file);
+                      setCustomIconPreview(URL.createObjectURL(file));
+                      setEditCatIcon("");
+                    }
+                  }}
+                />
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`w-14 h-14 shrink-0 rounded-xl border-2 flex items-center justify-center p-2 transition-all ${
+                    customIconFile
+                      ? "border-orange-500 bg-orange-50 shadow-sm"
+                      : "border-gray-200 border-dashed bg-gray-50 hover:border-orange-300 hover:bg-orange-50/50"
+                  }`}
+                >
+                  {customIconPreview ? (
+                    <img
+                      src={customIconPreview}
+                      alt="custom"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <IonIcon
+                      icon={addOutline}
+                      className="text-2xl text-gray-400"
+                    />
+                  )}
+                </button>
+
+                {AVAILABLE_ICONS.map((iconUrl, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setEditCatIcon(iconUrl);
+                      setCustomIconFile(null);
+                      setCustomIconPreview(null);
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    className={`w-14 h-14 shrink-0 rounded-xl border-2 flex items-center justify-center p-2 transition-all ${
+                      !customIconFile && editCatIcon === iconUrl
+                        ? "border-orange-500 bg-orange-50 shadow-sm"
+                        : "border-gray-100 bg-white hover:border-orange-200"
+                    }`}
+                  >
+                    <img
+                      src={iconUrl}
+                      alt={`icon-${idx}`}
+                      className="w-full h-full object-contain brightness-0 opacity-80"
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
