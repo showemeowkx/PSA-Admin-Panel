@@ -27,14 +27,13 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
       <div
         className={`
           relative w-[80px] h-[80px] rounded-[20px] flex items-center justify-center transition-all duration-300 border
-
-          ${isActive ? "bg-orange-500 border-orange-500 text-white" : "bg-gray-100 border-gray-200 text-gray-500"}
           shadow-[0_4px_12px_rgba(0,0,0,0.15)]
           
-          ${isActive ? "md:hover:!bg-orange-400 md:hover:!border-orange-400 md:hover:shadow-md" : "md:hover:bg-gray-200 md:hover:border-gray-300 md:hover:shadow-sm"}
-
-          ${isActive ? "group-hover:bg-orange-400 group-hover:border-orange-400" : ""}
-          ${isActive ? "md:group-hover:bg-orange-500 md:group-hover:border-orange-500" : ""}
+          ${
+            isActive
+              ? "bg-orange-500 border-orange-500 text-white md:hover:bg-orange-400 md:hover:border-orange-400 md:hover:shadow-md"
+              : "bg-gray-100 border-gray-200 text-gray-500 md:hover:bg-gray-200 md:hover:border-gray-300 md:hover:shadow-sm"
+          }
         `}
       >
         {isAdminOnDesktop && onEdit && (
