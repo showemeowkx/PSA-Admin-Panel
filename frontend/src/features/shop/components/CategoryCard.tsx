@@ -53,7 +53,10 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           <img
             src={image}
             alt={name}
-            className="w-10 h-10 object-contain brightness-0 invert"
+            className={
+              "w-10 h-10 object-contain brightness-0" +
+              (isActive ? " invert" : "")
+            }
           />
         ) : (
           <span className="text-2xl font-bold">{name[0]}</span>
