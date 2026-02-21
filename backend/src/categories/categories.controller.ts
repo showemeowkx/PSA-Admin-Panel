@@ -88,10 +88,13 @@ export class CategoriesController {
     this.logger.verbose(`Updating a category... {categoryId: ${id}}`);
 
     let oldIconPath = '';
-    if (file) {
-      const oldCategory = await this.categoriesService.findOne(id);
-      oldIconPath = oldCategory.iconPath;
 
+    if (file || updateCategoryDto.iconPath) {
+      const category = await this.categoriesService.findOne(id);
+      oldIconPath = category.iconPath;
+    }
+
+    if (file) {
       const result = await this.cloudinaryService.uploadFile(file);
       updateCategoryDto.iconPath = result.secure_url as string;
     }
