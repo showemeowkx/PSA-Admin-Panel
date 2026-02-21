@@ -37,10 +37,13 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           ${isActive ? "md:group-hover:bg-orange-500 md:group-hover:border-orange-500" : ""}
         `}
       >
-        {isAdminOnDesktop && (
+        {isAdminOnDesktop && onEdit && (
           <button
-            onClick={onEdit}
-            className="hidden md:flex absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full shadow-lg items-center justify-center text-gray-600 hover:text-orange-600 hover:scale-110 transition-all z-20 border border-gray-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(e);
+            }}
+            className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-400 hover:text-orange-500 hover:border-orange-200 transition-colors z-10"
           >
             <IonIcon icon={createOutline} className="text-sm" />
           </button>
