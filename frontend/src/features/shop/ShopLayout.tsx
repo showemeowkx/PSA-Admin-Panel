@@ -347,7 +347,7 @@ const ShopLayout: React.FC = () => {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute top-full right-0 mt-2 w-96 bg-white rounded-2xl shadow-xl border border-gray-100 p-2 overflow-hidden z-50 animate-fade-in-down">
+                <div className="absolute top-full right-0 mt-2 w-[450px] bg-white rounded-2xl shadow-xl border border-gray-100 p-2 overflow-hidden z-50 animate-fade-in-down">
                   <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
                     Оберіть магазин
                   </div>
@@ -366,9 +366,9 @@ const ShopLayout: React.FC = () => {
                             <p
                               className={`text-sm font-bold truncate ${isSelected ? "text-gray-900" : "text-gray-700"}`}
                             >
-                              {store.address.length <= 15
+                              {store.address.length <= 25
                                 ? store.address
-                                : `${store.address.substring(0, 15)}...`}
+                                : `${store.address.substring(0, 25)}...`}
                             </p>
                             <p
                               className={`text-[10px] ${store.isActive ? "text-green-500" : "text-red-400"}`}
