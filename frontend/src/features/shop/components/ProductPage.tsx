@@ -56,15 +56,6 @@ interface Product {
   stocks: Stock[];
 }
 
-// MOCK DATA
-const MOCK_ALIKE_PRODUCTS = [
-  { id: "2", name: "Солодкий диня", price: 39, unit: "кг" },
-  { id: "3", name: "Свіжі полуниці", price: 59, unit: "кг" },
-  { id: "4", name: "Соковиті персики", price: 45, unit: "кг" },
-  { id: "5", name: "Смачні абрикоси", price: 55, unit: "кг" },
-  { id: "6", name: "Свіжі вишні", price: 65, unit: "кг" },
-];
-
 const ProductScreen: React.FC = () => {
   const history = useHistory();
   const { id } = useParams<{ id: string }>();
@@ -73,6 +64,12 @@ const ProductScreen: React.FC = () => {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Стейт для схожих товарів
+  const [alikeProducts, setAlikeProducts] = useState<Product[]>([]);
+  const [alikePage, setAlikePage] = useState(1);
+  const [hasMoreAlike, setHasMoreAlike] = useState(false);
+  const [isLoadingAlike, setIsLoadingAlike] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -90,6 +87,84 @@ const ProductScreen: React.FC = () => {
 
     fetchProduct();
   }, [id]);
+
+  useEffect(() => {
+    const fetchAlikeProducts = async () => {
+      if (!product || !user?.selectedStoreId) return;
+      setIsLoadingAlike(true);
+      try {
+        const snippet = product.name.split(" ")[0];
+        const categoryParam = product.categoryId
+          ? `&categoryIds=${product.categoryId}`
+          : "";
+
+        const { data } = await api.get(
+          `/products?search=${encodeURIComponent(snippet)}${categoryParam}&showAll=0&showDeleted=0&showInactive=0&storeId=${user.selectedStoreId}&limit=12`,
+        );
+
+        const items = (data.data || []).filter(
+          (p: Product) => p.id !== product.id,
+        );
+
+        setAlikeProducts(items);
+        setAlikePage(1);
+        setHasMoreAlike(
+          data.metadata ? 1 < data.metadata.totalPages : items.length >= 11,
+        );
+      } catch (error) {
+        console.error("Failed to fetch alike products:", error);
+      } finally {
+        setIsLoadingAlike(false);
+      }
+    };
+
+    if (product) {
+      fetchAlikeProducts();
+    }
+  }, [product, user?.selectedStoreId]);
+
+  // Функція для підвантаження наступних сторінок схожих товарів
+  const loadMoreAlike = async () => {
+    if (!product || !user?.selectedStoreId || isLoadingAlike || !hasMoreAlike)
+      return;
+    setIsLoadingAlike(true);
+    try {
+      const nextPage = alikePage + 1;
+      const snippet = product.name.split(" ")[0];
+      const categoryParam = product.categoryId
+        ? `&categoryIds=${product.categoryId}`
+        : "";
+
+      const { data } = await api.get(
+        `/products?search=${encodeURIComponent(snippet)}${categoryParam}&showAll=0&showDeleted=0&showInactive=0&storeId=${user.selectedStoreId}&limit=12&page=${nextPage}`,
+      );
+
+      const items = (data.data || []).filter(
+        (p: Product) => p.id !== product.id,
+      );
+
+      setAlikeProducts((prev) => [...prev, ...items]);
+      setAlikePage(nextPage);
+      setHasMoreAlike(
+        data.metadata
+          ? nextPage < data.metadata.totalPages
+          : items.length >= 11,
+      );
+    } catch (error) {
+      console.error("Failed to load more alike products:", error);
+    } finally {
+      setIsLoadingAlike(false);
+    }
+  };
+
+  // Горизонтальний Infinite Scroll
+  const handleAlikeScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    // Якщо докрутили майже до кінця (залишилось 150px)
+    if (target.scrollWidth - target.scrollLeft <= target.clientWidth + 150) {
+      loadMoreAlike();
+    }
+  };
 
   useIonViewWillEnter(() => {
     if (!isPlatform("desktop")) {
@@ -219,6 +294,15 @@ const ProductScreen: React.FC = () => {
                     : `В наявності: ${currentStock} ${product.unitsOfMeasurments}`}
                 </span>
 
+                {product.category?.name && (
+                  <>
+                    <span className="text-gray-300 mx-1 font-bold">•</span>
+                    <span className="text-sm font-bold text-gray-400">
+                      {product.category.name}
+                    </span>
+                  </>
+                )}
+
                 {!product.isActive && (
                   <span className="ml-1 text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded font-bold">
                     Неактивний
@@ -301,6 +385,15 @@ const ProductScreen: React.FC = () => {
               </span>
             </div>
 
+            {product.category?.name && (
+              <>
+                <span className="text-gray-300 mx-1 font-bold">•</span>
+                <span className="text-sm font-bold text-gray-400">
+                  {product.category.name}
+                </span>
+              </>
+            )}
+
             <h3 className="font-bold text-lg text-gray-800 mb-2 mt-4">
               Опис товару
             </h3>
@@ -311,45 +404,79 @@ const ProductScreen: React.FC = () => {
         </div>
 
         <div className="px-5 md:px-0 md:container md:mx-auto md:max-w-6xl mt-2 pb-32 md:pb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-800 pl-1 md:pl-0">
-              Схожі товари
-            </h2>
+          {alikeProducts.length > 0 && (
+            <>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl md:text-2xl font-bold text-gray-800 pl-1 md:pl-0">
+                  Схожі товари
+                </h2>
 
-            <div className="hidden md:flex gap-2">
-              <button
-                onClick={() => scrollAlike("left")}
-                className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
-              >
-                <IonIcon icon={chevronBackOutline} />
-              </button>
-              <button
-                onClick={() => scrollAlike("right")}
-                className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
-              >
-                <IonIcon icon={chevronForwardOutline} />
-              </button>
-            </div>
-          </div>
-
-          <div
-            ref={alikeSliderRef}
-            className="flex overflow-x-auto pb-6 hide-scrollbar gap-4 snap-x md:snap-none"
-          >
-            {MOCK_ALIKE_PRODUCTS.map((dummy) => (
-              <div
-                key={dummy.id}
-                className="min-w-[160px] md:min-w-[220px] snap-start"
-              >
-                <ProductCard
-                  name={dummy.name}
-                  price={dummy.price}
-                  unit={dummy.unit}
-                  isActive={true}
-                />
+                <div className="hidden md:flex gap-2">
+                  <button
+                    onClick={() => scrollAlike("left")}
+                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
+                  >
+                    <IonIcon icon={chevronBackOutline} />
+                  </button>
+                  <button
+                    onClick={() => scrollAlike("right")}
+                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
+                  >
+                    <IonIcon icon={chevronForwardOutline} />
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
+
+              <div
+                ref={alikeSliderRef}
+                onScroll={handleAlikeScroll}
+                className="flex overflow-x-auto pb-6 hide-scrollbar gap-4 snap-x md:snap-none"
+              >
+                {alikeProducts.map((alikeProduct) => {
+                  const currentStockAlike = user?.selectedStoreId
+                    ? alikeProduct.stocks?.find(
+                        (s) => s.storeId === user.selectedStoreId,
+                      )?.available || 0
+                    : 0;
+                  const isCatActiveAlike = alikeProduct.category
+                    ? alikeProduct.category.isActive
+                    : true;
+
+                  return (
+                    <div
+                      key={alikeProduct.id}
+                      className="w-[160px] min-w-[160px] md:w-[220px] md:min-w-[220px] flex-none snap-start"
+                    >
+                      <ProductCard
+                        name={alikeProduct.name}
+                        price={
+                          alikeProduct.isPromo
+                            ? alikeProduct.pricePromo!
+                            : alikeProduct.price
+                        }
+                        oldPrice={
+                          alikeProduct.isPromo ? alikeProduct.price : undefined
+                        }
+                        unit={alikeProduct.unitsOfMeasurments}
+                        image={alikeProduct.imagePath}
+                        isActive={alikeProduct.isActive}
+                        isOutOfStock={currentStockAlike <= 0}
+                        isCategoryActive={isCatActiveAlike}
+                        onClick={() =>
+                          history.push(`${basePath}/product/${alikeProduct.id}`)
+                        }
+                      />
+                    </div>
+                  );
+                })}
+                {isLoadingAlike && (
+                  <div className="w-[160px] min-w-[160px] md:w-[220px] md:min-w-[220px] flex-none flex items-center justify-center">
+                    <IonSpinner color="primary" />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {!isPlatform("desktop") && (
