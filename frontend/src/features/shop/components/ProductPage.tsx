@@ -10,6 +10,10 @@ import {
   useIonViewWillEnter,
   useIonViewWillLeave,
   IonSpinner,
+  IonModal,
+  IonToggle,
+  IonAlert,
+  useIonToast,
 } from "@ionic/react";
 import {
   chevronBackOutline,
@@ -17,14 +21,13 @@ import {
   chevronForwardOutline,
   addOutline,
   alertCircleOutline,
+  createOutline,
+  closeOutline,
 } from "ionicons/icons";
-import { useHistory, useParams } from "react-router-dom";
+import { useHistory, useParams, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../auth/auth.store";
 import api from "../../../config/api";
 import ProductCard from "./ProductCard";
-
-const isAdminRoute = location.pathname.startsWith("/admin");
-const basePath = isAdminRoute ? "/admin" : "/app";
 
 interface Stock {
   id: number;
@@ -58,18 +61,36 @@ interface Product {
 
 const ProductScreen: React.FC = () => {
   const history = useHistory();
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
   const alikeSliderRef = useRef<HTMLDivElement>(null);
+  const [presentToast] = useIonToast();
+
+  const isAdminRoute = location.pathname.startsWith("/admin");
+  const basePath = isAdminRoute ? "/admin" : "/app";
+  const isAdminOnDesktop =
+    (user?.isAdmin || isAdminRoute) && isPlatform("desktop");
 
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Стейт для схожих товарів
   const [alikeProducts, setAlikeProducts] = useState<Product[]>([]);
   const [alikePage, setAlikePage] = useState(1);
   const [hasMoreAlike, setHasMoreAlike] = useState(false);
   const [isLoadingAlike, setIsLoadingAlike] = useState(false);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editIsActive, setEditIsActive] = useState(true);
+
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmAlert, setShowConfirmAlert] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -123,7 +144,6 @@ const ProductScreen: React.FC = () => {
     }
   }, [product, user?.selectedStoreId]);
 
-  // Функція для підвантаження наступних сторінок схожих товарів
   const loadMoreAlike = async () => {
     if (!product || !user?.selectedStoreId || isLoadingAlike || !hasMoreAlike)
       return;
@@ -157,10 +177,8 @@ const ProductScreen: React.FC = () => {
     }
   };
 
-  // Горизонтальний Infinite Scroll
   const handleAlikeScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
-    // Якщо докрутили майже до кінця (залишилось 150px)
     if (target.scrollWidth - target.scrollLeft <= target.clientWidth + 150) {
       loadMoreAlike();
     }
@@ -187,6 +205,72 @@ const ProductScreen: React.FC = () => {
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
       });
+    }
+  };
+
+  const handleOpenEditModal = () => {
+    if (product) {
+      setEditName(product.name);
+      setEditDesc(product.description || "");
+      setEditIsActive(product.isActive);
+      setEditImageFile(null);
+      setEditImagePreview(null);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleSaveProduct = async () => {
+    if (!product) return;
+    if (!editName.trim()) {
+      presentToast({
+        message: "Назва не може бути порожньою",
+        duration: 2000,
+        color: "warning",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("name", editName);
+      formData.append("description", editDesc);
+      formData.append("isActive", String(editIsActive));
+
+      if (editImageFile) {
+        formData.append("image", editImageFile);
+      }
+
+      const { data } = await api.patch(`/products/${product.id}`, formData);
+
+      setProduct((prev) =>
+        prev
+          ? {
+              ...prev,
+              name: editName,
+              description: editDesc,
+              isActive: editIsActive,
+              imagePath: data?.imagePath || prev.imagePath,
+            }
+          : null,
+      );
+
+      presentToast({
+        message: "Товар успішно оновлено!",
+        duration: 2000,
+        color: "success",
+      });
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error("Failed to update product:", error);
+      presentToast({
+        message: "Не вдалося оновити товар",
+        duration: 2000,
+        color: "danger",
+      });
+    } finally {
+      setIsSubmitting(false);
+      setShowConfirmAlert(false);
     }
   };
 
@@ -278,9 +362,20 @@ const ProductScreen: React.FC = () => {
             </div>
 
             <div className="w-1/2 flex flex-col pt-4">
-              <h1 className="text-3xl font-black text-gray-800 mb-4 leading-tight">
-                {product.name}
-              </h1>
+              <div className="flex justify-between items-start gap-4 mb-4">
+                <h1 className="text-3xl font-black text-gray-800 leading-tight">
+                  {product.name}
+                </h1>
+
+                {isAdminOnDesktop && (
+                  <button
+                    onClick={handleOpenEditModal}
+                    className="flex-shrink-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-400 hover:text-orange-500 hover:border-orange-200 transition-colors z-10"
+                  >
+                    <IonIcon icon={createOutline} className="text-xl" />
+                  </button>
+                )}
+              </div>
 
               <div className="mb-6 flex flex-wrap items-center gap-2">
                 <div
@@ -372,7 +467,7 @@ const ProductScreen: React.FC = () => {
               {product.name}
             </h1>
 
-            <div className="mb-4 flex items-center gap-2">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
               <div
                 className={`w-2 h-2 rounded-full ${isUnavailable ? "bg-red-500" : "bg-green-500"}`}
               ></div>
@@ -383,16 +478,16 @@ const ProductScreen: React.FC = () => {
                   ? "Немає в наявності"
                   : `В наявності: ${currentStock} ${product.unitsOfMeasurments}`}
               </span>
-            </div>
 
-            {product.category?.name && (
-              <>
-                <span className="text-gray-300 mx-1 font-bold">•</span>
-                <span className="text-sm font-bold text-gray-400">
-                  {product.category.name}
-                </span>
-              </>
-            )}
+              {product.category?.name && (
+                <>
+                  <span className="text-gray-300 mx-1 font-bold">•</span>
+                  <span className="text-xs font-bold text-gray-400">
+                    {product.category.name}
+                  </span>
+                </>
+              )}
+            </div>
 
             <h3 className="font-bold text-lg text-gray-800 mb-2 mt-4">
               Опис товару
@@ -523,6 +618,158 @@ const ProductScreen: React.FC = () => {
             </div>
           </>
         )}
+
+        <IonModal
+          isOpen={isEditModalOpen}
+          onDidDismiss={() => setIsEditModalOpen(false)}
+          style={{
+            "--width": "450px",
+            "--height": "auto",
+            "--border-radius": "24px",
+          }}
+        >
+          <div className="bg-white flex flex-col w-full h-full">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100 bg-gray-50/50">
+              <h3 className="font-black text-lg text-gray-800">
+                Редагувати товар
+              </h3>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-gray-400 hover:text-red-500 transition-colors p-1"
+              >
+                <IonIcon icon={closeOutline} className="text-2xl" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-6">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  Назва товару
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all"
+                  placeholder="Введіть назву"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  Опис
+                </label>
+                <textarea
+                  rows={4}
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all resize-none"
+                  placeholder="Додайте опис товару"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  Фото товару
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setEditImageFile(file);
+                        setEditImagePreview(URL.createObjectURL(file));
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`w-20 h-20 shrink-0 rounded-xl border-2 flex items-center justify-center p-2 transition-all ${
+                      editImageFile
+                        ? "border-orange-500 bg-orange-50 shadow-sm"
+                        : "border-gray-200 border-dashed bg-gray-50 hover:border-orange-300 hover:bg-orange-50/50"
+                    }`}
+                  >
+                    {editImagePreview ? (
+                      <img
+                        src={editImagePreview}
+                        alt="preview"
+                        className="w-full h-full object-contain"
+                      />
+                    ) : product?.imagePath ? (
+                      <img
+                        src={product.imagePath}
+                        alt="current"
+                        className="w-full h-full object-contain opacity-50"
+                      />
+                    ) : (
+                      <IonIcon
+                        icon={addOutline}
+                        className="text-2xl text-gray-400"
+                      />
+                    )}
+                  </button>
+                  <div className="flex flex-col justify-center text-xs text-gray-500">
+                    <span>Натисніть, щоб</span>
+                    <span>завантажити нове фото</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-gray-800">
+                    Статус товару
+                  </span>
+                  <span className="text-[10px] text-gray-500">
+                    {editIsActive ? "Активний" : "Неактивний"}
+                  </span>
+                </div>
+                <IonToggle
+                  color="medium"
+                  checked={editIsActive}
+                  onIonChange={(e) => setEditIsActive(e.detail.checked)}
+                />
+              </div>
+            </div>
+
+            <div className="p-5 border-t border-gray-100 bg-gray-50/50 flex gap-3">
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                disabled={isSubmitting}
+                className="flex-1 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm hover:bg-gray-100 transition-colors"
+              >
+                Скасувати
+              </button>
+              <button
+                onClick={() => setShowConfirmAlert(true)}
+                disabled={isSubmitting}
+                className="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm hover:bg-orange-700 active:scale-95 transition-all shadow-md shadow-orange-200 disabled:opacity-50 disabled:active:scale-100"
+              >
+                {isSubmitting ? "Збереження..." : "Зберегти"}
+              </button>
+            </div>
+          </div>
+        </IonModal>
+
+        <IonAlert
+          isOpen={showConfirmAlert}
+          onDidDismiss={() => setShowConfirmAlert(false)}
+          header="Підтвердження"
+          message="Зберегти зміни для цього товару?"
+          buttons={[
+            { text: "Скасувати", role: "cancel" },
+            {
+              text: "Так, зберегти",
+              role: "confirm",
+              handler: handleSaveProduct,
+            },
+          ]}
+        />
       </IonContent>
     </IonPage>
   );
