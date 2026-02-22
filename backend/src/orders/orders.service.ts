@@ -158,7 +158,7 @@ export class OrdersService {
       totalPages: number;
     };
   }> {
-    const { page = 1, limit = 10, status } = getOrdersDto;
+    const { page = 1, limit = 10, status, storeId, search } = getOrdersDto;
 
     const qb = this.orderRepository.createQueryBuilder('order');
 
@@ -166,6 +166,14 @@ export class OrdersService {
 
     if (status) {
       qb.andWhere('order.status = :status', { status });
+    }
+
+    if (storeId) {
+      qb.andWhere('order.storeId = :storeId', { storeId });
+    }
+
+    if (search) {
+      qb.andWhere('order.orderNumber LIKE :search', { search: `%${search}%` });
     }
 
     qb.skip((page - 1) * limit);
