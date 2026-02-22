@@ -32,6 +32,7 @@ import ShopScreen from "./ShopScreen";
 import { useAuthStore } from "../auth/auth.store";
 import api from "../../config/api";
 import { type Store } from "./components/StoreSelectorModal";
+import ProductScreen from "./components/ProductPage";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
@@ -199,6 +200,11 @@ const ShopLayout: React.FC = () => {
       <IonTabs>
         <IonRouterOutlet>
           <Route exact path={`${basePath}/shop`} component={ShopScreen} />
+          <Route
+            exact
+            path={`${basePath}/product/:id`}
+            component={ProductScreen}
+          />
           <Route
             exact
             path={`${basePath}/cart`}

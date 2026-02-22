@@ -11,6 +11,7 @@ interface ProductCardProps {
   isActive?: boolean;
   isOutOfStock?: boolean;
   isCategoryActive?: boolean;
+  onClick?: () => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -22,6 +23,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   isActive,
   isOutOfStock,
   isCategoryActive,
+  onClick,
 }) => {
   const discountPercentage = oldPrice
     ? Math.round(((oldPrice - price) / oldPrice) * 100)
@@ -31,6 +33,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
   return (
     <div
+      onClick={onClick}
       className={`bg-white rounded-[24px] p-3 shadow-sm border border-gray-100 flex flex-col h-full relative overflow-hidden group transition-all ${
         isUnavailable ? "opacity-70 grayscale-[30%]" : ""
       }`}
@@ -70,6 +73,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         <button
           disabled={isUnavailable}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
           className={`absolute bottom-1 right-1 z-20 w-8 h-8 rounded-[10px] flex items-center justify-center transition-all shadow-md ${
             isUnavailable
               ? "bg-gray-100/80 text-gray-400 cursor-not-allowed"
