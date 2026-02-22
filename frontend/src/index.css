@@ -92,3 +92,19 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+@media (max-width: 767px) {
+  ion-header {
+    padding-top: max(env(safe-area-inset-top), 24px) !important;
+    background-color: white;
+  }
+}
+
+@layer utilities {
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 24px);
+  }
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 20px);
+  }
+}
