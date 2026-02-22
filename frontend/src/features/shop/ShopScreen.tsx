@@ -739,6 +739,9 @@ const ShopScreen: React.FC = () => {
                               ?.isActive
                           : true
                       }
+                      onClick={() =>
+                        history.push(`${basePath}/product/${product.id}`)
+                      }
                     />
                   ))}
                   {products.length === 0 && (
@@ -820,6 +823,9 @@ const ShopScreen: React.FC = () => {
                                   )?.isActive
                                 : true
                             }
+                            onClick={() =>
+                              history.push(`${basePath}/product/${product.id}`)
+                            }
                           />
                         ) : (
                           <SearchProductCard
@@ -837,6 +843,9 @@ const ShopScreen: React.FC = () => {
                             image={product.imagePath}
                             isActive={product.isActive}
                             isOutOfStock={checkIsOutOfStock(product)}
+                            onClick={() =>
+                              history.push(`${basePath}/product/${product.id}`)
+                            }
                           />
                         ),
                       )}

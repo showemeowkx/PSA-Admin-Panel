@@ -10,6 +10,7 @@ interface SearchProductCardProps {
   oldPrice?: number;
   isActive?: boolean;
   isOutOfStock?: boolean;
+  onClick?: () => void;
 }
 
 const SearchProductCard: React.FC<SearchProductCardProps> = ({
@@ -20,6 +21,7 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
   oldPrice,
   isActive,
   isOutOfStock,
+  onClick,
 }) => {
   const discountPercentage = oldPrice
     ? Math.round(((oldPrice - price) / oldPrice) * 100)
@@ -29,6 +31,7 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
 
   return (
     <div
+      onClick={onClick}
       className={`flex items-center p-2.5 bg-white rounded-2xl border border-gray-100 shadow-sm mb-2.5 gap-3 transition-all ${isUnavailable ? "opacity-75 grayscale-[30%]" : ""}`}
     >
       <div className="w-14 h-14 shrink-0 rounded-xl bg-gray-50 flex items-center justify-center relative overflow-hidden">
@@ -85,6 +88,9 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
 
       <button
         disabled={isUnavailable}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
         className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors ${
           isUnavailable
             ? "bg-gray-100 text-gray-400 cursor-not-allowed"
