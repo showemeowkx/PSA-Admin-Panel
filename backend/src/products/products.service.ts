@@ -149,7 +149,10 @@ export class ProductsService {
       qb.withDeleted();
     }
     if (!showInactive) {
-      qb.andWhere('product.isActive = :isActive', { isActive: true });
+      qb.andWhere('product.isActive = :isActive', { isActive: true }).andWhere(
+        'category.isActive = :isActive',
+        { isActive: true },
+      );
     }
     if (storeId) {
       qb.andWhere('stock.storeId = :storeId', { storeId });
