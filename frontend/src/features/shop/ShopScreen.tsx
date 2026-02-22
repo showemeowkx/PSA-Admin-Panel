@@ -377,6 +377,15 @@ const ShopScreen: React.FC = () => {
   const handleExitSearch = () => {
     setIsSearchActive(false);
     setSearchQuery("");
+
+    setActiveFilters({
+      categories: [],
+      sort: "PROMO",
+      priceMin: 0,
+      priceMax: MAX_PRICE_LIMIT,
+      showAll: false,
+      showInactive: false,
+    });
   };
 
   const checkIsOutOfStock = (product: Product) => {
@@ -724,6 +733,12 @@ const ShopScreen: React.FC = () => {
                       image={product.imagePath}
                       isActive={product.isActive}
                       isOutOfStock={checkIsOutOfStock(product)}
+                      isCategoryActive={
+                        product.categoryId
+                          ? categories.find((c) => c.id === product.categoryId)
+                              ?.isActive
+                          : true
+                      }
                     />
                   ))}
                   {products.length === 0 && (
@@ -798,6 +813,13 @@ const ShopScreen: React.FC = () => {
                             image={product.imagePath}
                             isActive={product.isActive}
                             isOutOfStock={checkIsOutOfStock(product)}
+                            isCategoryActive={
+                              product.categoryId
+                                ? categories.find(
+                                    (c) => c.id === product.categoryId,
+                                  )?.isActive
+                                : true
+                            }
                           />
                         ) : (
                           <SearchProductCard
@@ -848,6 +870,14 @@ const ShopScreen: React.FC = () => {
                 setTimeout(() => {
                   setIsSearchActive(false);
                   setSearchQuery("");
+                  setActiveFilters({
+                    categories: [],
+                    sort: "PROMO",
+                    priceMin: 0,
+                    priceMax: MAX_PRICE_LIMIT,
+                    showAll: false,
+                    showInactive: false,
+                  });
                 }, 400);
               }}
               className="w-14 h-14 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-50 active:bg-orange-600 active:scale-95 transition-all"

@@ -1,5 +1,5 @@
 import React from "react";
-import { IonIcon } from "@ionic/react";
+import { IonIcon, isPlatform } from "@ionic/react";
 import { add } from "ionicons/icons";
 
 interface ProductCardProps {
@@ -10,6 +10,7 @@ interface ProductCardProps {
   oldPrice?: number;
   isActive?: boolean;
   isOutOfStock?: boolean;
+  isCategoryActive?: boolean;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -20,16 +21,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
   oldPrice,
   isActive,
   isOutOfStock,
+  isCategoryActive,
 }) => {
   const discountPercentage = oldPrice
     ? Math.round(((oldPrice - price) / oldPrice) * 100)
     : 0;
 
-  const isUnavailable = !isActive || isOutOfStock;
+  const isUnavailable = !isActive || isOutOfStock || isCategoryActive === false;
 
   return (
     <div
-      className={`bg-white rounded-[24px] p-3 shadow-sm border border-gray-100 flex flex-col h-full relative overflow-hidden group transition-all ${isUnavailable ? "opacity-70 grayscale-[30%]" : ""}`}
+      className={`bg-white rounded-[24px] p-3 shadow-sm border border-gray-100 flex flex-col h-full relative overflow-hidden group transition-all ${
+        isUnavailable ? "opacity-70 grayscale-[30%]" : ""
+      }`}
     >
       <div className="aspect-[1/0.9] bg-gray-50 rounded-[18px] mb-2 overflow-hidden flex items-center justify-center relative">
         {image ? (
@@ -56,17 +60,38 @@ const ProductCard: React.FC<ProductCardProps> = ({
               Немає в наявності
             </span>
           </div>
+        ) : isCategoryActive === false ? (
+          <div className="absolute inset-0 bg-white/50 flex items-center justify-center z-10 backdrop-blur-[1.5px]">
+            <span className="bg-gray-500 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg shadow-sm">
+              Категорія неактивна
+            </span>
+          </div>
         ) : null}
+
+        <button
+          disabled={isUnavailable}
+          className={`absolute bottom-1 right-1 z-20 w-8 h-8 rounded-[10px] flex items-center justify-center transition-all shadow-md ${
+            isUnavailable
+              ? "bg-gray-100/80 text-gray-400 cursor-not-allowed"
+              : "bg-white text-orange-600 hover:bg-orange-50 active:bg-orange-500 active:text-white active:scale-95"
+          }`}
+        >
+          <IonIcon icon={add} className="text-lg" />
+        </button>
       </div>
 
       <div className="flex flex-col flex-grow">
-        <h3 className="font-bold text-gray-800 text-sm mb-0.5 leading-tight line-clamp-2">
+        <h3
+          className={`font-bold text-gray-800 ${
+            isPlatform("desktop") ? "text-sm" : "text-xs"
+          } mb-0.5 leading-tight line-clamp-2`}
+        >
           {name}
         </h3>
 
         <p className="text-[10px] text-gray-400 font-medium mb-2">{unit}</p>
 
-        <div className="mt-auto flex items-center justify-between">
+        <div className="mt-auto flex items-end justify-between">
           <div className="flex flex-col">
             {oldPrice && (
               <span className="text-[10px] text-gray-400 line-through decoration-red-400/50">
@@ -80,17 +105,6 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <span className="text-xs font-normal text-gray-400">₴</span>
             </span>
           </div>
-
-          <button
-            disabled={isUnavailable}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-              isUnavailable
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-orange-50 text-orange-600 active:bg-orange-500 active:text-white"
-            }`}
-          >
-            <IonIcon icon={add} className="text-lg" />
-          </button>
         </div>
       </div>
     </div>
