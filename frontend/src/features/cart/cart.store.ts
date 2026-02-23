@@ -1,21 +1,22 @@
 import { create } from "zustand";
 import api from "../../config/api";
 
-interface Stock {
-  storeId: number;
-  available: number;
+interface CartProduct {
+  id: number;
+  name: string;
+  price: number;
+  pricePromo: number | null;
+  unitsOfMeasurments: string;
+  imagePath: string;
+  isActive: boolean;
+  isPromo: boolean;
+  stocks: { storeId: number; available: number | string }[];
 }
 
-interface Product {
+export interface CartItem {
   id: number;
-  stocks?: Stock[];
-  [key: string]: unknown;
-}
-
-interface CartItem {
-  id: number;
-  quantity: number;
-  product: Product;
+  quantity: number | string;
+  product: CartProduct;
 }
 
 interface CartState {
@@ -57,12 +58,15 @@ export const useCartStore = create<CartState>((set) => ({
 }));
 
 export const getDefaultAddQuantity = (
-  product: Product,
+  product: CartProduct,
   storeId?: number | null,
 ): number => {
   if (!product.stocks || !storeId) return 1;
 
-  const storeStock = product.stocks.find((s: Stock) => s.storeId === storeId);
+  const storeStock = product.stocks.find(
+    (s: { storeId: number; available: number | string }) =>
+      s.storeId === storeId,
+  );
   if (!storeStock) return 1;
 
   const totalAvailable = Number(storeStock.available);

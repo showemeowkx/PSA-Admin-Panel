@@ -117,9 +117,7 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
     <div
       onClick={onClick}
       className={`flex items-center p-2.5 bg-white rounded-2xl border border-gray-100 shadow-sm mb-2.5 gap-3 transition-all ${
-        isUnavailable && !isCartItem
-          ? "opacity-75 grayscale-[30%]"
-          : "cursor-pointer hover:border-orange-200"
+        isUnavailable && !isCartItem ? "opacity-75 grayscale-[30%]" : ""
       }`}
     >
       <div className="w-14 h-14 shrink-0 rounded-xl bg-gray-50 flex items-center justify-center relative overflow-hidden">
@@ -206,7 +204,7 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
             value={quantity}
             onChange={handleInputChange}
             onBlur={handleInputBlur}
-            className="w-6 text-center bg-transparent font-bold text-sm text-gray-800 outline-none p-0 m-0"
+            className="w-12 text-center bg-transparent font-bold text-sm text-gray-800 outline-none p-0 m-0"
           />
 
           <button

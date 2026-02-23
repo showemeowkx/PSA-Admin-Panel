@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
   IonPage,
   IonContent,
@@ -6,6 +6,7 @@ import {
   IonToolbar,
   IonButton,
   IonIcon,
+  IonSpinner,
 } from "@ionic/react";
 import {
   chevronBackOutline,
@@ -13,31 +14,21 @@ import {
   searchOutline,
   chevronForwardOutline,
   bagCheckOutline,
+  basketOutline,
+  chevronDownOutline,
 } from "ionicons/icons";
-import { useHistory, useLocation } from "react-router-dom"; // ВИПРАВЛЕНО: Додано useLocation
+import { useHistory, useLocation } from "react-router-dom";
 import SearchProductCard from "../shop/components/SearchProductCard";
 import ProductCard from "../shop/components/ProductCard";
+import { useCartStore } from "./cart.store";
+import { useAuthStore } from "../auth/auth.store";
+
+interface Stock {
+  storeId: string | number;
+  available: string | number;
+}
 
 // MOCK DATA
-const MOCK_CART_ITEMS = [
-  {
-    id: 1,
-    name: "Соковитий банан",
-    price: 25,
-    unit: "шт",
-    image:
-      "https://fruit-time.ua/images/cache/products/5a/banan-imp-500x500.jpeg",
-  },
-  {
-    id: 2,
-    name: "Свіжа полуниця",
-    price: 120,
-    unit: "кг",
-    image:
-      "https://fruit-time.ua/images/cache/products/55/polunicya-imp-500x500.jpeg",
-  },
-];
-
 const MOCK_RECOMMENDED = [
   {
     id: 3,
@@ -61,11 +52,25 @@ const MOCK_RECOMMENDED = [
 
 const CartScreen: React.FC = () => {
   const history = useHistory();
-  const location = useLocation(); // ВИПРАВЛЕНО: Тепер location працює коректно!
+  const location = useLocation();
+  const { user } = useAuthStore();
+
+  const { items, fetchCart } = useCartStore();
+  const [isLoading, setIsLoading] = useState(true);
+
   const recommendedSliderRef = useRef<HTMLDivElement>(null);
 
   const isAdminRoute = location.pathname.startsWith("/admin");
   const basePath = isAdminRoute ? "/admin" : "/app";
+
+  useEffect(() => {
+    const loadCart = async () => {
+      setIsLoading(true);
+      await fetchCart();
+      setIsLoading(false);
+    };
+    loadCart();
+  }, [fetchCart]);
 
   const scrollRecommended = (direction: "left" | "right") => {
     if (recommendedSliderRef.current) {
@@ -77,18 +82,107 @@ const CartScreen: React.FC = () => {
     }
   };
 
-  const totalAmount = MOCK_CART_ITEMS.reduce(
-    (acc, item) => acc + item.price,
-    0,
-  );
+  const rawTotalAmount = items.reduce((acc, item) => {
+    const product = item.product;
+    if (!product) return acc;
+
+    const price =
+      product.isPromo && product.pricePromo !== null
+        ? product.pricePromo
+        : product.price;
+
+    return acc + price * Number(item.quantity);
+  }, 0);
+
+  const totalAmount = Number(rawTotalAmount.toFixed(2));
 
   const minPurchaseAmount =
     Number(import.meta.env.VITE_MIN_PURCHASE_AMOUNT) || 0;
 
   const remainingAmount =
     minPurchaseAmount > totalAmount ? minPurchaseAmount - totalAmount : 0;
+  const remainingFormatted = Number(remainingAmount.toFixed(2));
 
-  const isSubmitDisabled = MOCK_CART_ITEMS.length === 0 || remainingAmount > 0;
+  const isSubmitDisabled = items.length === 0 || remainingAmount > 0;
+
+  if (isLoading) {
+    return (
+      <IonPage>
+        <IonHeader className="ion-no-border bg-white md:hidden pt-safe">
+          <IonToolbar style={{ "--background": "white" }}>
+            <div className="flex items-center justify-between px-2">
+              <IonButton
+                color="medium"
+                fill="clear"
+                onClick={() => history.push(`${basePath}/shop`)}
+                className="text-gray-800"
+              >
+                <IonIcon icon={chevronBackOutline} className="text-2xl" /> Назад
+              </IonButton>
+              <span className="font-bold text-gray-800 text-lg">Кошик</span>
+              <div className="w-[60px]"></div>
+            </div>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent className="bg-gray-50 text-gray-900" fullscreen>
+          <div className="flex flex-col items-center justify-center h-full gap-4">
+            <IonSpinner name="crescent" className="text-orange-500" />
+            <p className="text-gray-400 font-bold text-sm">
+              Завантаження кошика...
+            </p>
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  if (!isLoading && items.length === 0) {
+    return (
+      <IonPage>
+        <IonHeader className="ion-no-border bg-white md:hidden pt-safe">
+          <IonToolbar style={{ "--background": "white" }}>
+            <div className="flex items-center justify-between px-2">
+              <IonButton
+                color="medium"
+                fill="clear"
+                onClick={() => history.push(`${basePath}/shop`)}
+                className="text-gray-800"
+              >
+                <IonIcon icon={chevronBackOutline} className="text-2xl" /> Назад
+              </IonButton>
+              <span className="font-bold text-gray-800 text-lg">Кошик</span>
+              <div className="w-[60px]"></div> {/* Placeholder for balance */}
+            </div>
+          </IonToolbar>
+        </IonHeader>
+
+        <IonContent className="bg-gray-50 text-gray-900" fullscreen>
+          <div className="flex flex-col items-center justify-center h-full px-6 text-center pb-32 animate-fade-in-up">
+            <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 mb-6">
+              <IonIcon
+                icon={basketOutline}
+                className="text-6xl text-gray-300"
+              />
+            </div>
+            <h2 className="text-2xl font-black text-gray-800 mb-3">
+              Кошик порожній
+            </h2>
+            <p className="text-gray-500 mb-10 max-w-[280px]">
+              Схоже, ви ще не додали жодного товару. Перейдіть до каталогу та
+              оберіть щось смачненьке!
+            </p>
+            <button
+              onClick={() => history.push(`${basePath}/shop`)}
+              className="bg-orange-500 hover:bg-orange-600 active:scale-95 transition-all text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-md shadow-orange-200 flex items-center gap-2"
+            >
+              <IonIcon icon={searchOutline} className="text-xl" />
+              Перейти до покупок
+            </button>
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage>
@@ -112,7 +206,7 @@ const CartScreen: React.FC = () => {
       </IonHeader>
 
       <IonContent className="bg-gray-50 text-gray-900" fullscreen>
-        <div className="container mx-auto px-4 md:px-8 py-6 md:py-12 max-w-6xl md:mt-16 pb-40 md:pb-12">
+        <div className="container mx-auto px-4 md:px-8 py-6 md:py-12 max-w-6xl md:mt-16 pb-40 md:pb-12 animate-fade-in">
           <div className="hidden md:flex justify-between items-center mb-8">
             <button
               onClick={() => history.push(`${basePath}/shop`)}
@@ -128,7 +222,6 @@ const CartScreen: React.FC = () => {
           </div>
 
           <div className="flex flex-col md:flex-row gap-8">
-            {/* ЛІВА КОЛОНКА (Товари) */}
             <div className="flex-1 flex flex-col gap-8">
               <div>
                 <h1 className="text-2xl font-black text-gray-800 mb-4 hidden md:block">
@@ -137,29 +230,58 @@ const CartScreen: React.FC = () => {
 
                 <div className="md:hidden flex items-center justify-between mb-3 pl-1 mt-2">
                   <h2 className="text-lg font-bold text-gray-800">
-                    Ваше замовлення
+                    Ваше замовлення:
                   </h2>
                   <span className="text-xs font-bold text-gray-400 bg-gray-200/50 px-2 py-1 rounded-md">
-                    {MOCK_CART_ITEMS.length} товари
+                    {items.length} товари
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-3">
-                  {MOCK_CART_ITEMS.map((item) => (
-                    <SearchProductCard
-                      key={item.id}
-                      name={item.name}
-                      price={item.price}
-                      unit={item.unit}
-                      image={item.image}
-                      isActive={true}
-                      isCartItem={true}
-                      initialQuantity={1}
-                      onClick={() =>
-                        history.push(`${basePath}/product/${item.id}`)
-                      }
-                    />
-                  ))}
+                <div className="relative">
+                  <div className="flex flex-col gap-3 max-h-[380px] md:max-h-[480px] overflow-y-auto overscroll-y-contain pr-2 pb-6 pt-1 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 hover:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                    {items.map((item) => {
+                      const product = item.product;
+                      if (!product) return null;
+
+                      const storeStock = product.stocks?.find(
+                        (s: Stock) => s.storeId === user?.selectedStoreId,
+                      );
+                      const availableStock = storeStock
+                        ? Number(storeStock.available)
+                        : 0;
+
+                      return (
+                        <SearchProductCard
+                          key={item.id}
+                          name={product.name}
+                          price={
+                            product.isPromo && product.pricePromo !== null
+                              ? product.pricePromo
+                              : product.price
+                          }
+                          oldPrice={product.isPromo ? product.price : undefined}
+                          unit={product.unitsOfMeasurments}
+                          image={product.imagePath}
+                          isActive={product.isActive}
+                          isCartItem={true}
+                          initialQuantity={Number(item.quantity)}
+                          availableStock={availableStock}
+                          onClick={() =>
+                            history.push(`${basePath}/product/${product.id}`)
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {items.length >= 4 && (
+                    <div className="absolute bottom-0 left-0 right-2 h-16 bg-gradient-to-t from-gray-50 via-gray-50/80 to-transparent flex items-end justify-center pb-1 pointer-events-none z-10">
+                      <IonIcon
+                        icon={chevronDownOutline}
+                        className="text-black text-2xl animate-pulse drop-shadow-sm"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -174,9 +296,6 @@ const CartScreen: React.FC = () => {
                   <div className="flex flex-col text-left">
                     <span className="font-bold text-base">
                       Шукати ще товари
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      Відкрити каталог без фільтрів
                     </span>
                   </div>
                 </div>
@@ -231,8 +350,6 @@ const CartScreen: React.FC = () => {
               </div>
             </div>
 
-            {/* ДЕСКТОП: ПРАВА КОЛОНКА (Підсумок) 
-                ВИПРАВЛЕНО: md:block замість lg:block, щоб працювало на планшетах та нешироких моніторах */}
             <div className="hidden md:block w-[300px] lg:w-[380px]">
               <div className="bg-white rounded-[32px] p-6 lg:p-8 shadow-sm border border-gray-100 sticky top-24">
                 <h3 className="text-xl font-black text-gray-800 mb-6">
@@ -240,7 +357,7 @@ const CartScreen: React.FC = () => {
                 </h3>
 
                 <div className="flex justify-between items-center mb-4 text-gray-600">
-                  <span>Товари ({MOCK_CART_ITEMS.length})</span>
+                  <span>Товари ({items.length})</span>
                   <span className="font-bold">{totalAmount} ₴</span>
                 </div>
 
@@ -259,13 +376,13 @@ const CartScreen: React.FC = () => {
                 {remainingAmount > 0 && (
                   <div className="bg-orange-50 text-orange-600 p-3 rounded-xl text-sm font-medium mb-4 text-center border border-orange-100">
                     Додайте товарів ще на{" "}
-                    <span className="font-bold">{remainingAmount} ₴</span>
+                    <span className="font-bold">{remainingFormatted} ₴</span>
                   </div>
                 )}
 
                 <button
                   disabled={isSubmitDisabled}
-                  className={`w-full font-bold text-lg py-4 rounded-2xl flex items-center justify-center gap-2 transition-all ${
+                  className={`w-full font-bold text-base py-4 rounded-2xl flex items-center justify-center gap-2 transition-all ${
                     isSubmitDisabled
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
                       : "bg-orange-500 hover:bg-orange-600 active:scale-95 text-white shadow-md shadow-orange-200"
@@ -279,13 +396,11 @@ const CartScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* МОБІЛЬНА НИЖНЯ ПАНЕЛЬ 
-            ВИПРАВЛЕНО: md:hidden замість !isPlatform('desktop') */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe">
           {remainingAmount > 0 && (
             <div className="bg-orange-50 text-orange-600 px-4 py-2 text-xs font-medium text-center border-b border-orange-100">
               Додайте товарів ще на{" "}
-              <span className="font-bold">{remainingAmount} ₴</span> для
+              <span className="font-bold">{remainingFormatted} ₴</span> для
               оформлення
             </div>
           )}
@@ -293,7 +408,7 @@ const CartScreen: React.FC = () => {
           <div className="p-4 flex items-center justify-between">
             <div className="flex flex-col pl-2">
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                Всього ({MOCK_CART_ITEMS.length})
+                Всього ({items.length})
               </span>
               <span className="text-2xl font-black text-gray-900 leading-none">
                 {totalAmount}{" "}
