@@ -14,6 +14,7 @@ import {
   isPlatform,
   IonModal,
   IonAlert,
+  IonBadge,
 } from "@ionic/react";
 import { Route, Redirect, useLocation, useHistory } from "react-router-dom";
 import {
@@ -33,13 +34,15 @@ import { useAuthStore } from "../auth/auth.store";
 import api from "../../config/api";
 import { type Store } from "./components/StoreSelectorModal";
 import ProductScreen from "./components/ProductPage";
-import CartScreen from "./CartScreen";
+import CartScreen from "../cart/CartScreen";
+import { useCartStore } from "../cart/cart.store";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
   const location = useLocation();
   const history = useHistory();
   const { user, setSelectedStore, token, logout, setUser } = useAuthStore();
+  const { cartItemsCount, fetchCart } = useCartStore();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -112,6 +115,10 @@ const ShopLayout: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    fetchCart();
+  }, [fetchCart]);
 
   const handleStoreSelect = async (id: number) => {
     try {
@@ -296,6 +303,7 @@ const ShopLayout: React.FC = () => {
                 icon={basketOutline}
                 active={location.pathname.includes("cart")}
                 href={`${basePath}/cart`}
+                badgeCount={cartItemsCount}
               />
               <NavButton
                 label="Покупки"
@@ -457,22 +465,18 @@ const ShopLayout: React.FC = () => {
             </IonLabel>
           </IonTabButton>
 
-          <IonTabButton
-            tab="cart"
-            href={`${basePath}/cart`}
-            className="bg-white"
-          >
-            <div className="relative flex justify-center items-center">
-              <IonIcon
-                icon={basketOutline}
-                className={`text-2xl ${location.pathname.includes("cart") ? "text-orange-600" : "text-gray-400"}`}
-              />
-            </div>
+          <IonTabButton tab="cart" href={`${basePath}/cart`}>
+            <IonIcon icon={basketOutline} />
             <IonLabel
               className={`text-[10px] font-medium mt-1 ${location.pathname.includes("cart") ? "text-orange-600" : "text-gray-400"}`}
             >
               Кошик
             </IonLabel>
+            {cartItemsCount > 0 && (
+              <IonBadge color="danger" className="text-[10px] px-1.5 py-1">
+                {cartItemsCount > 99 ? "99+" : cartItemsCount}
+              </IonBadge>
+            )}
           </IonTabButton>
 
           <IonTabButton
@@ -601,6 +605,7 @@ interface NavButtonProps {
   active: boolean;
   href: string;
   className?: string;
+  badgeCount?: number;
 }
 
 const NavButton = ({
@@ -609,17 +614,27 @@ const NavButton = ({
   active,
   href,
   className = "",
+  badgeCount = 0,
 }: NavButtonProps) => (
   <a
     href={href}
     className={`
-      flex items-center px-4 py-2 rounded-full transition-all duration-200 text-sm font-bold
+      flex items-center px-4 py-2 rounded-full transition-all duration-200 text-sm font-bold relative
       ${active ? "bg-orange-50 text-orange-600" : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"}
       ${className} 
     `}
   >
     <IonIcon icon={icon} className="mr-2 text-xl" />
     {label}
+
+    {badgeCount > 0 && (
+      <IonBadge
+        color="danger"
+        className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full"
+      >
+        {badgeCount > 99 ? "99+" : badgeCount}
+      </IonBadge>
+    )}
   </a>
 );
 
