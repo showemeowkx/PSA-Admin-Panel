@@ -7,6 +7,7 @@ interface CartProduct {
   price: number;
   pricePromo: number | null;
   unitsOfMeasurments: string;
+  categoryId: number;
   imagePath: string;
   isActive: boolean;
   isPromo: boolean;

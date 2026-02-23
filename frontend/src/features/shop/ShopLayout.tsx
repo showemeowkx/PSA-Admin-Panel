@@ -466,7 +466,14 @@ const ShopLayout: React.FC = () => {
           </IonTabButton>
 
           <IonTabButton tab="cart" href={`${basePath}/cart`}>
-            <IonIcon icon={basketOutline} />
+            <IonIcon
+              icon={basketOutline}
+              className={
+                location.pathname.includes("cart")
+                  ? "text-orange-600"
+                  : "text-gray-400"
+              }
+            />
             <IonLabel
               className={`text-[10px] font-medium mt-1 ${location.pathname.includes("cart") ? "text-orange-600" : "text-gray-400"}`}
             >

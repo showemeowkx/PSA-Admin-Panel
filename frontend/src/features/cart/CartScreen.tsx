@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import {
   IonPage,
   IonContent,
@@ -7,6 +7,7 @@ import {
   IonButton,
   IonIcon,
   IonSpinner,
+  useIonToast,
 } from "@ionic/react";
 import {
   chevronBackOutline,
@@ -20,43 +21,42 @@ import {
 import { useHistory, useLocation } from "react-router-dom";
 import SearchProductCard from "../shop/components/SearchProductCard";
 import ProductCard from "../shop/components/ProductCard";
-import { useCartStore } from "./cart.store";
+import { getDefaultAddQuantity, useCartStore } from "./cart.store";
 import { useAuthStore } from "../auth/auth.store";
+import api from "../../config/api";
+import { isAxiosError } from "axios";
 
 interface Stock {
-  storeId: string | number;
+  storeId: number;
   available: string | number;
 }
 
-// MOCK DATA
-const MOCK_RECOMMENDED = [
-  {
-    id: 3,
-    name: "Соковитий апельсин",
-    price: 45,
-    unit: "шт",
-  },
-  {
-    id: 4,
-    name: "Свіжа полуниця",
-    price: 120,
-    unit: "кг",
-  },
-  {
-    id: 5,
-    name: "Соковитий банан",
-    price: 35,
-    unit: "шт",
-  },
-];
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  pricePromo?: number | null;
+  isPromo?: boolean;
+  isActive: boolean;
+  imagePath?: string;
+  unitsOfMeasurments?: string;
+  stocks?: Stock[];
+  categoryId?: number;
+}
 
 const CartScreen: React.FC = () => {
   const history = useHistory();
   const location = useLocation();
   const { user } = useAuthStore();
 
-  const { items, fetchCart } = useCartStore();
+  const { items, fetchCart, addToCart } = useCartStore();
   const [isLoading, setIsLoading] = useState(true);
+  const [presentToast] = useIonToast();
+
+  const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
+  const [recommendedPage, setRecommendedPage] = useState(1);
+  const [hasMoreRecommended, setHasMoreRecommended] = useState(true);
+  const [isLoadingRecommended, setIsLoadingRecommended] = useState(false);
 
   const recommendedSliderRef = useRef<HTMLDivElement>(null);
 
@@ -72,12 +72,141 @@ const CartScreen: React.FC = () => {
     loadCart();
   }, [fetchCart]);
 
+  const fetchRecommended = useCallback(
+    async (pageNum: number) => {
+      if (!user?.selectedStoreId || isLoadingRecommended || items.length === 0)
+        return;
+
+      try {
+        setIsLoadingRecommended(true);
+
+        const catIds = Array.from(
+          new Set(
+            items
+              .map((item) => (item.product as Product).categoryId)
+              .filter(Boolean),
+          ),
+        ).join(",");
+
+        if (!catIds) {
+          setIsLoadingRecommended(false);
+          return;
+        }
+
+        const { data: prodData } = await api.get(
+          `/products?limit=12&page=${pageNum}&showAll=0&showInactive=0&showDeleted=0&storeId=${user.selectedStoreId}&categoryIds=${catIds}`,
+        );
+
+        const fetchedProducts = prodData?.data || [];
+        const cartProductIds = items.map((item) => item.product.id);
+
+        const filteredProducts = fetchedProducts.filter(
+          (p: Product) => !cartProductIds.includes(p.id),
+        );
+
+        const uniqueProducts = Array.from(
+          new Map(filteredProducts.map((p: Product) => [p.id, p])).values(),
+        ) as Product[];
+
+        if (pageNum === 1) {
+          setRecommendedProducts(uniqueProducts);
+        } else {
+          setRecommendedProducts((prev) => {
+            const combined = [...prev, ...uniqueProducts];
+            return Array.from(
+              new Map(combined.map((p: Product) => [p.id, p])).values(),
+            ) as Product[];
+          });
+        }
+
+        setRecommendedPage(pageNum);
+        setHasMoreRecommended(fetchedProducts.length >= 12);
+      } catch (error) {
+        console.error("Failed to fetch recommended products:", error);
+      } finally {
+        setIsLoadingRecommended(false);
+      }
+    },
+    [user?.selectedStoreId, isLoadingRecommended, items],
+  );
+
+  useEffect(() => {
+    if (
+      !isLoading &&
+      user?.selectedStoreId &&
+      recommendedProducts.length === 0 &&
+      items.length > 0
+    ) {
+      fetchRecommended(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, user?.selectedStoreId, items.length]);
+
+  const handleRecommendedScroll = () => {
+    if (!recommendedSliderRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } =
+      recommendedSliderRef.current;
+
+    if (scrollLeft + clientWidth >= scrollWidth - 100) {
+      if (hasMoreRecommended && !isLoadingRecommended) {
+        fetchRecommended(recommendedPage + 1);
+      }
+    }
+  };
+
   const scrollRecommended = (direction: "left" | "right") => {
     if (recommendedSliderRef.current) {
       const scrollAmount = 300;
       recommendedSliderRef.current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
+      });
+    }
+  };
+
+  const handleAddToCart = async (productId: number, quantity: number) => {
+    try {
+      await addToCart(productId, quantity);
+      presentToast({
+        message: "Товар додано до кошика",
+        duration: 1500,
+        color: "success",
+        position: "bottom",
+        mode: "ios",
+      });
+    } catch (error: unknown) {
+      let errorMessage = "Не вдалося додати товар до кошика";
+      if (isAxiosError(error)) {
+        errorMessage = error.response?.data?.message || errorMessage;
+      }
+      presentToast({
+        message: errorMessage,
+        duration: 2000,
+        color: "danger",
+        position: "bottom",
+        mode: "ios",
+      });
+    }
+  };
+
+  const onAddToCartClick = (targetProduct: Product) => {
+    if (!targetProduct || !user?.selectedStoreId) return;
+
+    const amount = getDefaultAddQuantity(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      targetProduct as any,
+      user.selectedStoreId,
+    );
+
+    if (amount > 0) {
+      handleAddToCart(targetProduct.id, amount);
+    } else {
+      presentToast({
+        message: "Ви вже додали весь доступний залишок",
+        duration: 2000,
+        color: "warning",
+        position: "bottom",
+        mode: "ios",
       });
     }
   };
@@ -151,7 +280,7 @@ const CartScreen: React.FC = () => {
                 <IonIcon icon={chevronBackOutline} className="text-2xl" /> Назад
               </IonButton>
               <span className="font-bold text-gray-800 text-lg">Кошик</span>
-              <div className="w-[60px]"></div> {/* Placeholder for balance */}
+              <div className="w-[60px]"></div>
             </div>
           </IonToolbar>
         </IonHeader>
@@ -222,10 +351,10 @@ const CartScreen: React.FC = () => {
           </div>
 
           <div className="flex flex-col md:flex-row gap-8">
-            <div className="flex-1 flex flex-col gap-8">
+            <div className="flex-1 min-w-0 flex flex-col gap-8">
               <div>
                 <h1 className="text-2xl font-black text-gray-800 mb-4 hidden md:block">
-                  Ваш кошик
+                  Ваше замовлення:
                 </h1>
 
                 <div className="md:hidden flex items-center justify-between mb-3 pl-1 mt-2">
@@ -305,49 +434,89 @@ const CartScreen: React.FC = () => {
                 />
               </button>
 
-              <div className="mt-2">
-                <div className="flex items-center justify-between mb-4 pl-1">
-                  <h2 className="text-lg md:text-xl font-bold text-gray-800">
-                    Рекомендуємо
-                  </h2>
-                  <div className="hidden md:flex gap-2">
-                    <button
-                      onClick={() => scrollRecommended("left")}
-                      className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
+              {recommendedProducts.length > 0 && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-4 pl-1">
+                    <h2 className="text-lg md:text-xl font-bold text-gray-800">
+                      Рекомендовані товари
+                    </h2>
+                    <div className="hidden md:flex gap-2">
+                      <button
+                        onClick={() => scrollRecommended("left")}
+                        className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
+                      >
+                        <IonIcon icon={chevronBackOutline} />
+                      </button>
+                      <button
+                        onClick={() => scrollRecommended("right")}
+                        className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
+                      >
+                        <IonIcon icon={chevronForwardOutline} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <div
+                      ref={recommendedSliderRef}
+                      onScroll={handleRecommendedScroll}
+                      className="flex overflow-x-auto pb-6 hide-scrollbar gap-4 snap-x md:snap-none relative z-0"
                     >
-                      <IonIcon icon={chevronBackOutline} />
-                    </button>
-                    <button
-                      onClick={() => scrollRecommended("right")}
-                      className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
-                    >
-                      <IonIcon icon={chevronForwardOutline} />
-                    </button>
+                      {recommendedProducts.map((product) => {
+                        const storeStock = product.stocks?.find(
+                          (s: Stock) => s.storeId === user?.selectedStoreId,
+                        );
+                        const availableStock = storeStock
+                          ? Number(storeStock.available)
+                          : 0;
+                        const isOutOfStock = availableStock <= 0;
+
+                        return (
+                          <div
+                            key={product.id}
+                            className="w-[160px] min-w-[160px] md:w-[200px] md:min-w-[200px] flex-none snap-start"
+                          >
+                            <ProductCard
+                              name={product.name}
+                              price={
+                                product.isPromo &&
+                                product.pricePromo !== null &&
+                                product.pricePromo !== undefined
+                                  ? product.pricePromo
+                                  : product.price
+                              }
+                              oldPrice={
+                                product.isPromo ? product.price : undefined
+                              }
+                              unit={product.unitsOfMeasurments || ""}
+                              image={product.imagePath}
+                              isActive={product.isActive}
+                              isOutOfStock={isOutOfStock}
+                              onClick={() =>
+                                history.push(
+                                  `${basePath}/product/${product.id}`,
+                                )
+                              }
+                              onAddToCart={() => onAddToCartClick(product)}
+                            />
+                          </div>
+                        );
+                      })}
+
+                      {isLoadingRecommended && recommendedPage > 0 && (
+                        <div className="w-[100px] flex-none flex items-center justify-center h-[200px]">
+                          <IonSpinner
+                            name="crescent"
+                            className="text-orange-500"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="hidden md:block absolute right-0 top-0 bottom-6 z-10 w-16 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
                   </div>
                 </div>
-
-                <div
-                  ref={recommendedSliderRef}
-                  className="flex overflow-x-auto pb-6 hide-scrollbar gap-4 snap-x md:snap-none"
-                >
-                  {MOCK_RECOMMENDED.map((product) => (
-                    <div
-                      key={product.id}
-                      className="w-[160px] min-w-[160px] md:w-[200px] md:min-w-[200px] flex-none snap-start"
-                    >
-                      <ProductCard
-                        name={product.name}
-                        price={product.price}
-                        unit={product.unit}
-                        isActive={true}
-                        onClick={() =>
-                          history.push(`${basePath}/product/${product.id}`)
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="hidden md:block w-[300px] lg:w-[380px]">
