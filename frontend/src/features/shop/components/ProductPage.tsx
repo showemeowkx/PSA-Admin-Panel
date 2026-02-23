@@ -306,7 +306,11 @@ const ProductScreen: React.FC = () => {
   const onAddToCartClick = (targetProduct: Product) => {
     if (!targetProduct || !user?.selectedStoreId) return;
 
-    const amount = getDefaultAddQuantity(targetProduct, user.selectedStoreId);
+    const amount = getDefaultAddQuantity(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      targetProduct as any,
+      user.selectedStoreId,
+    );
 
     if (amount > 0) {
       handleAddToCart(targetProduct.id, amount);

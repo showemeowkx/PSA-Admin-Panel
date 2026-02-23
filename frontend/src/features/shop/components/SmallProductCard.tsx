@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { IonIcon } from "@ionic/react";
 import { add, remove, trashOutline } from "ionicons/icons";
 
-interface SearchProductCardProps {
+interface SmallProductCardProps {
   name: string;
   price: number;
   unit: string;
@@ -14,12 +14,13 @@ interface SearchProductCardProps {
   isCartItem?: boolean;
   initialQuantity?: number;
   availableStock?: number;
+  addStep?: number;
   onRemove?: () => void;
   onAddToCart?: () => void;
   onAddDelta?: (delta: number) => void;
 }
 
-const SearchProductCard: React.FC<SearchProductCardProps> = ({
+const SmallProductCard: React.FC<SmallProductCardProps> = ({
   name,
   price,
   unit,
@@ -31,47 +32,43 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
   isCartItem = false,
   initialQuantity = 1,
   availableStock,
+  addStep = 1,
   onRemove,
   onAddToCart,
   onAddDelta,
 }) => {
-  const [quantity, setQuantity] = useState<number | "">(initialQuantity);
-  const [prevInitialQuantity, setPrevInitialQuantity] =
-    useState(initialQuantity);
+  const [quantity, setQuantity] = useState<number | string>(initialQuantity);
 
-  if (initialQuantity !== prevInitialQuantity) {
-    setPrevInitialQuantity(initialQuantity);
-    if (initialQuantity) setQuantity(initialQuantity);
-  }
+  // Синхронізуємо локальний стейт, коли дані з бекенду оновилися
+  useEffect(() => {
+    setQuantity(initialQuantity);
+  }, [initialQuantity]);
 
   const handleIncrease = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const currentQty = Number(quantity) || 0;
-    let delta = 1;
+    const currentQty = Number(initialQuantity) || 0;
+    let delta = addStep;
 
+    // Перевіряємо, чи не перевищуємо залишок
     if (availableStock !== undefined && currentQty + delta > availableStock) {
       delta = availableStock - currentQty;
     }
 
     if (delta > 0) {
-      setQuantity(currentQty + delta);
       onAddDelta?.(delta);
     }
   };
 
   const handleDecrease = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const currentQty = Number(quantity) || 0;
-    if (currentQty > 1) {
-      setQuantity(currentQty - 1);
-      onAddDelta?.(-1);
-    }
+    // Логіку віднімання реалізуємо пізніше, тому поки нічого не відправляємо
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let valStr = e.target.value;
     const isPiece = unit.toLowerCase() === "шт" || unit.toLowerCase() === "шт.";
 
+    // Валідація: заборона вводу літер, а також крапки для "шт"
     if (isPiece) {
       valStr = valStr.replace(/[^0-9]/g, "");
     } else {
@@ -80,30 +77,33 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
       if (dotCount > 1) valStr = valStr.replace(/\.$/, "");
     }
 
-    if (valStr === "") {
-      setQuantity("");
-      return;
-    }
-
-    let val = isPiece ? parseInt(valStr, 10) : parseFloat(valStr);
-
-    if (!isNaN(val)) {
-      if (availableStock !== undefined && val > availableStock) {
-        val = availableStock;
-      }
-      const currentQty = Number(quantity) || 0;
-      const delta = val - currentQty;
-      setQuantity(val);
-      if (delta !== 0) onAddDelta?.(delta);
-    }
+    // ТІЛЬКИ оновлюємо локальний стейт (щоб користувач міг нормально вводити)
+    setQuantity(valStr);
   };
 
   const handleInputBlur = () => {
-    const currentQty = Number(quantity) || 0;
-    if (currentQty <= 0) {
-      const delta = 1 - currentQty;
-      setQuantity(1);
-      if (delta !== 0 && quantity !== "") onAddDelta?.(delta);
+    let val = Number(quantity);
+
+    // Якщо введено фігню або 0 — повертаємо до того, що було
+    if (isNaN(val) || val <= 0) {
+      setQuantity(initialQuantity);
+      return;
+    }
+
+    // Якщо ввели більше, ніж є на складі — зрізаємо до максимуму
+    if (availableStock !== undefined && val > availableStock) {
+      val = availableStock;
+    }
+
+    const delta = val - initialQuantity;
+
+    if (delta > 0) {
+      // Якщо хочуть додати товари — відправляємо дельту на сервер
+      setQuantity(val);
+      onAddDelta?.(delta);
+    } else {
+      // Якщо хочуть відняти (delta < 0) — поки просто повертаємо як було (зробимо пізніше)
+      setQuantity(initialQuantity);
     }
   };
 
@@ -203,7 +203,7 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
             type="text"
             value={quantity}
             onChange={handleInputChange}
-            onBlur={handleInputBlur}
+            onBlur={handleInputBlur} // <-- Виклик API переїхав сюди
             className="w-12 text-center bg-transparent font-bold text-sm text-gray-800 outline-none p-0 m-0"
           />
 
@@ -234,4 +234,4 @@ const SearchProductCard: React.FC<SearchProductCardProps> = ({
   );
 };
 
-export default SearchProductCard;
+export default SmallProductCard;

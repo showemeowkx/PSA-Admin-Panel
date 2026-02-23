@@ -19,7 +19,7 @@ import {
   chevronDownOutline,
 } from "ionicons/icons";
 import { useHistory, useLocation } from "react-router-dom";
-import SearchProductCard from "../shop/components/SearchProductCard";
+import SmallProductCard from "../shop/components/SmallProductCard";
 import ProductCard from "../shop/components/ProductCard";
 import { getDefaultAddQuantity, useCartStore } from "./cart.store";
 import { useAuthStore } from "../auth/auth.store";
@@ -380,7 +380,7 @@ const CartScreen: React.FC = () => {
                         : 0;
 
                       return (
-                        <SearchProductCard
+                        <SmallProductCard
                           key={item.id}
                           name={product.name}
                           price={

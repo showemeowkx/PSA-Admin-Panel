@@ -40,7 +40,7 @@ import StoreSelectorModal, {
   type Store,
 } from "./components/StoreSelectorModal";
 import api from "../../config/api";
-import SearchProductCard from "./components/SearchProductCard";
+import SmallProductCard from "./components/SmallProductCard";
 import type { FilterState } from "./components/FilterMenu";
 import FilterMenu from "./components/FilterMenu";
 import { getDefaultAddQuantity, useCartStore } from "../cart/cart.store";
@@ -872,7 +872,7 @@ const ShopScreen: React.FC = () => {
                             }
                           />
                         ) : (
-                          <SearchProductCard
+                          <SmallProductCard
                             key={product.id}
                             name={product.name}
                             price={
