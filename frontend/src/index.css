@@ -17,6 +17,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.force-hide-tab-bar {
+  display: none !important;
+}
+
 a {
   font-weight: 500;
   color: #646cff;

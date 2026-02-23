@@ -33,6 +33,7 @@ import { useAuthStore } from "../auth/auth.store";
 import api from "../../config/api";
 import { type Store } from "./components/StoreSelectorModal";
 import ProductScreen from "./components/ProductPage";
+import CartScreen from "./CartScreen";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
@@ -195,6 +196,11 @@ const ShopLayout: React.FC = () => {
     }
   };
 
+  const shouldHideTabBar =
+    !isPlatform("desktop") &&
+    (location.pathname.includes("/cart") ||
+      location.pathname.includes("/product/"));
+
   return (
     <>
       <IonTabs>
@@ -205,19 +211,7 @@ const ShopLayout: React.FC = () => {
             path={`${basePath}/product/:id`}
             component={ProductScreen}
           />
-          <Route
-            exact
-            path={`${basePath}/cart`}
-            render={() => (
-              <IonPage className="bg-white">
-                <IonContent>
-                  <div className="flex h-full items-center justify-center font-bold text-gray-300">
-                    Кошик
-                  </div>
-                </IonContent>
-              </IonPage>
-            )}
-          />
+          <Route exact path={`${basePath}/cart`} component={CartScreen} />
           <Route
             exact
             path={`${basePath}/purchases`}
@@ -441,7 +435,7 @@ const ShopLayout: React.FC = () => {
 
         <IonTabBar
           slot="bottom"
-          className="md:hidden border-t border-gray-100 shadow-lg h-[70px] pb-2 bg-white"
+          className={`md:hidden border-t border-gray-100 shadow-lg h-[70px] pb-2 bg-white ${shouldHideTabBar ? "force-hide-tab-bar" : ""}`}
         >
           <IonTabButton
             tab="shop"
