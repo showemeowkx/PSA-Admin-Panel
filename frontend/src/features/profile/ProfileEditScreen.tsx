@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   IonPage,
   IonHeader,
@@ -8,6 +8,7 @@ import {
   IonContent,
   useIonToast,
   IonSpinner,
+  IonModal,
 } from "@ionic/react";
 import {
   chevronBackOutline,
@@ -15,10 +16,52 @@ import {
   callOutline,
   mailOutline,
   chevronForwardOutline,
+  trashOutline,
 } from "ionicons/icons";
 import { useHistory } from "react-router-dom";
 import { useAuthStore } from "../auth/auth.store";
 import api from "../../config/api";
+import Cropper from "react-easy-crop";
+
+const createImage = (url: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener("load", () => resolve(image));
+    image.addEventListener("error", (error) => reject(error));
+    image.src = url;
+  });
+
+async function getCroppedImg(
+  imageSrc: string,
+  pixelCrop: { x: number; y: number; width: number; height: number },
+): Promise<Blob | null> {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) return null;
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height,
+  );
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(blob);
+    }, "image/jpeg");
+  });
+}
 
 const ProfileEditScreen: React.FC = () => {
   const history = useHistory();
@@ -29,11 +72,126 @@ const ProfileEditScreen: React.FC = () => {
   const [surname, setSurname] = useState(user?.surname || "");
   const [isSaving, setIsSaving] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
   const getInitials = () => {
     if (name && surname) return `${name[0]}${surname[0]}`.toUpperCase();
     if (name) return name[0].toUpperCase();
     if (surname) return surname[0].toUpperCase();
     return "👤";
+  };
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        setImageSrc(reader.result?.toString() || null);
+        setIsCropperOpen(true);
+      });
+      reader.readAsDataURL(file);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const onCropComplete = useCallback(
+    (
+      _croppedArea: { x: number; y: number; width: number; height: number },
+      croppedAreaPixels: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+      },
+    ) => {
+      setCroppedAreaPixels(croppedAreaPixels);
+    },
+    [],
+  );
+
+  const handleUploadPhoto = async () => {
+    if (!imageSrc || !croppedAreaPixels) return;
+
+    try {
+      setIsUploadingPhoto(true);
+      const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+
+      if (!croppedImageBlob) throw new Error("Помилка обрізки");
+
+      const formData = new FormData();
+      formData.append("pfp", croppedImageBlob, "avatar.jpg");
+
+      const { data } = await api.patch("/auth", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      if (setUser && user) {
+        setUser({ ...user, ...data });
+      }
+
+      presentToast({
+        message: "Фото успішно оновлено",
+        duration: 2000,
+        color: "success",
+        position: "bottom",
+        mode: "ios",
+      });
+      setIsCropperOpen(false);
+    } catch (error) {
+      console.error(error);
+      presentToast({
+        message: "Не вдалося оновити фото",
+        duration: 2000,
+        color: "danger",
+        position: "bottom",
+        mode: "ios",
+      });
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleResetPhoto = async () => {
+    try {
+      setIsUploadingPhoto(true);
+
+      const payload = { imagePath: null };
+      const { data } = await api.patch("/auth", payload);
+
+      if (setUser && user) {
+        setUser({ ...user, ...data });
+      }
+
+      presentToast({
+        message: "Фото видалено",
+        duration: 2000,
+        color: "success",
+        position: "bottom",
+        mode: "ios",
+      });
+    } catch (error) {
+      console.error(error);
+      presentToast({
+        message: "Не вдалося видалити фото",
+        duration: 2000,
+        color: "danger",
+        position: "bottom",
+        mode: "ios",
+      });
+    } finally {
+      setIsUploadingPhoto(false);
+    }
   };
 
   const handleSavePersonalData = async () => {
@@ -145,9 +303,32 @@ const ProfileEditScreen: React.FC = () => {
                     getInitials()
                   )}
                 </div>
-                <button className="absolute bottom-0 right-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-orange-600 active:scale-95 transition-all">
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingPhoto}
+                  className="absolute bottom-0 right-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-orange-600 active:scale-95 transition-all disabled:opacity-50"
+                >
                   <IonIcon icon={cameraOutline} className="text-xl" />
                 </button>
+
+                {user?.imagePath && (
+                  <button
+                    onClick={handleResetPhoto}
+                    disabled={isUploadingPhoto}
+                    className="absolute bottom-0 left-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-red-500 hover:text-red-600 active:scale-95 transition-all disabled:opacity-50"
+                  >
+                    <IonIcon icon={trashOutline} className="text-xl" />
+                  </button>
+                )}
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  ref={fileInputRef}
+                  onChange={onFileChange}
+                />
               </div>
             </div>
 
@@ -253,6 +434,56 @@ const ProfileEditScreen: React.FC = () => {
           </div>
         </div>
       </IonContent>
+
+      <IonModal
+        isOpen={isCropperOpen}
+        onDidDismiss={() => setIsCropperOpen(false)}
+      >
+        <IonHeader className="ion-no-border bg-white">
+          <IonToolbar style={{ "--background": "white" }}>
+            <div className="flex items-center justify-between px-4 py-3">
+              <button
+                onClick={() => setIsCropperOpen(false)}
+                disabled={isUploadingPhoto}
+                className="text-gray-500 font-bold active:scale-95 transition-all"
+              >
+                Скасувати
+              </button>
+              <span className="font-bold text-gray-800 text-lg">
+                Обрізка фото
+              </span>
+              <button
+                onClick={handleUploadPhoto}
+                disabled={isUploadingPhoto}
+                className="text-orange-600 font-bold flex items-center gap-1 active:scale-95 transition-all"
+              >
+                {isUploadingPhoto ? (
+                  <IonSpinner name="crescent" className="w-5 h-5" />
+                ) : (
+                  "Зберегти"
+                )}
+              </button>
+            </div>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
+          <div className="relative w-full h-full bg-black">
+            {imageSrc && (
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            )}
+          </div>
+        </IonContent>
+      </IonModal>
     </IonPage>
   );
 };
