@@ -30,6 +30,7 @@ interface CartState {
     setQuantity?: boolean,
   ) => Promise<void>;
   removeFromCart: (productId: number, removeAll?: 0 | 1) => Promise<void>;
+  clearCart: () => Promise<void>;
 }
 
 export const useCartStore = create<CartState>((set) => ({
@@ -76,6 +77,19 @@ export const useCartStore = create<CartState>((set) => ({
       });
     } catch (error) {
       console.error("Failed to remove from cart:", error);
+      throw error;
+    }
+  },
+
+  clearCart: async () => {
+    try {
+      await api.delete("/cart");
+      set({
+        cartItemsCount: 0,
+        items: [],
+      });
+    } catch (error) {
+      console.error("Failed to clear cart:", error);
       throw error;
     }
   },

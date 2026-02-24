@@ -50,7 +50,8 @@ const CartScreen: React.FC = () => {
   const location = useLocation();
   const { user } = useAuthStore();
 
-  const { items, fetchCart, addToCart, removeFromCart } = useCartStore();
+  const { items, fetchCart, addToCart, removeFromCart, clearCart } =
+    useCartStore();
   const [isLoading, setIsLoading] = useState(true);
   const [presentToast] = useIonToast();
   const [presentAlert] = useIonAlert();
@@ -213,6 +214,17 @@ const CartScreen: React.FC = () => {
     }
   };
 
+  const handleClearCart = () => {
+    presentAlert({
+      header: "Очистити кошик?",
+      message: "Всі товари будуть видалені. Ви впевнені?",
+      buttons: [
+        { text: "Скасувати", role: "cancel" },
+        { text: "Очистити", role: "destructive", handler: () => clearCart() },
+      ],
+    });
+  };
+
   const onAddToCartClick = (targetProduct: Product) => {
     if (!targetProduct || !user?.selectedStoreId) return;
 
@@ -368,7 +380,7 @@ const CartScreen: React.FC = () => {
               <IonIcon icon={chevronBackOutline} className="text-2xl" /> Назад
             </IonButton>
             <span className="font-bold text-gray-800 text-lg">Кошик</span>
-            <IonButton color="danger" fill="clear">
+            <IonButton onClick={handleClearCart} color="danger" fill="clear">
               <IonIcon icon={trashOutline} className="text-xl" />
             </IonButton>
           </div>
@@ -385,7 +397,10 @@ const CartScreen: React.FC = () => {
               <IonIcon icon={chevronBackOutline} className="text-xl" />
               Назад до покупок
             </button>
-            <button className="flex items-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-xl transition-all font-bold">
+            <button
+              onClick={handleClearCart}
+              className="flex items-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-xl transition-all font-bold"
+            >
               <IonIcon icon={trashOutline} className="text-lg" />
               Очистити кошик
             </button>
