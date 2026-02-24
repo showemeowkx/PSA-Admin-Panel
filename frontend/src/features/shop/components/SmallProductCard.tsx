@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { IonIcon } from "@ionic/react";
-import { add, remove } from "ionicons/icons";
+import { add, remove, trashOutline } from "ionicons/icons";
 
 interface SmallProductCardProps {
   name: string;
@@ -15,6 +15,7 @@ interface SmallProductCardProps {
   initialQuantity?: number;
   availableStock?: number;
   onRemove?: () => void;
+  onDecrease?: () => void;
   onAddToCart?: () => void;
   onUpdateQuantity?: (qty: number) => void;
 }
@@ -32,6 +33,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
   initialQuantity = 1,
   availableStock,
   onRemove,
+  onDecrease,
   onAddToCart,
   onUpdateQuantity,
 }) => {
@@ -58,7 +60,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
 
   const handleInputBlur = () => {
     const val = Number(quantity);
-    if (isNaN(val) || val < 0) {
+    if (isNaN(val) || val <= 0) {
       setQuantity(initialQuantity);
       return;
     }
@@ -78,6 +80,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
   };
 
   const isUnavailable = !isActive || isOutOfStock;
+  const isDecreaseDisabled = Number(quantity) <= 1;
 
   return (
     <div
@@ -93,9 +96,22 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
       </div>
 
       <div className="flex-1 min-w-0">
-        <h3 className="font-bold text-sm text-gray-800 truncate leading-tight">
-          {name}
-        </h3>
+        <div className="flex items-center justify-between w-full gap-2">
+          <h3 className="font-bold text-sm text-gray-800 truncate leading-tight flex-1">
+            {name}
+          </h3>
+          {isCartItem && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove?.();
+              }}
+              className="text-gray-300 hover:text-red-500 transition-colors shrink-0 ml-1"
+            >
+              <IonIcon icon={trashOutline} className="text-[18px]" />
+            </button>
+          )}
+        </div>
         <p className="text-[10px] text-gray-400 font-medium mb-1">{unit}</p>
         <div className="flex items-center gap-1.5">
           <span
@@ -112,10 +128,11 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           <button
+            disabled={isDecreaseDisabled}
             onClick={() => {
-              onRemove?.();
+              onDecrease?.();
             }}
-            className="w-8 h-8 flex items-center justify-center text-gray-500"
+            className={`w-8 h-8 flex items-center justify-center ${isDecreaseDisabled ? "text-gray-500" : "text-orange-600"}`}
           >
             <IonIcon icon={remove} />
           </button>
@@ -126,7 +143,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
             onChange={handleInputChange}
             onBlur={handleInputBlur}
             onKeyDown={handleKeyDown}
-            className="w-10 text-center bg-transparent font-bold text-sm text-gray-800 outline-none"
+            className="w-8 text-center bg-transparent font-bold text-sm text-gray-800 outline-none"
           />
           <button
             onClick={handleIncrease}

@@ -29,6 +29,7 @@ interface CartState {
     quantity: number,
     setQuantity?: boolean,
   ) => Promise<void>;
+  removeFromCart: (productId: number, removeAll?: 0 | 1) => Promise<void>;
 }
 
 export const useCartStore = create<CartState>((set) => ({
@@ -61,6 +62,20 @@ export const useCartStore = create<CartState>((set) => ({
       });
     } catch (error) {
       console.error("Failed to add to cart:", error);
+      throw error;
+    }
+  },
+
+  removeFromCart: async (productId: number, removeAll: 0 | 1 = 0) => {
+    try {
+      await api.delete(`/cart/${productId}?removeAll=${removeAll}`);
+      const { data } = await api.get("/cart");
+      set({
+        cartItemsCount: data?.items?.length || 0,
+        items: data?.items || [],
+      });
+    } catch (error) {
+      console.error("Failed to remove from cart:", error);
       throw error;
     }
   },
@@ -102,8 +117,6 @@ export const getDefaultAddQuantity = (
     console.log("No stock available for product:", product.id);
     return 1;
   }
-
-  console.log(remaining >= 1 ? 1 : remaining);
 
   return remaining >= 1 ? 1 : remaining;
 };

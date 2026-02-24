@@ -8,6 +8,7 @@ import {
   IonIcon,
   IonSpinner,
   useIonToast,
+  useIonAlert,
 } from "@ionic/react";
 import {
   chevronBackOutline,
@@ -49,9 +50,10 @@ const CartScreen: React.FC = () => {
   const location = useLocation();
   const { user } = useAuthStore();
 
-  const { items, fetchCart, addToCart } = useCartStore();
+  const { items, fetchCart, addToCart, removeFromCart } = useCartStore();
   const [isLoading, setIsLoading] = useState(true);
   const [presentToast] = useIonToast();
+  const [presentAlert] = useIonAlert();
 
   const [recommendedProducts, setRecommendedProducts] = useState<Product[]>([]);
   const [recommendedPage, setRecommendedPage] = useState(1);
@@ -171,13 +173,6 @@ const CartScreen: React.FC = () => {
   ) => {
     try {
       await addToCart(productId, quantity, setQuantity);
-      presentToast({
-        message: "Кошик оновлено",
-        duration: 1500,
-        color: "success",
-        position: "bottom",
-        mode: "ios",
-      });
     } catch (error: unknown) {
       let errorMessage = "Не вдалося додати товар до кошика";
       if (isAxiosError(error)) {
@@ -193,6 +188,31 @@ const CartScreen: React.FC = () => {
     }
   };
 
+  const handleRemove = async (productId: number, removeAll: 0 | 1) => {
+    if (removeAll === 1) {
+      presentAlert({
+        header: "Видалити товар?",
+        message: "Ви впевнені, що хочете прибрати цю позицію з кошика?",
+        buttons: [
+          {
+            text: "Скасувати",
+            role: "cancel",
+          },
+          {
+            text: "Видалити",
+            role: "destructive",
+            handler: async () => {
+              await executeRemoval(productId, 1);
+            },
+          },
+        ],
+      });
+    } else {
+      // Якщо це просто мінус (removeAll = 0), видаляємо без запитань
+      await executeRemoval(productId, 0);
+    }
+  };
+
   const onAddToCartClick = (targetProduct: Product) => {
     if (!targetProduct || !user?.selectedStoreId) return;
 
@@ -201,8 +221,6 @@ const CartScreen: React.FC = () => {
       targetProduct as any,
       user.selectedStoreId,
     );
-
-    console.log("Calculated add quantity:", amount);
 
     if (amount > 0) {
       handleAddToCart(targetProduct.id, amount, false);
@@ -214,6 +232,23 @@ const CartScreen: React.FC = () => {
         position: "bottom",
         mode: "ios",
       });
+    }
+  };
+
+  const executeRemoval = async (productId: number, removeAll: 0 | 1) => {
+    try {
+      await removeFromCart(productId, removeAll);
+      if (removeAll === 1) {
+        presentToast({
+          message: "Товар видалено",
+          duration: 1500,
+          color: "medium",
+          position: "bottom",
+          mode: "ios",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to remove item:", error);
     }
   };
 
@@ -414,7 +449,15 @@ const CartScreen: React.FC = () => {
                           onUpdateQuantity={(newQty) => {
                             handleAddToCart(product.id, newQty, true);
                           }}
-                          onRemove={() => {}}
+                          onDecrease={() => {
+                            handleRemove(product.id, 0);
+                          }}
+                          onRemove={() => {
+                            handleRemove(product.id, 1);
+                          }}
+                          onClick={() =>
+                            history.push(`${basePath}/product/${product.id}`)
+                          }
                         />
                       );
                     })}
