@@ -1,4 +1,5 @@
-import React, { useState, useRef, useCallback } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   IonPage,
   IonHeader,
@@ -9,6 +10,9 @@ import {
   useIonToast,
   IonSpinner,
   IonModal,
+  IonInput,
+  IonItem,
+  IonLabel,
 } from "@ionic/react";
 import {
   chevronBackOutline,
@@ -17,11 +21,18 @@ import {
   mailOutline,
   chevronForwardOutline,
   trashOutline,
+  phonePortraitOutline,
+  keypadOutline,
+  eyeOutline,
+  eyeOffOutline,
+  closeOutline,
 } from "ionicons/icons";
 import { useHistory } from "react-router-dom";
 import { useAuthStore } from "../auth/auth.store";
 import api from "../../config/api";
 import Cropper from "react-easy-crop";
+
+const DEFAULT_USER_PFP = import.meta.env.VITE_DEFAULT_USER_PFP;
 
 const createImage = (url: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
@@ -72,18 +83,43 @@ const ProfileEditScreen: React.FC = () => {
   const [surname, setSurname] = useState(user?.surname || "");
   const [isSaving, setIsSaving] = useState(false);
 
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | null>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isCropperOpen, setIsCropperOpen] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [phoneStep, setPhoneStep] = useState<1 | 2>(1);
+  const [newPhone, setNewPhone] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isPhoneUpdating, setIsPhoneUpdating] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const intervalId = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
 
   const getInitials = () => {
     if (name && surname) return `${name[0]}${surname[0]}`.toUpperCase();
@@ -219,7 +255,6 @@ const ProfileEditScreen: React.FC = () => {
 
     try {
       setIsSaving(true);
-
       const payload = {
         name: trimmedName || null,
         surname: trimmedSurname || null,
@@ -251,6 +286,315 @@ const ProfileEditScreen: React.FC = () => {
       setIsSaving(false);
     }
   };
+
+  const handleRequestPhoneCode = async () => {
+    if (!newPhone || newPhone.length < 10) {
+      presentToast({
+        message: "Введіть коректний номер телефону",
+        duration: 2000,
+        color: "warning",
+        mode: "ios",
+      });
+      return;
+    }
+
+    try {
+      setIsPhoneUpdating(true);
+      await api.post("/auth/send-code", { phone: newPhone });
+      setPhoneStep(2);
+      setTimeLeft(30);
+      presentToast({
+        message: "Код відправлено на новий номер",
+        duration: 2000,
+        color: "success",
+        mode: "ios",
+      });
+    } catch (error: any) {
+      console.error(error);
+      presentToast({
+        message: error.response?.data?.message || "Помилка при відправці коду",
+        duration: 3000,
+        color: "danger",
+        mode: "ios",
+      });
+    } finally {
+      setIsPhoneUpdating(false);
+    }
+  };
+
+  const handleConfirmPhoneChange = async () => {
+    if (verificationCode.length !== 6) {
+      presentToast({
+        message: "Введіть 6-значний код",
+        duration: 2000,
+        color: "warning",
+        mode: "ios",
+      });
+      return;
+    }
+    if (!currentPassword) {
+      presentToast({
+        message: "Введіть ваш поточний пароль",
+        duration: 2000,
+        color: "warning",
+        mode: "ios",
+      });
+      return;
+    }
+
+    try {
+      setIsPhoneUpdating(true);
+
+      const payload = {
+        phone: newPhone,
+        currentPassword: currentPassword,
+        code: verificationCode,
+      };
+
+      const { data } = await api.patch("/auth", payload);
+
+      if (setUser && user) {
+        setUser({ ...user, ...data });
+      }
+
+      presentToast({
+        message: "Номер телефону успішно змінено!",
+        duration: 2000,
+        color: "success",
+        mode: "ios",
+      });
+      resetPhoneModal();
+    } catch (error: any) {
+      console.error(error);
+      presentToast({
+        message: error.response?.data?.message || "Невірний код або пароль",
+        duration: 3000,
+        color: "danger",
+        mode: "ios",
+      });
+    } finally {
+      setIsPhoneUpdating(false);
+    }
+  };
+
+  const resetPhoneModal = () => {
+    setIsPhoneModalOpen(false);
+    setTimeout(() => {
+      setPhoneStep(1);
+      setNewPhone("");
+      setVerificationCode("");
+      setCurrentPassword("");
+      setShowPassword(false);
+      setTimeLeft(0);
+    }, 300);
+  };
+
+  const renderPhoneModalContent = () => (
+    <IonContent className="bg-white">
+      <div className={`p-6 ${isDesktop ? "pt-4" : "pt-8"}`}>
+        {!isDesktop && (
+          <h2 className="text-2xl font-black text-gray-800 mb-6 text-center">
+            {phoneStep === 1 ? "Зміна телефону" : "Підтвердження"}
+          </h2>
+        )}
+
+        {phoneStep === 1 ? (
+          <div className="space-y-6 animate-fade-in">
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <IonIcon
+                  icon={phonePortraitOutline}
+                  className="text-3xl text-orange-500"
+                />
+              </div>
+              <p className="text-gray-500 text-sm font-medium leading-relaxed">
+                Введіть новий номер телефону для отримання коду підтвердження
+              </p>
+            </div>
+
+            <div className="bg-gray-100/50 rounded-[30px] px-4 py-1 border border-gray-200/30 shadow-inner">
+              <IonItem
+                lines="none"
+                className="bg-transparent"
+                style={{ "--background": "transparent" }}
+              >
+                <div className="w-full">
+                  <IonLabel
+                    position="stacked"
+                    className="text-orange-600 font-bold ml-1 mb-1"
+                  >
+                    Новий номер телефону
+                  </IonLabel>
+                  <IonInput
+                    type="tel"
+                    inputmode="tel"
+                    value={newPhone}
+                    onIonInput={(e) => {
+                      const val = e.detail.value!;
+                      const filtered = val.replace(/[^0-9+]/g, "");
+                      setNewPhone(filtered);
+                      if (val !== filtered) e.target.value = filtered;
+                    }}
+                    className="font-medium text-gray-800"
+                    placeholder="+380..."
+                    maxlength={13}
+                  />
+                </div>
+              </IonItem>
+            </div>
+
+            <IonButton
+              expand="block"
+              onClick={handleRequestPhoneCode}
+              disabled={isPhoneUpdating || newPhone.length < 10}
+              className="h-14 mt-4 font-black text-lg"
+              style={{
+                "--border-radius": "30px",
+                "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
+              }}
+              color="primary"
+            >
+              {isPhoneUpdating ? (
+                <IonSpinner name="crescent" className="w-5 h-5" />
+              ) : (
+                "ОТРИМАТИ КОД"
+              )}
+            </IonButton>
+          </div>
+        ) : (
+          <div className="space-y-4 animate-fade-in">
+            <div className="text-center mb-2">
+              <p className="text-gray-500 text-sm font-medium">
+                Код відправлено на <br />
+                <span className="font-bold text-gray-800 text-base">
+                  {newPhone}
+                </span>
+              </p>
+            </div>
+
+            <div className="bg-gray-100/50 rounded-[30px] px-4 py-1 border border-gray-200/30 shadow-inner mb-4">
+              <IonItem
+                lines="none"
+                className="bg-transparent"
+                style={{ "--background": "transparent" }}
+              >
+                <div className="w-full">
+                  <IonLabel
+                    position="stacked"
+                    className="text-orange-600 font-bold ml-1 mb-1"
+                  >
+                    СМС Код
+                  </IonLabel>
+                  <div className="flex items-center">
+                    <IonInput
+                      type="tel"
+                      inputmode="numeric"
+                      pattern="[0-9]*"
+                      value={verificationCode}
+                      onIonInput={(e) => {
+                        const val = e.detail.value!;
+                        const numeric = val.replace(/\D/g, "");
+                        setVerificationCode(numeric);
+                        if (val !== numeric) {
+                          e.target.value = numeric;
+                        }
+                      }}
+                      className="font-medium text-gray-800"
+                      placeholder="6-значний код"
+                      maxlength={6}
+                    />
+                    <IonIcon
+                      icon={keypadOutline}
+                      className="text-gray-400 text-xl ml-2"
+                    />
+                  </div>
+                </div>
+              </IonItem>
+            </div>
+
+            <div className="bg-gray-100/50 rounded-[30px] px-4 py-1 border border-gray-200/30 shadow-inner">
+              <IonItem
+                lines="none"
+                className="bg-transparent"
+                style={{ "--background": "transparent" }}
+              >
+                <div className="w-full">
+                  <IonLabel
+                    position="stacked"
+                    className="text-orange-600 font-bold ml-1 mb-1"
+                  >
+                    Поточний пароль
+                  </IonLabel>
+                  <div className="flex items-center">
+                    <IonInput
+                      type={showPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onIonInput={(e) => setCurrentPassword(e.detail.value!)}
+                      className="font-medium text-gray-800"
+                      placeholder="Ваш пароль"
+                    />
+                    <IonIcon
+                      icon={showPassword ? eyeOffOutline : eyeOutline}
+                      className="text-gray-400 text-xl ml-2 cursor-pointer"
+                      onClick={() => setShowPassword(!showPassword)}
+                    />
+                  </div>
+                </div>
+              </IonItem>
+            </div>
+
+            <IonButton
+              expand="block"
+              onClick={handleConfirmPhoneChange}
+              disabled={
+                isPhoneUpdating ||
+                verificationCode.length !== 6 ||
+                currentPassword.length < 1
+              }
+              className="h-14 mt-4 font-black text-lg"
+              style={{
+                "--border-radius": "30px",
+                "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
+              }}
+              color="primary"
+            >
+              {isPhoneUpdating ? (
+                <IonSpinner name="crescent" className="w-5 h-5" />
+              ) : (
+                "ЗМІНИТИ НОМЕР"
+              )}
+            </IonButton>
+
+            <div className="text-center pt-2">
+              <IonButton
+                fill="clear"
+                disabled={timeLeft > 0 || isPhoneUpdating}
+                onClick={handleRequestPhoneCode}
+                color="medium"
+                className="text-xs normal-case opacity-80"
+              >
+                {timeLeft > 0
+                  ? `Надіслати код знову через ${formatTime(timeLeft)}`
+                  : "Надіслати код ще раз"}
+              </IonButton>
+            </div>
+
+            <div className="text-center">
+              <IonButton
+                fill="clear"
+                onClick={() => setPhoneStep(1)}
+                disabled={isPhoneUpdating}
+                color="medium"
+                className="text-xs normal-case opacity-80"
+              >
+                Повернутися назад
+              </IonButton>
+            </div>
+          </div>
+        )}
+      </div>
+    </IonContent>
+  );
 
   return (
     <IonPage>
@@ -307,20 +651,22 @@ const ProfileEditScreen: React.FC = () => {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingPhoto}
-                  className="absolute bottom-0 right-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-orange-600 active:scale-95 transition-all disabled:opacity-50"
+                  className="absolute bottom-0 right-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-orange-600 active:scale-95 transition-all disabled:opacity-0"
                 >
                   <IonIcon icon={cameraOutline} className="text-xl" />
                 </button>
 
-                {user?.imagePath && (
-                  <button
-                    onClick={handleResetPhoto}
-                    disabled={isUploadingPhoto}
-                    className="absolute bottom-0 left-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-red-500 hover:text-red-600 active:scale-95 transition-all disabled:opacity-50"
-                  >
-                    <IonIcon icon={trashOutline} className="text-xl" />
-                  </button>
-                )}
+                <button
+                  onClick={handleResetPhoto}
+                  disabled={
+                    isUploadingPhoto ||
+                    !user?.imagePath ||
+                    user?.imagePath === DEFAULT_USER_PFP
+                  }
+                  className="absolute bottom-0 left-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-red-500 hover:text-red-600 active:scale-95 transition-all disabled:opacity-0"
+                >
+                  <IonIcon icon={trashOutline} className="text-xl" />
+                </button>
 
                 <input
                   type="file"
@@ -387,11 +733,15 @@ const ProfileEditScreen: React.FC = () => {
               Дані для входу
             </h2>
             <p className="text-sm text-gray-500 mb-5 pl-1">
-              Для зміни номеру телефону або електронної необхідно ввести пароль.
+              Для зміни номеру телефону або електронної пошти необхідно
+              підтвердження.
             </p>
 
             <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 flex flex-col overflow-hidden">
-              <button className="flex items-center justify-between p-4 md:p-5 hover:bg-gray-50 transition-colors active:bg-gray-100 border-b border-gray-50 first:rounded-t-[24px] last:rounded-b-[24px]">
+              <button
+                onClick={() => setIsPhoneModalOpen(true)}
+                className="flex items-center justify-between p-4 md:p-5 hover:bg-gray-50 transition-colors active:bg-gray-100 border-b border-gray-50 first:rounded-t-[24px] last:rounded-b-[24px]"
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-orange-50 flex items-center justify-center text-orange-500 border border-orange-100 shrink-0">
                     <IonIcon icon={callOutline} className="text-xl" />
@@ -484,6 +834,44 @@ const ProfileEditScreen: React.FC = () => {
           </div>
         </IonContent>
       </IonModal>
+
+      {isDesktop ? (
+        <IonModal
+          isOpen={isPhoneModalOpen}
+          onDidDismiss={resetPhoneModal}
+          style={{
+            "--width": "450px",
+            "--height": "560px",
+            "--border-radius": "24px",
+          }}
+        >
+          <IonHeader className="ion-no-border bg-white rounded-t-[24px]">
+            <IonToolbar className="bg-white px-2 rounded-t-[24px]">
+              <h2 className="text-xl font-black text-gray-800 ml-2">
+                Зміна телефону
+              </h2>
+              <IonButton
+                slot="end"
+                fill="clear"
+                color="medium"
+                onClick={resetPhoneModal}
+              >
+                <IonIcon icon={closeOutline} className="text-2xl" />
+              </IonButton>
+            </IonToolbar>
+          </IonHeader>
+          {renderPhoneModalContent()}
+        </IonModal>
+      ) : (
+        <IonModal
+          isOpen={isPhoneModalOpen}
+          onDidDismiss={resetPhoneModal}
+          breakpoints={[0, 0.75, 0.9]}
+          initialBreakpoint={0.75}
+        >
+          {renderPhoneModalContent()}
+        </IonModal>
+      )}
     </IonPage>
   );
 };
