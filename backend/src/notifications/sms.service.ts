@@ -53,7 +53,9 @@ export class SmsService {
 
       if (
         response.data.response_code === 0 ||
-        response.data.response_code === 800
+        response.data.response_code === 800 ||
+        response.data.response_status === 'OK' ||
+        response.data.response_status === 'SUCCESS_MESSAGE_SENT'
       ) {
         this.logger.log(
           `SMS sent successfully. ID: ${response.data.response_result?.[0]?.message_id}`,
