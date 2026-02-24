@@ -37,6 +37,7 @@ import ProductScreen from "./components/ProductPage";
 import CartScreen from "../cart/CartScreen";
 import { useCartStore } from "../cart/cart.store";
 import ProfileScreen from "../profile/ProfileScreen";
+import ProfileEditScreen from "../profile/ProfileEditScreen";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
@@ -238,11 +239,7 @@ const ShopLayout: React.FC = () => {
           <Route
             exact
             path={`${basePath}/profile/edit`}
-            render={() => (
-              <IonPage>
-                <IonContent>Редагувати профіль</IonContent>
-              </IonPage>
-            )}
+            component={ProfileEditScreen}
           />
           <Route
             exact
