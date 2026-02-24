@@ -29,6 +29,7 @@ export class CartService {
     const cart = await this.cartRepository.findOne({
       where: { user: { id: userId } },
       relations: ['items', 'items.product', 'items.product.stocks'],
+      order: { items: { id: 'ASC' } },
     });
 
     if (!cart) {
