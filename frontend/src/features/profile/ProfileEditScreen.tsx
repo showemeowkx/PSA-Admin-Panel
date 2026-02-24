@@ -107,6 +107,12 @@ const ProfileEditScreen: React.FC = () => {
   const [isPhoneUpdating, setIsPhoneUpdating] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
 
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
+  const [showEmailPassword, setShowEmailPassword] = useState(false);
+  const [isEmailUpdating, setIsEmailUpdating] = useState(false);
+
   useEffect(() => {
     if (timeLeft <= 0) return;
     const intervalId = setInterval(() => {
@@ -389,6 +395,75 @@ const ProfileEditScreen: React.FC = () => {
     }, 300);
   };
 
+  const handleConfirmEmailChange = async () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!newEmail || !emailRegex.test(newEmail)) {
+      presentToast({
+        message: "Введіть коректну електронну пошту",
+        duration: 2000,
+        color: "warning",
+        mode: "ios",
+      });
+      return;
+    }
+
+    if (user?.email && !emailPassword) {
+      presentToast({
+        message: "Введіть ваш поточний пароль",
+        duration: 2000,
+        color: "warning",
+        mode: "ios",
+      });
+      return;
+    }
+
+    try {
+      setIsEmailUpdating(true);
+
+      const payload: any = { email: newEmail };
+      if (user?.email) {
+        payload.currentPassword = emailPassword;
+      }
+
+      const { data } = await api.patch("/auth", payload);
+
+      if (setUser && user) {
+        setUser({ ...user, ...data });
+      }
+
+      presentToast({
+        message: user?.email
+          ? "Електронну пошту успішно змінено!"
+          : "Електронну пошту успішно додано!",
+        duration: 2000,
+        color: "success",
+        mode: "ios",
+      });
+      resetEmailModal();
+    } catch (error: any) {
+      console.error(error);
+      presentToast({
+        message:
+          error.response?.data?.message ||
+          "Не вдалося зберегти електронну пошту",
+        duration: 3000,
+        color: "danger",
+        mode: "ios",
+      });
+    } finally {
+      setIsEmailUpdating(false);
+    }
+  };
+
+  const resetEmailModal = () => {
+    setIsEmailModalOpen(false);
+    setTimeout(() => {
+      setNewEmail("");
+      setEmailPassword("");
+      setShowEmailPassword(false);
+    }, 300);
+  };
+
   const renderPhoneModalContent = () => (
     <IonContent className="bg-white">
       <div className={`p-6 ${isDesktop ? "pt-4" : "pt-8"}`}>
@@ -596,6 +671,111 @@ const ProfileEditScreen: React.FC = () => {
     </IonContent>
   );
 
+  const renderEmailModalContent = () => (
+    <IonContent className="bg-white">
+      <div className={`p-6 ${isDesktop ? "pt-4" : "pt-8"}`}>
+        {!isDesktop && (
+          <h2 className="text-2xl font-black text-gray-800 mb-6 text-center">
+            {user?.email ? "Зміна пошти" : "Додавання пошти"}
+          </h2>
+        )}
+
+        <div className="space-y-6 animate-fade-in">
+          <div className="text-center mb-4">
+            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <IonIcon icon={mailOutline} className="text-3xl text-blue-500" />
+            </div>
+            <p className="text-gray-500 text-sm font-medium leading-relaxed">
+              {user?.email
+                ? "Введіть нову електронну пошту та поточний пароль для підтвердження"
+                : "Введіть вашу електронну пошту"}
+            </p>
+          </div>
+
+          <div className="bg-gray-100/50 rounded-[30px] px-4 py-1 border border-gray-200/30 shadow-inner">
+            <IonItem
+              lines="none"
+              className="bg-transparent"
+              style={{ "--background": "transparent" }}
+            >
+              <div className="w-full">
+                <IonLabel
+                  position="stacked"
+                  className="text-blue-600 font-bold ml-1 mb-1"
+                >
+                  Електронна пошта
+                </IonLabel>
+                <IonInput
+                  type="email"
+                  inputmode="email"
+                  value={newEmail}
+                  onIonInput={(e) => setNewEmail(e.detail.value!)}
+                  className="font-medium text-gray-800"
+                  placeholder="example@mail.com"
+                />
+              </div>
+            </IonItem>
+          </div>
+
+          {user?.email && (
+            <div className="bg-gray-100/50 rounded-[30px] px-4 py-1 border border-gray-200/30 shadow-inner">
+              <IonItem
+                lines="none"
+                className="bg-transparent"
+                style={{ "--background": "transparent" }}
+              >
+                <div className="w-full">
+                  <IonLabel
+                    position="stacked"
+                    className="text-blue-600 font-bold ml-1 mb-1"
+                  >
+                    Поточний пароль
+                  </IonLabel>
+                  <div className="flex items-center">
+                    <IonInput
+                      type={showEmailPassword ? "text" : "password"}
+                      value={emailPassword}
+                      onIonInput={(e) => setEmailPassword(e.detail.value!)}
+                      className="font-medium text-gray-800"
+                      placeholder="Ваш пароль"
+                    />
+                    <IonIcon
+                      icon={showEmailPassword ? eyeOffOutline : eyeOutline}
+                      className="text-gray-400 text-xl ml-2 cursor-pointer"
+                      onClick={() => setShowEmailPassword(!showEmailPassword)}
+                    />
+                  </div>
+                </div>
+              </IonItem>
+            </div>
+          )}
+
+          <IonButton
+            expand="block"
+            onClick={handleConfirmEmailChange}
+            disabled={
+              isEmailUpdating || !newEmail || (!!user?.email && !emailPassword)
+            }
+            className="h-14 mt-4 font-black text-lg"
+            style={{
+              "--border-radius": "30px",
+              "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
+            }}
+            color="primary"
+          >
+            {isEmailUpdating ? (
+              <IonSpinner name="crescent" className="w-5 h-5" />
+            ) : user?.email ? (
+              "ЗМІНИТИ ПОШТУ"
+            ) : (
+              "ЗБЕРЕГТИ ПОШТУ"
+            )}
+          </IonButton>
+        </div>
+      </div>
+    </IonContent>
+  );
+
   return (
     <IonPage>
       <IonHeader className="ion-no-border bg-white md:hidden pt-safe">
@@ -761,7 +941,10 @@ const ProfileEditScreen: React.FC = () => {
                 />
               </button>
 
-              <button className="flex items-center justify-between p-4 md:p-5 hover:bg-gray-50 transition-colors active:bg-gray-100 first:rounded-t-[24px] last:rounded-b-[24px]">
+              <button
+                onClick={() => setIsEmailModalOpen(true)}
+                className="flex items-center justify-between p-4 md:p-5 hover:bg-gray-50 transition-colors active:bg-gray-100 first:rounded-t-[24px] last:rounded-b-[24px]"
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-500 border border-blue-100 shrink-0">
                     <IonIcon icon={mailOutline} className="text-xl" />
@@ -870,6 +1053,44 @@ const ProfileEditScreen: React.FC = () => {
           initialBreakpoint={0.75}
         >
           {renderPhoneModalContent()}
+        </IonModal>
+      )}
+
+      {isDesktop ? (
+        <IonModal
+          isOpen={isEmailModalOpen}
+          onDidDismiss={resetEmailModal}
+          style={{
+            "--width": "450px",
+            "--height": "560px",
+            "--border-radius": "24px",
+          }}
+        >
+          <IonHeader className="ion-no-border bg-white rounded-t-[24px]">
+            <IonToolbar className="bg-white px-2 rounded-t-[24px]">
+              <h2 className="text-xl font-black text-gray-800 ml-2">
+                {user?.email ? "Зміна пошти" : "Додавання пошти"}
+              </h2>
+              <IonButton
+                slot="end"
+                fill="clear"
+                color="medium"
+                onClick={resetEmailModal}
+              >
+                <IonIcon icon={closeOutline} className="text-2xl" />
+              </IonButton>
+            </IonToolbar>
+          </IonHeader>
+          {renderEmailModalContent()}
+        </IonModal>
+      ) : (
+        <IonModal
+          isOpen={isEmailModalOpen}
+          onDidDismiss={resetEmailModal}
+          breakpoints={[0, 0.75, 0.9]}
+          initialBreakpoint={0.75}
+        >
+          {renderEmailModalContent()}
         </IonModal>
       )}
     </IonPage>
