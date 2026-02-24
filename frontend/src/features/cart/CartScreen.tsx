@@ -164,11 +164,15 @@ const CartScreen: React.FC = () => {
     }
   };
 
-  const handleAddToCart = async (productId: number, quantity: number) => {
+  const handleAddToCart = async (
+    productId: number,
+    quantity: number,
+    setQuantity: boolean = false,
+  ) => {
     try {
-      await addToCart(productId, quantity);
+      await addToCart(productId, quantity, setQuantity);
       presentToast({
-        message: "Товар додано до кошика",
+        message: "Кошик оновлено",
         duration: 1500,
         color: "success",
         position: "bottom",
@@ -198,8 +202,10 @@ const CartScreen: React.FC = () => {
       user.selectedStoreId,
     );
 
+    console.log("Calculated add quantity:", amount);
+
     if (amount > 0) {
-      handleAddToCart(targetProduct.id, amount);
+      handleAddToCart(targetProduct.id, amount, false);
     } else {
       presentToast({
         message: "Ви вже додали весь доступний залишок",
@@ -377,27 +383,38 @@ const CartScreen: React.FC = () => {
                       );
                       const availableStock = storeStock
                         ? Number(storeStock.available)
-                        : 0;
+                        : undefined;
 
                       return (
                         <SmallProductCard
                           key={item.id}
                           name={product.name}
-                          price={
-                            product.isPromo && product.pricePromo !== null
-                              ? product.pricePromo
-                              : product.price
-                          }
-                          oldPrice={product.isPromo ? product.price : undefined}
+                          price={Number(
+                            (
+                              (product.isPromo && product.pricePromo !== null
+                                ? product.pricePromo
+                                : product.price) * Number(item.quantity)
+                            ).toFixed(2),
+                          )}
                           unit={product.unitsOfMeasurments}
                           image={product.imagePath}
-                          isActive={product.isActive}
                           isCartItem={true}
                           initialQuantity={Number(item.quantity)}
                           availableStock={availableStock}
-                          onClick={() =>
-                            history.push(`${basePath}/product/${product.id}`)
+                          onAddToCart={() =>
+                            handleAddToCart(
+                              product.id,
+                              getDefaultAddQuantity(
+                                product,
+                                user?.selectedStoreId,
+                              ),
+                              false,
+                            )
                           }
+                          onUpdateQuantity={(newQty) => {
+                            handleAddToCart(product.id, newQty, true);
+                          }}
+                          onRemove={() => {}}
                         />
                       );
                     })}

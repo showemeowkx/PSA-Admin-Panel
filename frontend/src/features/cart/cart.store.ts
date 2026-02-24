@@ -24,7 +24,11 @@ interface CartState {
   cartItemsCount: number;
   items: CartItem[];
   fetchCart: () => Promise<void>;
-  addToCart: (productId: number, quantity: number) => Promise<void>;
+  addToCart: (
+    productId: number,
+    quantity: number,
+    setQuantity?: boolean,
+  ) => Promise<void>;
 }
 
 export const useCartStore = create<CartState>((set) => ({
@@ -43,9 +47,13 @@ export const useCartStore = create<CartState>((set) => ({
     }
   },
 
-  addToCart: async (productId: number, quantity: number) => {
+  addToCart: async (
+    productId: number,
+    quantity: number,
+    setQuantity?: boolean,
+  ) => {
     try {
-      await api.post("/cart", { productId, quantity });
+      await api.post("/cart", { productId, quantity, setQuantity });
       const { data } = await api.get("/cart");
       set({
         cartItemsCount: data?.items?.length || 0,
@@ -62,13 +70,25 @@ export const getDefaultAddQuantity = (
   product: CartProduct,
   storeId?: number | null,
 ): number => {
-  if (!product.stocks || !storeId) return 1;
+  if (!product.stocks || !storeId) {
+    console.log("Product stocks or storeId is missing");
+    return 1;
+  }
 
   const storeStock = product.stocks.find(
     (s: { storeId: number; available: number | string }) =>
       s.storeId === storeId,
   );
-  if (!storeStock) return 1;
+
+  if (!storeStock) {
+    console.log(
+      "Store stock not found for product:",
+      product.id,
+      "and storeId:",
+      storeId,
+    );
+    return 1;
+  }
 
   const totalAvailable = Number(storeStock.available);
 
@@ -78,7 +98,12 @@ export const getDefaultAddQuantity = (
 
   const remaining = Number((totalAvailable - currentlyInCart).toFixed(3));
 
-  if (remaining <= 0) return 1;
+  if (remaining <= 0) {
+    console.log("No stock available for product:", product.id);
+    return 1;
+  }
+
+  console.log(remaining >= 1 ? 1 : remaining);
 
   return remaining >= 1 ? 1 : remaining;
 };
