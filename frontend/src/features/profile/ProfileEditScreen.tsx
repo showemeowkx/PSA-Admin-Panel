@@ -6,6 +6,8 @@ import {
   IonButton,
   IonIcon,
   IonContent,
+  useIonToast,
+  IonSpinner,
 } from "@ionic/react";
 import {
   chevronBackOutline,
@@ -16,19 +18,80 @@ import {
 } from "ionicons/icons";
 import { useHistory } from "react-router-dom";
 import { useAuthStore } from "../auth/auth.store";
+import api from "../../config/api";
 
 const ProfileEditScreen: React.FC = () => {
   const history = useHistory();
-  const { user } = useAuthStore();
+  const { user, setUser } = useAuthStore();
+  const [presentToast] = useIonToast();
 
   const [name, setName] = useState(user?.name || "");
   const [surname, setSurname] = useState(user?.surname || "");
+  const [isSaving, setIsSaving] = useState(false);
 
   const getInitials = () => {
     if (name && surname) return `${name[0]}${surname[0]}`.toUpperCase();
     if (name) return name[0].toUpperCase();
     if (surname) return surname[0].toUpperCase();
     return "👤";
+  };
+
+  const handleSavePersonalData = async () => {
+    const trimmedName = name.trim();
+    const trimmedSurname = surname.trim();
+
+    if (trimmedName && trimmedName.length < 2) {
+      presentToast({
+        message: "Ім'я повинно містити щонайменше 2 символи",
+        duration: 2000,
+        color: "warning",
+        mode: "ios",
+      });
+      return;
+    }
+    if (trimmedSurname && trimmedSurname.length < 2) {
+      presentToast({
+        message: "Прізвище повинно містити щонайменше 2 символи",
+        duration: 2000,
+        color: "warning",
+        mode: "ios",
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      const payload = {
+        name: trimmedName || null,
+        surname: trimmedSurname || null,
+      };
+
+      const { data } = await api.patch("/auth", payload);
+
+      if (setUser && user) {
+        setUser({ ...user, ...data });
+      }
+
+      presentToast({
+        message: "Дані успішно оновлено",
+        duration: 2000,
+        color: "success",
+        position: "bottom",
+        mode: "ios",
+      });
+    } catch (error) {
+      console.error(error);
+      presentToast({
+        message: "Не вдалося оновити дані",
+        duration: 2000,
+        color: "danger",
+        position: "bottom",
+        mode: "ios",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -96,7 +159,11 @@ const ProfileEditScreen: React.FC = () => {
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) =>
+                    setName(
+                      e.target.value.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄґҐ'’-]/g, ""),
+                    )
+                  }
                   placeholder="Введіть ваше ім'я"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all"
                 />
@@ -108,15 +175,27 @@ const ProfileEditScreen: React.FC = () => {
                 <input
                   type="text"
                   value={surname}
-                  onChange={(e) => setSurname(e.target.value)}
+                  onChange={(e) =>
+                    setSurname(
+                      e.target.value.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄґҐ'’-]/g, ""),
+                    )
+                  }
                   placeholder="Введіть ваше прізвище"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all"
                 />
               </div>
             </div>
 
-            <button className="w-full py-4 bg-orange-500 text-white rounded-2xl font-bold text-base hover:bg-orange-600 active:scale-95 shadow-md shadow-orange-200 transition-all">
-              Зберегти зміни
+            <button
+              onClick={handleSavePersonalData}
+              disabled={isSaving}
+              className={`w-full py-4 bg-orange-500 text-white rounded-2xl font-bold text-base hover:bg-orange-600 active:scale-95 shadow-md shadow-orange-200 transition-all flex justify-center items-center gap-2 ${isSaving ? "opacity-75 cursor-not-allowed" : ""}`}
+            >
+              {isSaving ? (
+                <IonSpinner name="crescent" className="w-5 h-5" />
+              ) : (
+                "Зберегти зміни"
+              )}
             </button>
           </div>
 
