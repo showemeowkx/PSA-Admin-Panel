@@ -95,7 +95,7 @@ export class StoreService {
 
     if (!store) {
       this.logger.error(`Store with ID ${id} not found`);
-      throw new NotFoundException('Store not found');
+      throw new NotFoundException('Магазин не знайдено.');
     }
 
     return store;
@@ -128,7 +128,7 @@ export class StoreService {
     if (result.affected === 0) {
       const idMsg = Array.isArray(ids) ? ids.join(', ') : ids;
       this.logger.error(`No stores found with IDs: ${idMsg}`);
-      throw new NotFoundException('Some stores not found');
+      throw new NotFoundException('Деякі магазини не знайдено.');
     }
   }
 

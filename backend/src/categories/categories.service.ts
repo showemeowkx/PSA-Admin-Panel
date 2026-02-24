@@ -53,7 +53,7 @@ export class CategoriesService {
 
     if (!category) {
       this.logger.error(`Category with ID ${id} not found`);
-      throw new NotFoundException('Category not found');
+      throw new NotFoundException('Категорію не знайдено.');
     }
 
     return category;

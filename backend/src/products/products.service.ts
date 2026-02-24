@@ -206,7 +206,7 @@ export class ProductsService {
 
     if (!product) {
       this.logger.error(`Product with ID ${id} not found`);
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('Товар не знайдено.');
     }
 
     return product;
@@ -268,7 +268,7 @@ export class ProductsService {
     if (result.affected === 0) {
       const idMsg = Array.isArray(ids) ? ids.join(', ') : ids;
       this.logger.error(`No products found with IDs: ${idMsg}`);
-      throw new NotFoundException('Some products not found');
+      throw new NotFoundException('Деякі товари не знайдено.');
     }
   }
 

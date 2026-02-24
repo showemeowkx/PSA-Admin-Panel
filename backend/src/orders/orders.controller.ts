@@ -91,7 +91,7 @@ export class OrdersController {
       this.logger.error(
         `Incorrect order status value {orderId: ${id}, status: ${status}}`,
       );
-      throw new ConflictException('Incorrect order status value');
+      throw new ConflictException('Неправильне значення статусу замовлення.');
     }
 
     return this.ordersService.updateStatus(id, status);

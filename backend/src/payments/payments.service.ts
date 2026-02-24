@@ -52,7 +52,9 @@ export class PaymentsService {
     const wallet = await this.getWallet(user.id);
     if (!wallet) {
       this.logger.error(`No wallet attached {userId: ${user.id}}`);
-      throw new BadRequestException('No wallet attached');
+      throw new BadRequestException(
+        'Відсутній спосіб оплати. Будь ласка, додайте платіжну картку.',
+      );
     }
 
     this.logger.debug(
@@ -65,7 +67,9 @@ export class PaymentsService {
 
     if (!isSuccess) {
       this.logger.error(`Payment declined {userId: ${user.id}}`);
-      throw new BadRequestException('Payment declined');
+      throw new BadRequestException(
+        "Оплата відмовлена. Спробуйте іншу картку або зв'яжіться з банком.",
+      );
     }
 
     const payment = this.paymentRepository.create({

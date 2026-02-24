@@ -34,7 +34,7 @@ export class CartService {
 
     if (!cart) {
       this.logger.error(`Cart not found for user with ID ${userId}`);
-      throw new NotFoundException('Cart not found for this user');
+      throw new NotFoundException('Кошик не знайдено для цього користувача.');
     }
 
     return cart;
@@ -46,7 +46,9 @@ export class CartService {
       await this.cartRepository.save(cartEntity);
     } catch (error) {
       this.logger.error(`Failed to create a cart: ${error.stack}`);
-      throw new InternalServerErrorException('Failed to create a cart');
+      throw new InternalServerErrorException(
+        'Не вдалося створити кошик. Спробуйте ще раз пізніше.',
+      );
     }
   }
 
@@ -76,7 +78,7 @@ export class CartService {
             this.logger.error(
               `Not enough products available {productId: ${product.id}, stockId: ${stock.id}}`,
             );
-            throw new BadRequestException('Not enough products available');
+            throw new BadRequestException('Недостатньо товарів у наявності.');
           }
         }
 
@@ -84,13 +86,13 @@ export class CartService {
           this.logger.error(
             `Not enough products available {productId: ${product.id}, stockId: ${stock.id}}`,
           );
-          throw new BadRequestException('Not enough products available');
+          throw new BadRequestException('Недостатньо товарів у наявності.');
         }
       } else {
         this.logger.error(
           `Product not found in store {productId: ${product.id}, storeId: ${chosenStoreId}}`,
         );
-        throw new BadRequestException('Product not found in the chosen store');
+        throw new BadRequestException('Товар не знайдено в обраному магазині.');
       }
     }
 
@@ -118,7 +120,7 @@ export class CartService {
     } catch (error) {
       this.logger.error(`Failed to add a product to a cart: ${error.stack}`);
       throw new InternalServerErrorException(
-        'Failed to add a product to a cart',
+        'Не вдалося додати товар до кошика. Спробуйте ще раз пізніше.',
       );
     }
   }
@@ -150,7 +152,7 @@ export class CartService {
       this.logger.error(
         `Item not found in cart {userId: ${userId}, productId: ${productId}}`,
       );
-      throw new NotFoundException('Item not found in cart');
+      throw new NotFoundException('Товар не знайдено в кошику.');
     }
   }
 }

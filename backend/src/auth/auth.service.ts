@@ -72,10 +72,12 @@ export class AuthService {
     } catch (error) {
       if (error.code === '23505') {
         this.logger.error(`User already exists {phone: ${phone}}`);
-        throw new ConflictException('This user already exists');
+        throw new ConflictException('Цей номер вже зареєстрований.');
       } else {
         this.logger.error(`Failed to register a user: ${error.stack}`);
-        throw new InternalServerErrorException('Failed to register a user');
+        throw new InternalServerErrorException(
+          'Не вдалося зареєструвати користувача. Спробуйте ще раз пізніше.',
+        );
       }
     }
   }
@@ -99,12 +101,12 @@ export class AuthService {
 
     if (existingUser && !refresh) {
       this.logger.error(`Phone number is already registered {phone: ${phone}}`);
-      throw new ConflictException('This phone number is already registered');
+      throw new ConflictException('Цей номер вже зареєстрований.');
     }
 
     if (!existingUser && refresh) {
       this.logger.error(`User is not registered {phone: ${phone}}`);
-      throw new ConflictException('This phone number is not registered');
+      throw new ConflictException('Цей номер не зареєстрований.');
     }
 
     const rawCode = crypto.randomInt(100000, 999999).toString();
@@ -131,7 +133,9 @@ export class AuthService {
     });
 
     if (!record) {
-      throw new BadRequestException('No verification code found');
+      throw new BadRequestException(
+        'Код верифікації не знайдено. Будь ласка, запросіть новий код.',
+      );
     }
 
     const minutesOld = (Date.now() - record.createdAt.getTime()) / 1000 / 60;
@@ -140,12 +144,14 @@ export class AuthService {
 
     if (minutesOld > expiresIn) {
       await this.verificationCodeRepository.delete({ phone });
-      throw new BadRequestException('Code expired');
+      throw new BadRequestException(
+        'Код верифікації вичерпано. Будь ласка, запросіть новий код.',
+      );
     }
 
     const isMatch = await bcrypt.compare(code, record.code);
     if (!isMatch) {
-      throw new BadRequestException('Invalid verification code');
+      throw new BadRequestException('Неправильний код верифікації.');
     }
 
     await this.verificationCodeRepository.delete({ phone });
@@ -183,7 +189,7 @@ export class AuthService {
       return tokens;
     } else {
       this.logger.error(`Wrong login or password {login: ${login}}`);
-      throw new UnauthorizedException('Wrong login or password!');
+      throw new UnauthorizedException('Неправильний логін або пароль.');
     }
   }
 
@@ -240,7 +246,7 @@ export class AuthService {
 
     if (!store.isActive && !user.isAdmin) {
       this.logger.error(`Store with ID ${storeId} is not active`);
-      throw new Error(`Store is not active`);
+      throw new Error('Цей магазин не активний');
     }
 
     user.selectedStore = store;
@@ -252,7 +258,9 @@ export class AuthService {
       this.logger.error(
         `Failed to asign a store {userId: ${user.id}, storeId: ${storeId}}: ${error.stack}`,
       );
-      throw new InternalServerErrorException('Failed to asign a store');
+      throw new InternalServerErrorException(
+        'Не вдалося выбрати магазин. Спробуйте ще раз пізніше.',
+      );
     }
   }
 
@@ -261,7 +269,7 @@ export class AuthService {
 
     if (!user) {
       this.logger.error(`User with ID ${id} not found`);
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('Користувача не знайдено.');
     }
 
     return user;
@@ -279,7 +287,7 @@ export class AuthService {
       if (!updateUserDto.currentPassword) {
         this.logger.error(`No current password provided {userId: ${id}}`);
         throw new BadRequestException(
-          'Current password is required to change sensitive data',
+          'Потрібно вказати поточний пароль для зміни чутливих даних',
         );
       }
 
@@ -289,7 +297,7 @@ export class AuthService {
       );
       if (!isMatch) {
         this.logger.error(`Wrong current password {userId: ${id}}`);
-        throw new UnauthorizedException('Wrong current password');
+        throw new UnauthorizedException('Неправильний поточний пароль.');
       }
     }
 
@@ -312,13 +320,18 @@ export class AuthService {
       });
 
       this.logger.error(`User with phone '${newPhone}' already exists`);
-      if (sameUser) throw new ConflictException('This phone is already in use');
+      if (sameUser)
+        throw new ConflictException(
+          'Цей номер телефону вже використовується. Спробуйте інший номер.',
+        );
 
       if (!updateUserDto.code) {
         this.logger.error(
           `No verification code provided for number '${newPhone}'`,
         );
-        throw new BadRequestException('No verification code provided');
+        throw new BadRequestException(
+          'Код верифікації не надано. Будь ласка, вкажіть код для зміни номера телефону.',
+        );
       }
 
       await this.verifyCode(newPhone, updateUserDto.code);
@@ -330,7 +343,9 @@ export class AuthService {
 
       if (sameUser) {
         this.logger.error(`User with email '${email}' already exists`);
-        throw new ConflictException('A user with this email already exists');
+        throw new ConflictException(
+          'Користувач з цією електронною поштою вже існує. Спробуйте іншу електронну пошту.',
+        );
       }
     }
 
@@ -355,7 +370,9 @@ export class AuthService {
 
     if (!user) {
       this.logger.error(`User with phone '${phone}' not found`);
-      throw new NotFoundException('This user is not registered');
+      throw new NotFoundException(
+        'Користувача з таким номером телефону не знайдено.',
+      );
     }
 
     await this.verifyCode(phone, code);
@@ -369,7 +386,9 @@ export class AuthService {
       await this.userRepository.save(user);
     } catch (error) {
       this.logger.error(`Failed to restore password: ${error.stack}`);
-      throw new InternalServerErrorException('Failed to restore password');
+      throw new InternalServerErrorException(
+        'Не вдалося відновити пароль. Спробуйте ще раз пізніше.',
+      );
     }
   }
 
@@ -378,7 +397,7 @@ export class AuthService {
 
     if (result.affected === 0) {
       this.logger.error(`User with ID ${id} not found`);
-      throw new NotFoundException(`User not found`);
+      throw new NotFoundException('Користувача не знайдено.');
     }
   }
 }

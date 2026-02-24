@@ -20,7 +20,7 @@ export class AdminGuard extends JwtAuthGuard {
 
     if (!user || user.isAdmin !== true) {
       throw new UnauthorizedException(
-        'Access denied: Admin privileges required',
+        'Доступ заборонено. Необхідні права адміністратора.',
       );
     }
 

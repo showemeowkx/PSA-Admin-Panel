@@ -50,7 +50,7 @@ export class OrdersService {
 
     if (!cart.items || cart.items.length === 0) {
       this.logger.error(`Cart is empty {userId: ${user.id}}`);
-      throw new BadRequestException('Cart is empty');
+      throw new BadRequestException('Кошик пустий.');
     }
 
     let totalAmount = 0;
@@ -79,7 +79,9 @@ export class OrdersService {
 
     if (totalAmount < minOrderAmout) {
       this.logger.error(`Minimum order sum is ${minOrderAmout} UAH`);
-      throw new ConflictException(`Minimum order sum is ${minOrderAmout} UAH`);
+      throw new ConflictException(
+        `Мінімальна сума замовлення ${minOrderAmout} UAH.`,
+      );
     }
 
     const qr = this.dataSource.createQueryRunner();
@@ -99,7 +101,7 @@ export class OrdersService {
 
         if (!stock || stock.available < item.quantity) {
           throw new ConflictException(
-            `Not enough stock for ${item.productName}`,
+            `Недостатньо товарів у наявності для ${item.productName}`,
           );
         }
 
@@ -142,7 +144,9 @@ export class OrdersService {
     } catch (error) {
       await qr.rollbackTransaction();
       this.logger.error(`Failed to create an order: ${error.stack}`);
-      throw new InternalServerErrorException('Failed to create an order');
+      throw new InternalServerErrorException(
+        'Не вдалося створити замовлення. Спробуйте ще раз пізніше.',
+      );
     } finally {
       this.logger.debug(`Order places successfully! {userId: ${user.id}}`);
       await qr.release();
@@ -239,7 +243,7 @@ export class OrdersService {
       this.logger.error(
         `Order not found {identifier: ${getOrderDto.orderId || getOrderDto.orderNumber}}`,
       );
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException('Замовлення не знайдено.');
     }
 
     return order;
@@ -251,7 +255,7 @@ export class OrdersService {
 
     if (result.affected === 0) {
       this.logger.error(`Order with ID ${id} not found`);
-      throw new NotFoundException('Order not found');
+      throw new NotFoundException('Замовлення не знайдено.');
     }
   }
 
