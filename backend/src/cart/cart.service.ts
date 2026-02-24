@@ -51,7 +51,7 @@ export class CartService {
 
   async addToCart(user: User, addToCartDto: AddToCartDto): Promise<void> {
     const cart = await this.getCartByUserId(user.id);
-    const { productId, quantity } = addToCartDto;
+    const { productId, quantity, setQuantity } = addToCartDto;
 
     const existingItem = cart.items.find(
       (item) => item.product.id === productId,
@@ -67,7 +67,11 @@ export class CartService {
 
       if (stock) {
         if (existingItem) {
-          if (stock.available < existingItem.quantity + quantity) {
+          const comparedQuantity = setQuantity
+            ? quantity
+            : existingItem.quantity + quantity;
+
+          if (stock.available < comparedQuantity) {
             this.logger.error(
               `Not enough products available {productId: ${product.id}, stockId: ${stock.id}}`,
             );
@@ -91,8 +95,16 @@ export class CartService {
 
     try {
       if (existingItem) {
-        existingItem.quantity += quantity;
+        if (setQuantity) {
+          existingItem.quantity = quantity;
+        } else {
+          existingItem.quantity += quantity;
+        }
         await this.cartItemRepository.save(existingItem);
+
+        if (existingItem.quantity === 0) {
+          await this.cartItemRepository.remove(existingItem);
+        }
       } else {
         const newItem = this.cartItemRepository.create({
           cart,

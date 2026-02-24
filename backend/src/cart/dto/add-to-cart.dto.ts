@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsNumber, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class AddToCartDto {
   @IsInt()
@@ -7,7 +7,11 @@ export class AddToCartDto {
   productId: number;
 
   @IsNumber()
-  @Min(0.01)
+  @Min(0)
   @Type(() => Number)
   quantity: number;
+
+  @IsBoolean()
+  @IsOptional()
+  setQuantity?: boolean;
 }
