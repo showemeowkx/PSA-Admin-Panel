@@ -7,6 +7,7 @@ import {
   IonIcon,
   IonContent,
   IonSpinner,
+  useIonAlert,
 } from "@ionic/react";
 import {
   chevronBackOutline,
@@ -28,6 +29,7 @@ const ProfileScreen: React.FC = () => {
   const location = useLocation();
   const { user, setUser, logout } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [presentAlert] = useIonAlert();
 
   const isAdminRoute = location.pathname.startsWith("/admin");
   const basePath = isAdminRoute ? "/admin" : "/app";
@@ -50,9 +52,40 @@ const ProfileScreen: React.FC = () => {
     fetchUserProfile();
   }, [setUser]);
 
-  const handleLogout = () => {
-    logout();
-    history.replace("/login");
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      if (logout) {
+        logout();
+      }
+
+      history.replace("/login");
+    }
+  };
+
+  const confirmLogout = () => {
+    presentAlert({
+      header: "Вихід",
+      message: "Ви дійсно хочете вийти з акаунта?",
+      buttons: [
+        {
+          text: "Скасувати",
+          role: "cancel",
+          cssClass: "text-gray-500 font-medium",
+        },
+        {
+          text: "Вийти",
+          role: "destructive",
+          cssClass: "text-red-500 font-bold",
+          handler: () => {
+            handleLogout();
+          },
+        },
+      ],
+    });
   };
 
   const menuItems = [
@@ -202,7 +235,7 @@ const ProfileScreen: React.FC = () => {
           </div>
 
           <button
-            onClick={handleLogout}
+            onClick={confirmLogout}
             className="w-full bg-white rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-100 flex items-center justify-between hover:bg-red-50 transition-colors active:bg-red-100 text-red-500 group overflow-hidden"
           >
             <div className="flex items-center gap-4">
