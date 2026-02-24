@@ -14,6 +14,7 @@ import {
   IonToggle,
   IonAlert,
   useIonToast,
+  IonBadge,
 } from "@ionic/react";
 import {
   chevronBackOutline,
@@ -28,6 +29,7 @@ import { useHistory, useParams, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../auth/auth.store";
 import api from "../../../config/api";
 import ProductCard from "./ProductCard";
+import { getDefaultAddQuantity, useCartStore } from "../../cart/cart.store";
 
 interface Stock {
   id: number;
@@ -57,6 +59,7 @@ interface Product {
   isActive: boolean;
   isPromo: boolean;
   stocks: Stock[];
+  [key: string]: unknown;
 }
 
 const ProductScreen: React.FC = () => {
@@ -64,6 +67,7 @@ const ProductScreen: React.FC = () => {
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
+  const { cartItemsCount, addToCart } = useCartStore();
   const alikeSliderRef = useRef<HTMLDivElement>(null);
   const [presentToast] = useIonToast();
 
@@ -274,6 +278,53 @@ const ProductScreen: React.FC = () => {
     }
   };
 
+  const handleAddToCart = async (productId: number, quantity: number) => {
+    try {
+      await addToCart(productId, quantity);
+      presentToast({
+        message: "Товар додано до кошика",
+        duration: 1500,
+        color: "success",
+        position: "bottom",
+        mode: "ios",
+      });
+    } catch (error) {
+      const errorMessage =
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message || "Не вдалося додати товар до кошика";
+
+      presentToast({
+        message: errorMessage,
+        duration: 2000,
+        color: "danger",
+        position: "bottom",
+        mode: "ios",
+      });
+    }
+  };
+
+  const onAddToCartClick = (targetProduct: Product) => {
+    if (!targetProduct || !user?.selectedStoreId) return;
+
+    const amount = getDefaultAddQuantity(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      targetProduct as any,
+      user.selectedStoreId,
+    );
+
+    if (amount > 0) {
+      handleAddToCart(targetProduct.id, amount);
+    } else {
+      presentToast({
+        message: "Ви вже додали весь доступний залишок",
+        duration: 2000,
+        color: "warning",
+        position: "bottom",
+        mode: "ios",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <IonPage>
@@ -433,6 +484,7 @@ const ProductScreen: React.FC = () => {
                 </div>
 
                 <button
+                  onClick={() => onAddToCartClick(product)}
                   disabled={isUnavailable}
                   className={`px-10 py-4 rounded-2xl font-bold text-lg shadow-md flex items-center gap-2 transition-all
                     ${
@@ -560,6 +612,7 @@ const ProductScreen: React.FC = () => {
                         onClick={() =>
                           history.push(`${basePath}/product/${alikeProduct.id}`)
                         }
+                        onAddToCart={() => onAddToCartClick(alikeProduct)}
                       />
                     </div>
                   );
@@ -579,9 +632,18 @@ const ProductScreen: React.FC = () => {
             <div className="fixed bottom-32 right-5 z-50 animate-fade-in-up">
               <button
                 onClick={() => history.push(`${basePath}/cart`)}
-                className="w-14 h-14 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-2xl border border-gray-100 active:scale-95 transition-all"
+                className="w-14 h-14 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-2xl border border-gray-100 active:scale-95 transition-all relative"
               >
                 <IonIcon icon={basketOutline} className="text-2xl" />
+
+                {cartItemsCount > 0 && (
+                  <IonBadge
+                    color="danger"
+                    className="absolute -top-1 -right-1 text-[11px] px-1.5 py-1 border-[1.5px] border-white rounded-full leading-none"
+                  >
+                    {cartItemsCount > 99 ? "99+" : cartItemsCount}
+                  </IonBadge>
+                )}
               </button>
             </div>
 
@@ -604,6 +666,7 @@ const ProductScreen: React.FC = () => {
               </div>
 
               <button
+                onClick={() => onAddToCartClick(product)}
                 disabled={isUnavailable}
                 className={`px-8 py-3.5 rounded-2xl font-bold shadow-md flex items-center gap-2 transition-all
                   ${

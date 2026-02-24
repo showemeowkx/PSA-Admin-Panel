@@ -12,6 +12,7 @@ interface ProductCardProps {
   isOutOfStock?: boolean;
   isCategoryActive?: boolean;
   onClick?: () => void;
+  onAddToCart?: () => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
@@ -24,6 +25,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   isOutOfStock,
   isCategoryActive,
   onClick,
+  onAddToCart,
 }) => {
   const discountPercentage = oldPrice
     ? Math.round(((oldPrice - price) / oldPrice) * 100)
@@ -75,6 +77,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           disabled={isUnavailable}
           onClick={(e) => {
             e.stopPropagation();
+            onAddToCart?.();
           }}
           className={`absolute bottom-1 right-1 z-20 w-8 h-8 rounded-[10px] flex items-center justify-center transition-all shadow-md ${
             isUnavailable

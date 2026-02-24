@@ -8,6 +8,15 @@ import {
 import { Cart } from './cart.entity';
 import { Product } from 'src/products/entities/product.entity';
 
+export class ColumnNumericTransformer {
+  to(data: number): number {
+    return data;
+  }
+  from(data: string): number {
+    return parseFloat(data);
+  }
+}
+
 @Entity()
 export class CartItem {
   @PrimaryGeneratedColumn()
@@ -20,6 +29,10 @@ export class CartItem {
   @JoinColumn({ name: 'productId' })
   product: Product;
 
-  @Column('int')
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   quantity: number;
 }

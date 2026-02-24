@@ -17,6 +17,7 @@ import {
   IonAlert,
   IonToggle,
   useIonToast,
+  IonBadge,
 } from "@ionic/react";
 import {
   searchOutline,
@@ -39,9 +40,10 @@ import StoreSelectorModal, {
   type Store,
 } from "./components/StoreSelectorModal";
 import api from "../../config/api";
-import SearchProductCard from "./components/SearchProductCard";
+import SmallProductCard from "./components/SmallProductCard";
 import type { FilterState } from "./components/FilterMenu";
 import FilterMenu from "./components/FilterMenu";
+import { getDefaultAddQuantity, useCartStore } from "../cart/cart.store";
 
 const MAX_PRICE_LIMIT = Number(import.meta.env.VITE_MAX_PRICE_LIMIT) || 2500;
 
@@ -58,6 +60,7 @@ interface Product {
   isActive: boolean;
   isPromo: boolean;
   stocks: Stock[];
+  [key: string]: unknown;
 }
 
 interface Stock {
@@ -78,6 +81,7 @@ const ShopScreen: React.FC = () => {
   const history = useHistory();
   const location = useLocation();
   const { user, token } = useAuthStore();
+  const { cartItemsCount, addToCart } = useCartStore();
   const [presentToast] = useIonToast();
   const [isStoreModalOpen, setIsStoreModalOpen] = useState(false);
 
@@ -465,6 +469,31 @@ const ShopScreen: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const handleAddToCart = async (productId: number, quantity: number) => {
+    try {
+      await addToCart(productId, quantity);
+      presentToast({
+        message: "Товар додано до кошика",
+        duration: 1500,
+        color: "success",
+        position: "bottom",
+        mode: "ios",
+      });
+    } catch (error) {
+      const errorMessage =
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message || "Не вдалося додати товар до кошика";
+
+      presentToast({
+        message: errorMessage,
+        duration: 2000,
+        color: "danger",
+        position: "bottom",
+        mode: "ios",
+      });
+    }
+  };
+
   return (
     <IonPage>
       <StoreSelectorModal
@@ -742,6 +771,12 @@ const ShopScreen: React.FC = () => {
                       onClick={() =>
                         history.push(`${basePath}/product/${product.id}`)
                       }
+                      onAddToCart={() =>
+                        handleAddToCart(
+                          product.id,
+                          getDefaultAddQuantity(product, user?.selectedStoreId),
+                        )
+                      }
                     />
                   ))}
                   {products.length === 0 && (
@@ -826,9 +861,18 @@ const ShopScreen: React.FC = () => {
                             onClick={() =>
                               history.push(`${basePath}/product/${product.id}`)
                             }
+                            onAddToCart={() =>
+                              handleAddToCart(
+                                product.id,
+                                getDefaultAddQuantity(
+                                  product,
+                                  user?.selectedStoreId,
+                                ),
+                              )
+                            }
                           />
                         ) : (
-                          <SearchProductCard
+                          <SmallProductCard
                             key={product.id}
                             name={product.name}
                             price={
@@ -845,6 +889,15 @@ const ShopScreen: React.FC = () => {
                             isOutOfStock={checkIsOutOfStock(product)}
                             onClick={() =>
                               history.push(`${basePath}/product/${product.id}`)
+                            }
+                            onAddToCart={() =>
+                              handleAddToCart(
+                                product.id,
+                                getDefaultAddQuantity(
+                                  product,
+                                  user?.selectedStoreId,
+                                ),
+                              )
                             }
                           />
                         ),
@@ -889,9 +942,18 @@ const ShopScreen: React.FC = () => {
                   });
                 }, 400);
               }}
-              className="w-14 h-14 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-50 active:bg-orange-600 active:scale-95 transition-all"
+              className="w-14 h-14 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-50 active:bg-orange-600 active:scale-95 transition-all relative"
             >
               <IonIcon icon={basketOutline} className="text-2xl" />
+
+              {cartItemsCount > 0 && (
+                <IonBadge
+                  color="danger"
+                  className="absolute -top-1 -right-1 text-[11px] px-1.5 py-1 border-[1.5px] border-white rounded-full leading-none"
+                >
+                  {cartItemsCount > 99 ? "99+" : cartItemsCount}
+                </IonBadge>
+              )}
             </button>
           </div>
         )}
