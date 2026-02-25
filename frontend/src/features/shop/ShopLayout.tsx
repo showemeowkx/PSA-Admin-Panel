@@ -39,6 +39,7 @@ import { useCartStore } from "../cart/cart.store";
 import ProfileScreen from "../profile/ProfileScreen";
 import ProfileEditScreen from "../profile/ProfileEditScreen";
 import ProfileSecurityScreen from "../profile/ProfileSecurityScreen";
+import ProfileWalletScreen from "../profile/ProfileWalletScreen";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
@@ -245,11 +246,7 @@ const ShopLayout: React.FC = () => {
           <Route
             exact
             path={`${basePath}/profile/wallet`}
-            render={() => (
-              <IonPage>
-                <IonContent>Гаманець</IonContent>
-              </IonPage>
-            )}
+            component={ProfileWalletScreen}
           />
           <Route
             exact
