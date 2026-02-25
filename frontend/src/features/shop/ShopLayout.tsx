@@ -38,6 +38,7 @@ import CartScreen from "../cart/CartScreen";
 import { useCartStore } from "../cart/cart.store";
 import ProfileScreen from "../profile/ProfileScreen";
 import ProfileEditScreen from "../profile/ProfileEditScreen";
+import ProfileSecurityScreen from "../profile/ProfileSecurityScreen";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
@@ -253,11 +254,7 @@ const ShopLayout: React.FC = () => {
           <Route
             exact
             path={`${basePath}/profile/security`}
-            render={() => (
-              <IonPage>
-                <IonContent>Безпека</IonContent>
-              </IonPage>
-            )}
+            component={ProfileSecurityScreen}
           />
           <Route
             exact
