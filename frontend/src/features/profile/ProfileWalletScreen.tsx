@@ -92,9 +92,16 @@ const ProfileWalletScreen: React.FC = () => {
     });
   };
 
-  const maskedCard = wallet?.cardNumber
-    ? `**** **** **** ${wallet.cardNumber.slice(-4)}`
+  const maskedCard = wallet?.maskedCard
+    ? wallet.maskedCard
     : "**** **** **** 0000";
+
+  const displayName =
+    wallet?.cardHolderFirstName && wallet?.cardHolderLastName
+      ? `${wallet.cardHolderFirstName} ${wallet.cardHolderLastName}`
+          .trim()
+          .toUpperCase()
+      : "ІМ'Я ПРІЗВИЩЕ";
 
   return (
     <IonPage>
@@ -165,13 +172,29 @@ const ProfileWalletScreen: React.FC = () => {
                       <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">
                         Номер рахунку
                       </p>
-                      <p className="text-xl md:text-2xl font-black tracking-widest text-gray-100">
+                      <p className="text-xl md:text-2xl font-black tracking-widest text-gray-100 mb-4">
                         {maskedCard}
                       </p>
+
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">
+                            Власник картки
+                          </p>
+                          <p className="text-sm font-bold tracking-wider text-gray-100 truncate max-w-[180px]">
+                            {displayName}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <button className="flex flex-col items-center justify-center min-h-[220px] md:min-h-[200px] w-full md:w-[340px] shrink-0 rounded-[24px] border-2 border-dashed border-orange-400 bg-orange-50/50 hover:bg-orange-100 text-orange-500 transition-colors active:scale-[0.98]">
+                  <button
+                    onClick={() =>
+                      history.push(history.location.pathname + "/add")
+                    }
+                    className="flex flex-col items-center justify-center min-h-[220px] md:min-h-[200px] w-full md:w-[340px] shrink-0 rounded-[24px] border-2 border-dashed border-orange-400 bg-orange-50/50 hover:bg-orange-100 text-orange-500 transition-colors active:scale-[0.98]"
+                  >
                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-orange-500">
                       <IonIcon icon={addOutline} className="text-3xl" />
                     </div>
@@ -181,7 +204,12 @@ const ProfileWalletScreen: React.FC = () => {
 
                 {wallet && (
                   <div className="flex flex-col gap-3 w-full md:justify-center pt-2 md:pt-0">
-                    <button className="flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 text-gray-700 font-bold py-4 px-6 rounded-2xl hover:bg-gray-50 active:scale-95 transition-all shadow-sm">
+                    <button
+                      onClick={() =>
+                        history.push(history.location.pathname + "/add")
+                      }
+                      className="flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 text-gray-700 font-bold py-4 px-6 rounded-2xl hover:bg-gray-50 active:scale-95 transition-all shadow-sm"
+                    >
                       <IonIcon
                         icon={syncOutline}
                         className="text-xl text-black"
