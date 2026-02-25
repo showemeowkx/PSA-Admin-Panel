@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   IonPage,
   IonHeader,
@@ -13,12 +13,16 @@ import {
   IonInput,
   IonItem,
   IonLabel,
+  IonModal,
 } from "@ionic/react";
 import {
   chevronBackOutline,
   trashOutline,
   eyeOutline,
   eyeOffOutline,
+  lockClosedOutline,
+  chevronForwardOutline,
+  closeOutline,
 } from "ionicons/icons";
 import { useHistory } from "react-router-dom";
 import api from "../../config/api";
@@ -30,6 +34,14 @@ const ProfileSecurityScreen: React.FC = () => {
   const [presentAlert] = useIonAlert();
   const { logout } = useAuthStore();
 
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -88,12 +100,7 @@ const ProfileSecurityScreen: React.FC = () => {
         mode: "ios",
       });
 
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setShowCurrentPassword(false);
-      setShowNewPassword(false);
-      setShowConfirmPassword(false);
+      resetPasswordModal();
     } catch (error: any) {
       console.error(error);
       presentToast({
@@ -105,6 +112,18 @@ const ProfileSecurityScreen: React.FC = () => {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const resetPasswordModal = () => {
+    setIsPasswordModalOpen(false);
+    setTimeout(() => {
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
+    }, 300);
   };
 
   const handleDeleteAccount = () => {
@@ -125,6 +144,7 @@ const ProfileSecurityScreen: React.FC = () => {
           handler: async () => {
             try {
               setIsUpdating(true);
+
               await api.delete("/auth");
 
               if (logout) {
@@ -154,24 +174,165 @@ const ProfileSecurityScreen: React.FC = () => {
           },
         },
       ],
+      mode: "ios",
     });
   };
+
+  const renderPasswordModalContent = () => (
+    <IonContent className="bg-white hide-scrollbar">
+      <div className={`p-6 ${isDesktop ? "pt-4 pb-8" : "pt-8"}`}>
+        {!isDesktop && (
+          <h2 className="text-2xl font-black text-gray-800 mb-6 text-center">
+            Зміна пароля
+          </h2>
+        )}
+
+        <div className="space-y-6 animate-fade-in">
+          <div className="text-center mb-4">
+            <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <IonIcon
+                icon={lockClosedOutline}
+                className="text-3xl text-purple-500"
+              />
+            </div>
+            <p className="text-gray-500 text-sm font-medium leading-relaxed">
+              Введіть Ваш поточний пароль та придумайте новий
+            </p>
+          </div>
+
+          <div className="bg-gray-100/50 rounded-[30px] px-4 py-1 border border-gray-200/30 shadow-inner">
+            <IonItem
+              lines="none"
+              className="bg-transparent"
+              style={{ "--background": "transparent" }}
+            >
+              <div className="w-full">
+                <IonLabel
+                  position="stacked"
+                  className="text-purple-600 font-bold ml-1 mb-1"
+                >
+                  Поточний пароль
+                </IonLabel>
+                <div className="flex items-center">
+                  <IonInput
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={currentPassword}
+                    onIonInput={(e) => setCurrentPassword(e.detail.value!)}
+                    className="font-medium text-gray-800"
+                    placeholder="Введіть поточний пароль"
+                  />
+                  <IonIcon
+                    icon={showCurrentPassword ? eyeOffOutline : eyeOutline}
+                    className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-orange-500 transition-colors"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  />
+                </div>
+              </div>
+            </IonItem>
+          </div>
+
+          <div className="bg-gray-100/50 rounded-[30px] px-4 py-1 border border-gray-200/30 shadow-inner">
+            <IonItem
+              lines="none"
+              className="bg-transparent"
+              style={{ "--background": "transparent" }}
+            >
+              <div className="w-full">
+                <IonLabel
+                  position="stacked"
+                  className="text-purple-600 font-bold ml-1 mb-1"
+                >
+                  Новий пароль
+                </IonLabel>
+                <div className="flex items-center">
+                  <IonInput
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onIonInput={(e) => setNewPassword(e.detail.value!)}
+                    className="font-medium text-gray-800"
+                    placeholder="Придумайте новий пароль"
+                  />
+                  <IonIcon
+                    icon={showNewPassword ? eyeOffOutline : eyeOutline}
+                    className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-orange-500 transition-colors"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  />
+                </div>
+              </div>
+            </IonItem>
+          </div>
+
+          <div className="bg-gray-100/50 rounded-[30px] px-4 py-1 border border-gray-200/30 shadow-inner">
+            <IonItem
+              lines="none"
+              className="bg-transparent"
+              style={{ "--background": "transparent" }}
+            >
+              <div className="w-full">
+                <IonLabel
+                  position="stacked"
+                  className="text-purple-600 font-bold ml-1 mb-1"
+                >
+                  Підтвердження пароля
+                </IonLabel>
+                <div className="flex items-center">
+                  <IonInput
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onIonInput={(e) => setConfirmPassword(e.detail.value!)}
+                    className="font-medium text-gray-800"
+                    placeholder="Повторіть новий пароль"
+                  />
+                  <IonIcon
+                    icon={showConfirmPassword ? eyeOffOutline : eyeOutline}
+                    className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-orange-500 transition-colors"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  />
+                </div>
+              </div>
+            </IonItem>
+          </div>
+
+          <IonButton
+            expand="block"
+            onClick={handlePasswordChange}
+            disabled={
+              isUpdating || !currentPassword || !newPassword || !confirmPassword
+            }
+            className="h-14 mt-4 font-black text-lg"
+            style={{
+              "--border-radius": "30px",
+              "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
+            }}
+            color="primary"
+          >
+            {isUpdating ? (
+              <IonSpinner name="crescent" className="w-5 h-5" />
+            ) : (
+              "ЗМІНИТИ ПАРОЛЬ"
+            )}
+          </IonButton>
+        </div>
+      </div>
+    </IonContent>
+  );
 
   return (
     <IonPage>
       <IonHeader className="ion-no-border bg-white md:hidden pt-safe">
         <IonToolbar style={{ "--background": "white" }}>
-          <div className="flex items-center justify-between px-2">
+          <div className="flex items-center px-2 relative h-full">
             <IonButton
               color="medium"
               fill="clear"
               onClick={() => history.goBack()}
-              className="text-gray-800"
+              className="text-gray-800 z-10"
             >
               <IonIcon icon={chevronBackOutline} className="text-2xl" /> Назад
             </IonButton>
-            <span className="font-bold text-gray-800 text-lg">Безпека</span>
-            <div className="w-[80px]"></div>
+            <span className="absolute left-0 right-0 text-center font-bold text-gray-800 text-lg pointer-events-none">
+              Безпека
+            </span>
           </div>
         </IonToolbar>
       </IonHeader>
@@ -192,130 +353,37 @@ const ProfileSecurityScreen: React.FC = () => {
 
           <div className="mb-10">
             <h2 className="text-lg font-black text-gray-800 mb-2 pl-1">
-              Зміна пароля
+              Управління доступом
             </h2>
             <p className="text-sm text-gray-500 mb-5 pl-1">
               Регулярна зміна пароля допомагає зберегти Ваш акаунт у безпеці.
             </p>
 
-            <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100 space-y-5 mb-6">
-              <div className="bg-gray-100/50 rounded-[20px] px-4 py-1 border border-gray-200/30 shadow-inner">
-                <IonItem
-                  lines="none"
-                  className="bg-transparent"
-                  style={{ "--background": "transparent" }}
-                >
-                  <div className="w-full">
-                    <IonLabel
-                      position="stacked"
-                      className="text-gray-500 font-bold ml-1 mb-1"
-                    >
-                      Поточний пароль
-                    </IonLabel>
-                    <div className="flex items-center">
-                      <IonInput
-                        type={showCurrentPassword ? "text" : "password"}
-                        value={currentPassword}
-                        onIonInput={(e) => setCurrentPassword(e.detail.value!)}
-                        className="font-medium text-gray-800"
-                        placeholder="Введіть поточний пароль"
-                      />
-                      <IonIcon
-                        icon={showCurrentPassword ? eyeOffOutline : eyeOutline}
-                        className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-orange-500 transition-colors"
-                        onClick={() =>
-                          setShowCurrentPassword(!showCurrentPassword)
-                        }
-                      />
-                    </div>
+            <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+              <button
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="flex items-center justify-between p-4 md:p-5 hover:bg-gray-50 transition-colors active:bg-gray-100 first:rounded-t-[24px] last:rounded-b-[24px]"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-500 border border-purple-100 shrink-0">
+                    <IonIcon icon={lockClosedOutline} className="text-xl" />
                   </div>
-                </IonItem>
-              </div>
-
-              <div className="bg-gray-100/50 rounded-[20px] px-4 py-1 border border-gray-200/30 shadow-inner">
-                <IonItem
-                  lines="none"
-                  className="bg-transparent"
-                  style={{ "--background": "transparent" }}
-                >
-                  <div className="w-full">
-                    <IonLabel
-                      position="stacked"
-                      className="text-orange-600 font-bold ml-1 mb-1"
-                    >
-                      Новий пароль
-                    </IonLabel>
-                    <div className="flex items-center">
-                      <IonInput
-                        type={showNewPassword ? "text" : "password"}
-                        value={newPassword}
-                        onIonInput={(e) => setNewPassword(e.detail.value!)}
-                        className="font-medium text-gray-800"
-                        placeholder="Введіть новий пароль"
-                      />
-                      <IonIcon
-                        icon={showNewPassword ? eyeOffOutline : eyeOutline}
-                        className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-orange-500 transition-colors"
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                      />
-                    </div>
+                  <div className="flex flex-col items-start text-left">
+                    <span className="font-bold text-gray-800 text-[15px]">
+                      Змінити пароль
+                    </span>
+                    <span className="text-sm text-gray-500 font-medium mt-0.5">
+                      Створити новий пароль для входу
+                    </span>
                   </div>
-                </IonItem>
-              </div>
-
-              <div className="bg-gray-100/50 rounded-[20px] px-4 py-1 border border-gray-200/30 shadow-inner">
-                <IonItem
-                  lines="none"
-                  className="bg-transparent"
-                  style={{ "--background": "transparent" }}
-                >
-                  <div className="w-full">
-                    <IonLabel
-                      position="stacked"
-                      className="text-orange-600 font-bold ml-1 mb-1"
-                    >
-                      Підтвердження пароля
-                    </IonLabel>
-                    <div className="flex items-center">
-                      <IonInput
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={confirmPassword}
-                        onIonInput={(e) => setConfirmPassword(e.detail.value!)}
-                        className="font-medium text-gray-800"
-                        placeholder="Повторіть новий пароль"
-                      />
-                      <IonIcon
-                        icon={showConfirmPassword ? eyeOffOutline : eyeOutline}
-                        className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-orange-500 transition-colors"
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
-                      />
-                    </div>
-                  </div>
-                </IonItem>
-              </div>
+                </div>
+                <IonIcon
+                  icon={chevronForwardOutline}
+                  className="text-gray-300 text-xl"
+                />
+              </button>
             </div>
-
-            <button
-              onClick={handlePasswordChange}
-              disabled={
-                isUpdating ||
-                !currentPassword ||
-                !newPassword ||
-                !confirmPassword
-              }
-              className="w-full py-4 bg-orange-500 text-white rounded-2xl font-bold text-base hover:bg-orange-600 active:scale-95 shadow-md shadow-orange-200 transition-all flex justify-center items-center gap-2 disabled:opacity-50 disabled:shadow-none"
-            >
-              {isUpdating ? (
-                <IonSpinner name="crescent" className="w-5 h-5" />
-              ) : (
-                <>ЗМІНИТИ ПАРОЛЬ</>
-              )}
-            </button>
           </div>
-
-          <div className="border-t border-gray-200/60 w-full mb-10"></div>
 
           <div>
             <h2 className="text-lg font-black text-red-500 mb-2 pl-1">
@@ -328,10 +396,11 @@ const ProfileSecurityScreen: React.FC = () => {
 
             <button
               onClick={handleDeleteAccount}
-              className="w-full bg-red-50 rounded-[24px] p-4 md:p-5 shadow-sm border border-red-100 flex items-center justify-between hover:bg-red-100 transition-colors active:bg-red-100 text-red-500 group overflow-hidden"
+              disabled={isUpdating}
+              className="w-full bg-red-50 rounded-[24px] p-4 md:p-5 border border-red-100 flex items-center justify-between hover:bg-red-100 transition-all active:scale-[0.98] text-red-500 group overflow-hidden disabled:opacity-50"
             >
               <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center text-red-500 group-hover:bg-red-50 transition-colors border border-red-100">
+                <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center text-red-500 transition-colors shrink-0">
                   <IonIcon icon={trashOutline} className="text-xl pl-0.5" />
                 </div>
                 <div className="flex flex-col items-start text-left">
@@ -345,6 +414,41 @@ const ProfileSecurityScreen: React.FC = () => {
           </div>
         </div>
       </IonContent>
+
+      <IonModal
+        isOpen={isPasswordModalOpen}
+        onDidDismiss={resetPasswordModal}
+        breakpoints={isDesktop ? undefined : [0, 0.75, 0.9]}
+        initialBreakpoint={isDesktop ? undefined : 0.75}
+        style={
+          isDesktop
+            ? {
+                "--width": "500px",
+                "--height": "600px",
+                "--border-radius": "24px",
+              }
+            : undefined
+        }
+      >
+        {isDesktop && (
+          <IonHeader className="ion-no-border bg-white rounded-t-[24px]">
+            <IonToolbar className="bg-white px-2 rounded-t-[24px]">
+              <h2 className="text-xl font-black text-gray-800 ml-2">
+                Зміна пароля
+              </h2>
+              <IonButton
+                slot="end"
+                fill="clear"
+                color="medium"
+                onClick={resetPasswordModal}
+              >
+                <IonIcon icon={closeOutline} className="text-2xl" />
+              </IonButton>
+            </IonToolbar>
+          </IonHeader>
+        )}
+        {renderPasswordModalContent()}
+      </IonModal>
     </IonPage>
   );
 };
