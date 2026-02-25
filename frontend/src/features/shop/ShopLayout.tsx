@@ -36,6 +36,11 @@ import { type Store } from "./components/StoreSelectorModal";
 import ProductScreen from "./components/ProductPage";
 import CartScreen from "../cart/CartScreen";
 import { useCartStore } from "../cart/cart.store";
+import ProfileScreen from "../profile/ProfileScreen";
+import ProfileEditScreen from "../profile/ProfileEditScreen";
+import ProfileSecurityScreen from "../profile/ProfileSecurityScreen";
+import ProfileWalletScreen from "../profile/ProfileWalletScreen";
+import ProfileSupportScreen from "../profile/ProfileSupportScreen";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
@@ -206,7 +211,8 @@ const ShopLayout: React.FC = () => {
   const shouldHideTabBar =
     !isPlatform("desktop") &&
     (location.pathname.includes("/cart") ||
-      location.pathname.includes("/product/"));
+      location.pathname.includes("/product/") ||
+      location.pathname.includes("/profile"));
 
   return (
     <>
@@ -232,16 +238,33 @@ const ShopLayout: React.FC = () => {
               </IonPage>
             )}
           />
+          <Route exact path={`${basePath}/profile`} component={ProfileScreen} />
           <Route
             exact
-            path={`${basePath}/profile`}
+            path={`${basePath}/profile/edit`}
+            component={ProfileEditScreen}
+          />
+          <Route
+            exact
+            path={`${basePath}/profile/wallet`}
+            component={ProfileWalletScreen}
+          />
+          <Route
+            exact
+            path={`${basePath}/profile/security`}
+            component={ProfileSecurityScreen}
+          />
+          <Route
+            exact
+            path={`${basePath}/profile/support`}
+            component={ProfileSupportScreen}
+          />
+          <Route
+            exact
+            path={`${basePath}/profile/policy`}
             render={() => (
-              <IonPage className="bg-white">
-                <IonContent>
-                  <div className="flex h-full items-center justify-center font-bold text-gray-300">
-                    Мій Кабінет
-                  </div>
-                </IonContent>
+              <IonPage>
+                <IonContent>Політика</IonContent>
               </IonPage>
             )}
           />
@@ -430,9 +453,6 @@ const ShopLayout: React.FC = () => {
               href={`${basePath}/profile`}
               className="flex items-center gap-3 hover:bg-gray-50 px-3 py-2 rounded-xl transition-colors"
             >
-              <div className="text-right hidden lg:block">
-                <p className="text-sm font-bold text-gray-800">Мій Кабінет</p>
-              </div>
               <IonIcon
                 icon={personCircleOutline}
                 className="text-3xl text-gray-400"

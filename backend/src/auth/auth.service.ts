@@ -28,6 +28,7 @@ import {
   isValidPhoneNumber,
 } from 'libphonenumber-js';
 import { RefreshPasswordDto } from './dto/refresh-password.dto';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class AuthService {
@@ -43,6 +44,7 @@ export class AuthService {
     private readonly storeService: StoreService,
     private readonly configService: ConfigService,
     private readonly smsService: SmsService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async register(createUserDto: CreateUserDto): Promise<void> {
@@ -280,8 +282,10 @@ export class AuthService {
     const password = updateUserDto.password;
     const phoneRaw = updateUserDto.phone;
     const email = updateUserDto.email;
+    const oldImagePath = user.imagePath;
+    const imagePath = updateUserDto.imagePath;
 
-    const isSensitiveUpdate = password || email || phoneRaw;
+    const isSensitiveUpdate = password || (email && user.email) || phoneRaw;
 
     if (isSensitiveUpdate) {
       if (!updateUserDto.currentPassword) {
@@ -319,11 +323,12 @@ export class AuthService {
         phone: newPhone,
       });
 
-      this.logger.error(`User with phone '${newPhone}' already exists`);
-      if (sameUser)
+      if (sameUser) {
+        this.logger.error(`User with phone '${newPhone}' already exists`);
         throw new ConflictException(
           'Цей номер телефону вже використовується. Спробуйте інший номер.',
         );
+      }
 
       if (!updateUserDto.code) {
         this.logger.error(
@@ -349,9 +354,27 @@ export class AuthService {
       }
     }
 
+    const defaultPfp = this.configService.get<string>('DEFAULT_USER_PFP');
+
+    if (imagePath !== undefined && imagePath !== oldImagePath) {
+      if (imagePath === null) {
+        updateUserDto.imagePath = defaultPfp;
+      }
+
+      if (oldImagePath && oldImagePath !== defaultPfp) {
+        try {
+          await this.cloudinaryService.deleteFile(oldImagePath);
+        } catch (error) {
+          this.logger.error(
+            `Failed to delete old image from Cloudinary: ${(error as Error).message}`,
+          );
+        }
+      }
+    }
+
     try {
       this.userRepository.merge(user, updateUserDto);
-      return this.userRepository.save(user);
+      return await this.userRepository.save(user);
     } catch (error) {
       this.logger.error(`Failed to update a user: ${error.stack}`);
       throw new InternalServerErrorException('Failed to update a user');
