@@ -92,6 +92,22 @@ const ProfileWalletScreen: React.FC = () => {
     });
   };
 
+  // MOCK WALLET DATA
+  const MOCK_WALLET = {
+    maskedCard: "**** **** **** 1234",
+    cardHolderFirstName: "Іван",
+    cardHolderLastName: "Петренко",
+  };
+
+  const mockAddWallet = () => {
+    setWallet(MOCK_WALLET);
+    presentToast({
+      message: "Гаманець успішно додано!",
+      duration: 2000,
+      color: "success",
+    });
+  };
+
   const maskedCard = wallet?.maskedCard
     ? wallet.maskedCard
     : "**** **** **** 0000";
@@ -142,7 +158,9 @@ const ProfileWalletScreen: React.FC = () => {
               Спосіб оплати
             </h2>
             <p className="text-sm text-gray-500 mb-5 pl-1">
-              Ваша збережена картка для оплати.
+              {wallet
+                ? "Ваша збережена картка для оплати."
+                : "У Вас ще немає збереженої картки для оплати."}
             </p>
 
             {isLoading ? (
@@ -172,7 +190,7 @@ const ProfileWalletScreen: React.FC = () => {
                       <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">
                         Номер рахунку
                       </p>
-                      <p className="text-xl md:text-2xl font-black tracking-widest text-gray-100 mb-4">
+                      <p className="text-xl font-black tracking-widest text-gray-100 mb-4">
                         {maskedCard}
                       </p>
 
@@ -190,9 +208,7 @@ const ProfileWalletScreen: React.FC = () => {
                   </div>
                 ) : (
                   <button
-                    onClick={() =>
-                      history.push(history.location.pathname + "/add")
-                    }
+                    onClick={() => mockAddWallet()}
                     className="flex flex-col items-center justify-center min-h-[220px] md:min-h-[200px] w-full md:w-[340px] shrink-0 rounded-[24px] border-2 border-dashed border-orange-400 bg-orange-50/50 hover:bg-orange-100 text-orange-500 transition-colors active:scale-[0.98]"
                   >
                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-orange-500">
