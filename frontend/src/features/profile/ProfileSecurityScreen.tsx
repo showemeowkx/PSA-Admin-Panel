@@ -22,11 +22,13 @@ import {
 } from "ionicons/icons";
 import { useHistory } from "react-router-dom";
 import api from "../../config/api";
+import { useAuthStore } from "../auth/auth.store";
 
 const ProfileSecurityScreen: React.FC = () => {
   const history = useHistory();
   const [presentToast] = useIonToast();
   const [presentAlert] = useIonAlert();
+  const { logout } = useAuthStore();
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -120,7 +122,36 @@ const ProfileSecurityScreen: React.FC = () => {
           text: "Видалити",
           role: "destructive",
           cssClass: "text-red-500 font-bold",
-          handler: () => {},
+          handler: async () => {
+            try {
+              setIsUpdating(true);
+              await api.delete("/auth");
+
+              if (logout) {
+                logout();
+              }
+
+              history.replace("/login");
+
+              presentToast({
+                message: "Акаунт успішно видалено",
+                duration: 2000,
+                color: "success",
+                mode: "ios",
+              });
+            } catch (error: any) {
+              console.error(error);
+              presentToast({
+                message:
+                  error.response?.data?.message || "Не вдалося видалити акаунт",
+                duration: 3000,
+                color: "danger",
+                mode: "ios",
+              });
+            } finally {
+              setIsUpdating(false);
+            }
+          },
         },
       ],
     });
