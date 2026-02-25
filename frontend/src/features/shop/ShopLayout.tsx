@@ -40,6 +40,7 @@ import ProfileScreen from "../profile/ProfileScreen";
 import ProfileEditScreen from "../profile/ProfileEditScreen";
 import ProfileSecurityScreen from "../profile/ProfileSecurityScreen";
 import ProfileWalletScreen from "../profile/ProfileWalletScreen";
+import ProfileSupportScreen from "../profile/ProfileSupportScreen";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
@@ -256,11 +257,7 @@ const ShopLayout: React.FC = () => {
           <Route
             exact
             path={`${basePath}/profile/support`}
-            render={() => (
-              <IonPage>
-                <IonContent>Підтримка</IonContent>
-              </IonPage>
-            )}
+            component={ProfileSupportScreen}
           />
           <Route
             exact
