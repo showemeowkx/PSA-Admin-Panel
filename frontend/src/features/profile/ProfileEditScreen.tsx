@@ -340,7 +340,7 @@ const ProfileEditScreen: React.FC = () => {
     }
     if (!currentPassword) {
       presentToast({
-        message: "Введіть ваш поточний пароль",
+        message: "Введіть Ваш поточний пароль",
         duration: 2000,
         color: "warning",
         mode: "ios",
@@ -409,7 +409,7 @@ const ProfileEditScreen: React.FC = () => {
 
     if (user?.email && !emailPassword) {
       presentToast({
-        message: "Введіть ваш поточний пароль",
+        message: "Введіть Ваш поточний пароль",
         duration: 2000,
         color: "warning",
         mode: "ios",
@@ -688,7 +688,7 @@ const ProfileEditScreen: React.FC = () => {
             <p className="text-gray-500 text-sm font-medium leading-relaxed">
               {user?.email
                 ? "Введіть нову електронну пошту та поточний пароль для підтвердження"
-                : "Введіть вашу електронну пошту"}
+                : "Введіть Вашу електронну пошту"}
             </p>
           </div>
 
@@ -871,7 +871,7 @@ const ProfileEditScreen: React.FC = () => {
                       e.target.value.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄґҐ'’-]/g, ""),
                     )
                   }
-                  placeholder="Введіть ваше ім'я"
+                  placeholder="Введіть Ваше ім'я"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all"
                 />
               </div>
@@ -887,7 +887,7 @@ const ProfileEditScreen: React.FC = () => {
                       e.target.value.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄґҐ'’-]/g, ""),
                     )
                   }
-                  placeholder="Введіть ваше прізвище"
+                  placeholder="Введіть Ваше прізвище"
                   className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all"
                 />
               </div>
