@@ -285,8 +285,7 @@ export class AuthService {
     const oldImagePath = user.imagePath;
     const imagePath = updateUserDto.imagePath;
 
-    const isNewEmail = email && !user.email;
-    const isSensitiveUpdate = password || !isNewEmail || phoneRaw;
+    const isSensitiveUpdate = password || (email && user.email) || phoneRaw;
 
     if (isSensitiveUpdate) {
       if (!updateUserDto.currentPassword) {
