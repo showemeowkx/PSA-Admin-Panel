@@ -780,17 +780,19 @@ const ProfileEditScreen: React.FC = () => {
     <IonPage>
       <IonHeader className="ion-no-border bg-white md:hidden pt-safe">
         <IonToolbar style={{ "--background": "white" }}>
-          <div className="flex items-center justify-between px-2">
+          <div className="flex items-center px-2 relative h-full">
             <IonButton
               color="medium"
               fill="clear"
               onClick={() => history.goBack()}
-              className="text-gray-800"
+              className="text-gray-800 z-10"
             >
               <IonIcon icon={chevronBackOutline} className="text-2xl" /> Назад
             </IonButton>
-            <span className="font-bold text-gray-800 text-lg">Редагування</span>
-            <div className="w-[80px]"></div>
+
+            <span className="absolute left-0 right-0 text-center font-bold text-gray-800 text-lg pointer-events-none">
+              Редагування
+            </span>
           </div>
         </IonToolbar>
       </IonHeader>
