@@ -42,7 +42,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
               e.stopPropagation();
               onEdit(e);
             }}
-            className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-black hover:text-gray-500 hover:border-gray-200 transition-colors z-10"
+            className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-500 hover:text-black hover:border-gray-200 transition-colors z-10"
           >
             <IonIcon icon={createOutline} className="text-sm" />
           </button>
