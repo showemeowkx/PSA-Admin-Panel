@@ -99,10 +99,10 @@ const SelectStoreScreen: React.FC = () => {
       <IonContent className="ion-padding custom-login-bg">
         <div className="flex flex-col h-full justify-center items-center px-6 py-6">
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border-[2px] border-gray-300 shadow-lg">
               <IonIcon
                 icon={storefrontOutline}
-                className="text-4xl text-orange-500"
+                className="text-4xl text-gray-500"
               />
             </div>
             <h1 className="text-2xl font-black text-gray-800">
@@ -136,7 +136,7 @@ const SelectStoreScreen: React.FC = () => {
                       onClick={() =>
                         !isSubmitting && handleSelectStore(store.id)
                       }
-                      className="bg-white rounded-[20px] p-4 border border-gray-100 shadow-sm active:scale-95 transition-all flex items-center gap-4 cursor-pointer hover:border-orange-300 hover:shadow-md"
+                      className="bg-white rounded-[20px] p-4 border border-gray-100 shadow-sm active:scale-95 transition-all flex items-center gap-4 cursor-pointer hover:border-gray-300 hover:shadow-md"
                     >
                       <div className="flex-1">
                         <h3 className="font-bold text-gray-800 text-sm leading-tight">
@@ -145,7 +145,7 @@ const SelectStoreScreen: React.FC = () => {
                       </div>
                       <IonIcon
                         icon={checkmarkCircle}
-                        className="text-gray-200 text-2xl group-hover:text-orange-400"
+                        className="text-gray-200 text-2xl group-hover:text-gray-400"
                       />
                     </div>
                   ))}
@@ -165,7 +165,7 @@ const SelectStoreScreen: React.FC = () => {
               color="medium"
               onClick={handleLogout}
               size="small"
-              className="text-gray-500 font-medium hover:text-orange-600"
+              className="text-gray-500 font-medium"
             >
               <IonIcon icon={logOutOutline} slot="start" />
               Вийти з акаунту
