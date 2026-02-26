@@ -476,10 +476,10 @@ const ProfileEditScreen: React.FC = () => {
         {phoneStep === 1 ? (
           <div className="space-y-6 animate-fade-in">
             <div className="text-center mb-4">
-              <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex border-[1px] border-gray-300 items-center justify-center mx-auto mb-4">
                 <IonIcon
                   icon={phonePortraitOutline}
-                  className="text-3xl text-orange-500"
+                  className="text-3xl text-gray-500"
                 />
               </div>
               <p className="text-gray-500 text-sm font-medium leading-relaxed">
@@ -496,13 +496,14 @@ const ProfileEditScreen: React.FC = () => {
                 <div className="w-full">
                   <IonLabel
                     position="stacked"
-                    className="text-orange-600 font-bold ml-1 mb-1"
+                    className="text-gray-600 font-bold ml-1 mb-1"
                   >
                     Новий номер телефону
                   </IonLabel>
                   <IonInput
                     type="tel"
                     inputmode="tel"
+                    color="medium"
                     value={newPhone}
                     onIonInput={(e) => {
                       const val = e.detail.value!;
@@ -527,10 +528,14 @@ const ProfileEditScreen: React.FC = () => {
                 "--border-radius": "30px",
                 "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
               }}
-              color="primary"
+              color="dark"
             >
               {isPhoneUpdating ? (
-                <IonSpinner name="crescent" className="w-5 h-5" />
+                <IonSpinner
+                  name="crescent"
+                  className="w-5 h-5"
+                  style={{ "--spinner-color": "black" }}
+                />
               ) : (
                 "ОТРИМАТИ КОД"
               )}
@@ -556,7 +561,7 @@ const ProfileEditScreen: React.FC = () => {
                 <div className="w-full">
                   <IonLabel
                     position="stacked"
-                    className="text-orange-600 font-bold ml-1 mb-1"
+                    className="text-gray-600 font-bold ml-1 mb-1"
                   >
                     СМС Код
                   </IonLabel>
@@ -565,6 +570,7 @@ const ProfileEditScreen: React.FC = () => {
                       type="tel"
                       inputmode="numeric"
                       pattern="[0-9]*"
+                      color="medium"
                       value={verificationCode}
                       onIonInput={(e) => {
                         const val = e.detail.value!;
@@ -596,7 +602,7 @@ const ProfileEditScreen: React.FC = () => {
                 <div className="w-full">
                   <IonLabel
                     position="stacked"
-                    className="text-orange-600 font-bold ml-1 mb-1"
+                    className="text-gray-600 font-bold ml-1 mb-1"
                   >
                     Поточний пароль
                   </IonLabel>
@@ -604,6 +610,7 @@ const ProfileEditScreen: React.FC = () => {
                     <IonInput
                       type={showPassword ? "text" : "password"}
                       value={currentPassword}
+                      color="medium"
                       onIonInput={(e) => setCurrentPassword(e.detail.value!)}
                       className="font-medium text-gray-800"
                       placeholder="Ваш пароль"
@@ -631,7 +638,7 @@ const ProfileEditScreen: React.FC = () => {
                 "--border-radius": "30px",
                 "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
               }}
-              color="primary"
+              color="dark"
             >
               {isPhoneUpdating ? (
                 <IonSpinner name="crescent" className="w-5 h-5" />
@@ -682,8 +689,8 @@ const ProfileEditScreen: React.FC = () => {
 
         <div className="space-y-6 animate-fade-in">
           <div className="text-center mb-4">
-            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-              <IonIcon icon={mailOutline} className="text-3xl text-blue-500" />
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex border-[1px] border-gray-300 items-center justify-center mx-auto mb-4">
+              <IonIcon icon={mailOutline} className="text-3xl text-gray-500" />
             </div>
             <p className="text-gray-500 text-sm font-medium leading-relaxed">
               {user?.email
@@ -701,7 +708,7 @@ const ProfileEditScreen: React.FC = () => {
               <div className="w-full">
                 <IonLabel
                   position="stacked"
-                  className="text-blue-600 font-bold ml-1 mb-1"
+                  className="text-gray-600 font-bold ml-1 mb-1"
                 >
                   Електронна пошта
                 </IonLabel>
@@ -709,6 +716,7 @@ const ProfileEditScreen: React.FC = () => {
                   type="email"
                   inputmode="email"
                   value={newEmail}
+                  color="medium"
                   onIonInput={(e) => setNewEmail(e.detail.value!)}
                   className="font-medium text-gray-800"
                   placeholder="example@mail.com"
@@ -727,7 +735,7 @@ const ProfileEditScreen: React.FC = () => {
                 <div className="w-full">
                   <IonLabel
                     position="stacked"
-                    className="text-blue-600 font-bold ml-1 mb-1"
+                    className="text-gray-600 font-bold ml-1 mb-1"
                   >
                     Поточний пароль
                   </IonLabel>
@@ -735,6 +743,7 @@ const ProfileEditScreen: React.FC = () => {
                     <IonInput
                       type={showEmailPassword ? "text" : "password"}
                       value={emailPassword}
+                      color="medium"
                       onIonInput={(e) => setEmailPassword(e.detail.value!)}
                       className="font-medium text-gray-800"
                       placeholder="Ваш пароль"
@@ -761,7 +770,7 @@ const ProfileEditScreen: React.FC = () => {
               "--border-radius": "30px",
               "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
             }}
-            color="primary"
+            color="dark"
           >
             {isEmailUpdating ? (
               <IonSpinner name="crescent" className="w-5 h-5" />
@@ -802,7 +811,7 @@ const ProfileEditScreen: React.FC = () => {
           <div className="flex items-center gap-4 mb-8 hidden md:flex">
             <button
               onClick={() => history.goBack()}
-              className="text-gray-400 hover:text-orange-500 transition-colors"
+              className="text-gray-400 hover:text-black transition-colors"
             >
               <IonIcon icon={chevronBackOutline} className="text-3xl" />
             </button>
@@ -818,7 +827,7 @@ const ProfileEditScreen: React.FC = () => {
 
             <div className="flex justify-center mb-8">
               <div className="relative">
-                <div className="w-28 h-28 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 font-bold text-4xl overflow-hidden shadow-sm border-4 border-white">
+                <div className="w-28 h-28 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 font-bold text-4xl overflow-hidden shadow-sm border-4 border-white">
                   {user?.imagePath ? (
                     <img
                       src={user.imagePath}
@@ -833,7 +842,7 @@ const ProfileEditScreen: React.FC = () => {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingPhoto}
-                  className="absolute bottom-0 right-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-orange-600 active:scale-95 transition-all disabled:opacity-0"
+                  className="absolute bottom-0 right-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-600 hover:text-black active:scale-95 transition-all disabled:opacity-0"
                 >
                   <IonIcon icon={cameraOutline} className="text-xl" />
                 </button>
@@ -874,7 +883,7 @@ const ProfileEditScreen: React.FC = () => {
                     )
                   }
                   placeholder="Введіть Ваше ім'я"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-black focus:bg-white transition-all"
                 />
               </div>
               <div>
@@ -890,7 +899,7 @@ const ProfileEditScreen: React.FC = () => {
                     )
                   }
                   placeholder="Введіть Ваше прізвище"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-bold text-gray-800 outline-none focus:border-black focus:bg-white transition-all"
                 />
               </div>
             </div>
@@ -898,7 +907,7 @@ const ProfileEditScreen: React.FC = () => {
             <button
               onClick={handleSavePersonalData}
               disabled={isSaving}
-              className={`w-full py-4 bg-orange-500 text-white rounded-2xl font-bold text-base hover:bg-orange-600 active:scale-95 shadow-md shadow-orange-200 transition-all flex justify-center items-center gap-2 ${isSaving ? "opacity-75 cursor-not-allowed" : ""}`}
+              className={`w-full py-4 bg-black text-white rounded-2xl font-bold text-base hover:bg-gray-800 active:scale-95 shadow-md shadow-gray-200 transition-all flex justify-center items-center gap-2 ${isSaving ? "opacity-75 cursor-not-allowed" : ""}`}
             >
               {isSaving ? (
                 <IonSpinner name="crescent" className="w-5 h-5" />
@@ -990,7 +999,7 @@ const ProfileEditScreen: React.FC = () => {
               <button
                 onClick={handleUploadPhoto}
                 disabled={isUploadingPhoto}
-                className="text-orange-600 font-bold flex items-center gap-1 active:scale-95 transition-all"
+                className="text-black font-bold flex items-center gap-1 active:scale-95 transition-all"
               >
                 {isUploadingPhoto ? (
                   <IonSpinner name="crescent" className="w-5 h-5" />

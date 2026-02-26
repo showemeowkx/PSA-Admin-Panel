@@ -46,7 +46,7 @@ const ProfileSupportScreen: React.FC = () => {
           <div className="flex items-center gap-4 mb-8 hidden md:flex">
             <button
               onClick={() => history.goBack()}
-              className="text-gray-400 hover:text-orange-500 transition-colors"
+              className="text-gray-400 hover:text-black transition-colors"
             >
               <IonIcon icon={chevronBackOutline} className="text-3xl" />
             </button>

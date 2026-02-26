@@ -174,7 +174,6 @@ const ProfileSecurityScreen: React.FC = () => {
           },
         },
       ],
-      mode: "ios",
     });
   };
 
@@ -189,10 +188,10 @@ const ProfileSecurityScreen: React.FC = () => {
 
         <div className="space-y-6 animate-fade-in">
           <div className="text-center mb-4">
-            <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex border-[1px] border-gray-300 items-center justify-center mx-auto mb-4">
               <IonIcon
                 icon={lockClosedOutline}
-                className="text-3xl text-purple-500"
+                className="text-3xl text-gray-500"
               />
             </div>
             <p className="text-gray-500 text-sm font-medium leading-relaxed">
@@ -217,13 +216,14 @@ const ProfileSecurityScreen: React.FC = () => {
                   <IonInput
                     type={showCurrentPassword ? "text" : "password"}
                     value={currentPassword}
+                    color="medium"
                     onIonInput={(e) => setCurrentPassword(e.detail.value!)}
                     className="font-medium text-gray-800"
                     placeholder="Введіть поточний пароль"
                   />
                   <IonIcon
                     icon={showCurrentPassword ? eyeOffOutline : eyeOutline}
-                    className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-orange-500 transition-colors"
+                    className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-gray-500 transition-colors"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                   />
                 </div>
@@ -248,13 +248,14 @@ const ProfileSecurityScreen: React.FC = () => {
                   <IonInput
                     type={showNewPassword ? "text" : "password"}
                     value={newPassword}
+                    color="medium"
                     onIonInput={(e) => setNewPassword(e.detail.value!)}
                     className="font-medium text-gray-800"
                     placeholder="Придумайте новий пароль"
                   />
                   <IonIcon
                     icon={showNewPassword ? eyeOffOutline : eyeOutline}
-                    className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-orange-500 transition-colors"
+                    className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-gray-500 transition-colors"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                   />
                 </div>
@@ -279,13 +280,14 @@ const ProfileSecurityScreen: React.FC = () => {
                   <IonInput
                     type={showConfirmPassword ? "text" : "password"}
                     value={confirmPassword}
+                    color="medium"
                     onIonInput={(e) => setConfirmPassword(e.detail.value!)}
                     className="font-medium text-gray-800"
                     placeholder="Повторіть новий пароль"
                   />
                   <IonIcon
                     icon={showConfirmPassword ? eyeOffOutline : eyeOutline}
-                    className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-orange-500 transition-colors"
+                    className="text-gray-400 text-xl ml-2 cursor-pointer hover:text-gray-500 transition-colors"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   />
                 </div>
@@ -304,7 +306,7 @@ const ProfileSecurityScreen: React.FC = () => {
               "--border-radius": "30px",
               "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
             }}
-            color="primary"
+            color="dark"
           >
             {isUpdating ? (
               <IonSpinner name="crescent" className="w-5 h-5" />
@@ -342,7 +344,7 @@ const ProfileSecurityScreen: React.FC = () => {
           <div className="flex items-center gap-4 mb-8 hidden md:flex">
             <button
               onClick={() => history.goBack()}
-              className="text-gray-400 hover:text-orange-500 transition-colors"
+              className="text-gray-400 hover:text-black transition-colors"
             >
               <IonIcon icon={chevronBackOutline} className="text-3xl" />
             </button>

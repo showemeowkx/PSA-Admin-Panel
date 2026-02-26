@@ -144,7 +144,7 @@ const ProfileWalletScreen: React.FC = () => {
           <div className="flex items-center gap-4 mb-8 hidden md:flex">
             <button
               onClick={() => history.goBack()}
-              className="text-gray-400 hover:text-orange-500 transition-colors"
+              className="text-gray-400 hover:text-black transition-colors"
             >
               <IonIcon icon={chevronBackOutline} className="text-3xl" />
             </button>
@@ -167,7 +167,8 @@ const ProfileWalletScreen: React.FC = () => {
               <div className="flex justify-center items-center py-20">
                 <IonSpinner
                   name="crescent"
-                  className="w-10 h-10 text-orange-500"
+                  style={{ "--spinner-color": "black" }}
+                  className="w-10 h-10 text-black"
                 />
               </div>
             ) : (
@@ -209,9 +210,9 @@ const ProfileWalletScreen: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => mockAddWallet()}
-                    className="flex flex-col items-center justify-center min-h-[220px] md:min-h-[200px] w-full md:w-[340px] shrink-0 rounded-[24px] border-2 border-dashed border-orange-400 bg-orange-50/50 hover:bg-orange-100 text-orange-500 transition-colors active:scale-[0.98]"
+                    className="flex flex-col items-center justify-center min-h-[220px] md:min-h-[200px] w-full md:w-[340px] shrink-0 rounded-[24px] border-2 border-dashed border-gray-400 bg-gray-50/50 hover:bg-gray-100 text-gray-500 transition-colors active:scale-[0.98]"
                   >
-                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-orange-500">
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-gray-500">
                       <IonIcon icon={addOutline} className="text-3xl" />
                     </div>
                     <span className="font-bold text-lg">Додати гаманець</span>

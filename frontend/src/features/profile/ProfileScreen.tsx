@@ -158,12 +158,15 @@ const ProfileScreen: React.FC = () => {
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex items-center gap-5 mb-6 relative overflow-hidden">
             {isLoading && (
               <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-10 flex items-center justify-center">
-                <IonSpinner name="crescent" className="text-orange-500" />
+                <IonSpinner
+                  name="crescent"
+                  style={{ "--spinner-color": "black" }}
+                />
               </div>
             )}
 
             <div className="flex flex-col items-center gap-2 shrink-0">
-              <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center text-orange-500 font-bold text-3xl overflow-hidden shadow-sm">
+              <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-black font-bold text-3xl overflow-hidden shadow-sm">
                 {user?.imagePath ? (
                   <img
                     src={user.imagePath}
@@ -176,7 +179,7 @@ const ProfileScreen: React.FC = () => {
               </div>
 
               {user?.isAdmin && (
-                <span className="hidden md:flex items-center justify-center px-2 py-0.5 rounded-md text-[10px] font-black bg-orange-100 text-orange-600 uppercase tracking-wider border border-orange-200">
+                <span className="hidden md:flex items-center justify-center px-2 py-0.5 rounded-md text-[10px] font-black bg-yellow-300 text-yellow-600 uppercase tracking-wider border border-gray-200">
                   Admin
                 </span>
               )}
@@ -196,7 +199,7 @@ const ProfileScreen: React.FC = () => {
               {!hasNameOrSurname && (
                 <button
                   onClick={() => history.push(`${basePath}/profile/edit`)}
-                  className="flex items-center gap-1.5 text-sm font-bold text-orange-600 bg-orange-50 px-3 py-1.5 rounded-lg active:scale-95 transition-all w-max mt-2"
+                  className="flex items-center gap-1.5 text-sm font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-lg active:scale-95 transition-all w-max mt-2"
                 >
                   <IonIcon icon={alertCircleOutline} className="text-lg" />
                   Додати дані

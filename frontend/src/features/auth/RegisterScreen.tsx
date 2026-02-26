@@ -225,6 +225,7 @@ const RegisterScreen: React.FC = () => {
                         <IonInput
                           type="tel"
                           inputmode="numeric"
+                          color="medium"
                           pattern="[0-9]*"
                           value={code}
                           onIonInput={(e) => {
