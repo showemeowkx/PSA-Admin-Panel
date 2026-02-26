@@ -348,7 +348,7 @@ const ProductScreen: React.FC = () => {
             </h2>
             <button
               onClick={() => history.goBack()}
-              className="text-orange-500 font-bold"
+              className="text-gray-500 font-bold"
             >
               Повернутися назад
             </button>
@@ -393,7 +393,7 @@ const ProductScreen: React.FC = () => {
         <div className="hidden md:block container mx-auto px-8 py-12 max-w-6xl mt-16">
           <button
             onClick={() => history.goBack()}
-            className="mb-8 text-gray-500 hover:text-orange-600 flex items-center gap-1 font-bold transition-colors"
+            className="mb-8 text-gray-500 hover:text-black flex items-center gap-1 font-bold transition-colors"
           >
             <IonIcon icon={chevronBackOutline} className="text-xl" />
             Назад
@@ -421,7 +421,7 @@ const ProductScreen: React.FC = () => {
                 {isAdminOnDesktop && (
                   <button
                     onClick={handleOpenEditModal}
-                    className="flex-shrink-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-400 hover:text-orange-500 hover:border-orange-200 transition-colors z-10"
+                    className="flex-shrink-0 w-10 h-10 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-400 hover:text-black hover:border-gray-200 transition-colors z-10"
                   >
                     <IonIcon icon={createOutline} className="text-xl" />
                   </button>
@@ -455,7 +455,7 @@ const ProductScreen: React.FC = () => {
                   </span>
                 )}
                 {!isCategoryActive && (
-                  <span className="ml-1 text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-bold">
+                  <span className="ml-1 text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded font-bold">
                     Категорія неактивна
                   </span>
                 )}
@@ -490,7 +490,7 @@ const ProductScreen: React.FC = () => {
                     ${
                       isUnavailable
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
-                        : "bg-orange-500 hover:bg-orange-600 active:scale-95 text-white shadow-orange-200"
+                        : "bg-black active:scale-95 text-white shadow-gray-200"
                     }`}
                 >
                   <IonIcon icon={addOutline} className="text-2xl" />
@@ -561,13 +561,13 @@ const ProductScreen: React.FC = () => {
                 <div className="hidden md:flex gap-2">
                   <button
                     onClick={() => scrollAlike("left")}
-                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
+                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-black active:scale-95 transition-all"
                   >
                     <IonIcon icon={chevronBackOutline} />
                   </button>
                   <button
                     onClick={() => scrollAlike("right")}
-                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
+                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-black active:scale-95 transition-all"
                   >
                     <IonIcon icon={chevronForwardOutline} />
                   </button>
@@ -632,13 +632,13 @@ const ProductScreen: React.FC = () => {
             <div className="fixed bottom-32 right-5 z-50 animate-fade-in-up">
               <button
                 onClick={() => history.push(`${basePath}/cart`)}
-                className="w-14 h-14 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-2xl border border-gray-100 active:scale-95 transition-all relative"
+                className="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-2xl border border-gray-100 active:scale-95 transition-all relative"
               >
                 <IonIcon icon={basketOutline} className="text-2xl" />
 
                 {cartItemsCount > 0 && (
                   <IonBadge
-                    color="danger"
+                    color="light"
                     className="absolute -top-1 -right-1 text-[11px] px-1.5 py-1 border-[1.5px] border-white rounded-full leading-none"
                   >
                     {cartItemsCount > 99 ? "99+" : cartItemsCount}
@@ -672,7 +672,7 @@ const ProductScreen: React.FC = () => {
                   ${
                     isUnavailable
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
-                      : "bg-orange-500 active:bg-orange-600 active:scale-95 text-white shadow-orange-200"
+                      : "bg-black active:scale-95 text-white shadow-gray-200"
                   }`}
               >
                 <IonIcon icon={addOutline} className="text-xl" />
@@ -698,7 +698,7 @@ const ProductScreen: React.FC = () => {
               </h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                className="text-gray-400 hover:text-black transition-colors p-1"
               >
                 <IonIcon icon={closeOutline} className="text-2xl" />
               </button>
@@ -713,7 +713,7 @@ const ProductScreen: React.FC = () => {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-black focus:bg-white transition-all"
                   placeholder="Введіть назву"
                 />
               </div>
@@ -726,7 +726,7 @@ const ProductScreen: React.FC = () => {
                   rows={4}
                   value={editDesc}
                   onChange={(e) => setEditDesc(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all resize-none"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-black focus:bg-white transition-all resize-none"
                   placeholder="Додайте опис товару"
                 />
               </div>
@@ -753,8 +753,8 @@ const ProductScreen: React.FC = () => {
                     onClick={() => fileInputRef.current?.click()}
                     className={`w-20 h-20 shrink-0 rounded-xl border-2 flex items-center justify-center p-2 transition-all ${
                       editImageFile
-                        ? "border-orange-500 bg-orange-50 shadow-sm"
-                        : "border-gray-200 border-dashed bg-gray-50 hover:border-orange-300 hover:bg-orange-50/50"
+                        ? "border-black bg-gray-100 shadow-sm"
+                        : "border-gray-200 border-dashed bg-gray-50 hover:border-gray-300 hover:bg-gray-100"
                     }`}
                   >
                     {editImagePreview ? (
@@ -793,7 +793,7 @@ const ProductScreen: React.FC = () => {
                   </span>
                 </div>
                 <IonToggle
-                  color="medium"
+                  color="dark"
                   checked={editIsActive}
                   onIonChange={(e) => setEditIsActive(e.detail.checked)}
                 />
@@ -811,7 +811,7 @@ const ProductScreen: React.FC = () => {
               <button
                 onClick={() => setShowConfirmAlert(true)}
                 disabled={isSubmitting}
-                className="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm hover:bg-orange-700 active:scale-95 transition-all shadow-md shadow-orange-200 disabled:opacity-50 disabled:active:scale-100"
+                className="flex-1 py-3 bg-black text-white rounded-xl font-bold text-sm hover:bg-gray-800 active:scale-95 transition-all shadow-md shadow-gray-200 disabled:opacity-50 disabled:active:scale-100"
               >
                 {isSubmitting ? "Збереження..." : "Зберегти"}
               </button>

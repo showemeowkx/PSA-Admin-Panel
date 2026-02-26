@@ -149,10 +149,10 @@ const ForgotPasswordScreen: React.FC = () => {
             {step === 1 ? (
               <div className="space-y-6 animate-fade-in">
                 <div className="text-center mb-4">
-                  <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex border-[1px] border-gray-300 items-center justify-center mx-auto mb-4">
                     <IonIcon
                       icon={lockClosedOutline}
-                      className="text-3xl text-orange-500"
+                      className="text-3xl text-gray-500"
                     />
                   </div>
                   <p className="text-gray-500 text-sm font-medium leading-relaxed">
@@ -169,7 +169,7 @@ const ForgotPasswordScreen: React.FC = () => {
                     <div className="w-full">
                       <IonLabel
                         position="stacked"
-                        className="text-orange-600 font-bold ml-1 mb-1"
+                        className="text-gray-600 font-bold ml-1 mb-1"
                       >
                         Номер телефону
                       </IonLabel>
@@ -177,6 +177,7 @@ const ForgotPasswordScreen: React.FC = () => {
                         type="tel"
                         inputmode="tel"
                         value={phone}
+                        color="dark"
                         onIonInput={(e) => {
                           const val = e.detail.value!;
                           const filtered = val.replace(/[^0-9+]/g, "");
@@ -199,7 +200,7 @@ const ForgotPasswordScreen: React.FC = () => {
                     "--border-radius": "30px",
                     "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
                   }}
-                  color="primary"
+                  color="dark"
                 >
                   ОТРИМАТИ КОД
                 </IonButton>
@@ -221,13 +222,14 @@ const ForgotPasswordScreen: React.FC = () => {
                     <div className="w-full">
                       <IonLabel
                         position="stacked"
-                        className="text-orange-600 font-bold ml-1 mb-1"
+                        className="text-gray-600 font-bold ml-1 mb-1"
                       >
                         СМС Код
                       </IonLabel>
                       <div className="flex items-center">
                         <IonInput
                           type="tel"
+                          color="dark"
                           inputmode="numeric"
                           pattern="[0-9]*"
                           value={code}
@@ -259,13 +261,14 @@ const ForgotPasswordScreen: React.FC = () => {
                     <div className="w-full">
                       <IonLabel
                         position="stacked"
-                        className="text-orange-600 font-bold ml-1 mb-1"
+                        className="text-gray-600 font-bold ml-1 mb-1"
                       >
                         Новий пароль
                       </IonLabel>
                       <div className="flex items-center">
                         <IonInput
                           type={showPassword ? "text" : "password"}
+                          color="dark"
                           value={password}
                           onIonInput={(e) => setPassword(e.detail.value!)}
                           className="font-medium text-gray-800"
@@ -290,13 +293,14 @@ const ForgotPasswordScreen: React.FC = () => {
                     <div className="w-full">
                       <IonLabel
                         position="stacked"
-                        className="text-orange-600 font-bold ml-1 mb-1"
+                        className="text-gray-600 font-bold ml-1 mb-1"
                       >
                         Підтвердіть пароль
                       </IonLabel>
                       <div className="flex items-center">
                         <IonInput
                           type={showPassword ? "text" : "password"}
+                          color="dark"
                           value={confirmPassword}
                           onIonInput={(e) =>
                             setConfirmPassword(e.detail.value!)
@@ -325,7 +329,7 @@ const ForgotPasswordScreen: React.FC = () => {
                     "--border-radius": "30px",
                     "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
                   }}
-                  color="primary"
+                  color="dark"
                 >
                   ЗМІНИТИ ПАРОЛЬ
                 </IonButton>
@@ -346,9 +350,8 @@ const ForgotPasswordScreen: React.FC = () => {
               </div>
             )}
           </div>
-
-          <p className="mt-8 text-gray-300 text-[9px] uppercase tracking-[0.2em]">
-            © 2026 ВІКТЕ. Всі права захищені.
+          <p className="mt-8 text-gray-400 text-[8px] md:text-[10px] tracking-widest">
+            Продовжуючи, Ви погоджуєтесь з нашою Політикою конфіденційності
           </p>
         </div>
 
@@ -356,6 +359,7 @@ const ForgotPasswordScreen: React.FC = () => {
           isOpen={isLoading}
           message="Оновлення даних..."
           spinner="circular"
+          style={{ "--spinner-color": "black" } as any}
         />
       </IonContent>
     </IonPage>

@@ -86,18 +86,21 @@ const StoreSelectorModal: React.FC<StoreSelectorModalProps> = ({
                   relative p-4 rounded-[24px] border transition-all duration-200 cursor-pointer flex items-center gap-4
                   ${
                     isSelected
-                      ? "bg-white border-orange-500 shadow-md shadow-orange-100"
-                      : "bg-white border-gray-100 hover:border-orange-200"
+                      ? "bg-white border-black shadow-md shadow-gray-100"
+                      : "bg-white border-gray-100 hover:border-gray-200"
                   }
                 `}
               >
                 <div
                   className={`
-                  w-12 h-12 rounded-2xl flex items-center justify-center font-black text-[10px] tracking-tighter
-                  ${isSelected ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-500"}
+                  w-12 h-12 rounded-2xl flex items-center justify-center p-2bla
                 `}
                 >
-                  ВІКТЕ
+                  <img
+                    src="/logo512.png"
+                    alt="Логотип"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
 
                 <div className="flex-1">
@@ -109,7 +112,7 @@ const StoreSelectorModal: React.FC<StoreSelectorModalProps> = ({
                   <div className="flex items-center gap-1 mt-1">
                     <IonIcon
                       icon={locationOutline}
-                      className="text-[10px] text-gray-400"
+                      className="text-[10px] text-black"
                     />
                     <span
                       className={`text-[10px] font-medium ${store.isActive ? "text-green-500" : "text-red-400"}`}
@@ -124,7 +127,7 @@ const StoreSelectorModal: React.FC<StoreSelectorModalProps> = ({
                 {isSelected && (
                   <IonIcon
                     icon={checkmarkCircle}
-                    className="text-2xl text-orange-500"
+                    className="text-2xl text-black"
                   />
                 )}
               </div>

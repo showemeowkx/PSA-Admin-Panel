@@ -106,7 +106,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
                 e.stopPropagation();
                 onRemove?.();
               }}
-              className="text-gray-300 hover:text-red-500 transition-colors shrink-0 ml-1"
+              className="text-gray-300 hover:text-black transition-colors shrink-0 ml-1"
             >
               <IonIcon icon={trashOutline} className="text-[18px]" />
             </button>
@@ -132,7 +132,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
             onClick={() => {
               onDecrease?.();
             }}
-            className={`w-8 h-8 flex items-center justify-center ${isDecreaseDisabled ? "text-gray-500" : "text-orange-600"}`}
+            className={`w-8 h-8 flex items-center justify-center ${isDecreaseDisabled ? "text-gray-300" : "text-black"}`}
           >
             <IonIcon icon={remove} />
           </button>
@@ -147,7 +147,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
           />
           <button
             onClick={handleIncrease}
-            className="w-8 h-8 flex items-center justify-center text-orange-600"
+            className="w-8 h-8 flex items-center justify-center text-black"
           >
             <IonIcon icon={add} />
           </button>
@@ -159,7 +159,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
           className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center transition-colors ${
             isUnavailable
               ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-orange-50 text-orange-600 active:bg-orange-500 active:text-white"
+              : "bg-gray-50 text-black hover:bg-gray-50 active:bg-gray-100 active:text-white active:scale-95"
           }`}
         >
           <IonIcon icon={add} className="text-lg" />

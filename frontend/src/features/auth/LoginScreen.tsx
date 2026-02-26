@@ -5,7 +5,6 @@ import {
   IonContent,
   IonInput,
   IonButton,
-  IonLoading,
   useIonToast,
   IonItem,
   IonLabel,
@@ -20,7 +19,6 @@ const LoginScreen: React.FC = () => {
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
   const setAuth = useAuthStore((state) => state.setAuth);
   const history = useHistory();
@@ -31,12 +29,11 @@ const LoginScreen: React.FC = () => {
       presentToast({
         message: "Будь ласка, введіть логін та пароль",
         duration: 2000,
-        color: "warning",
+        color: "danger",
       });
       return;
     }
 
-    setIsLoading(true);
     try {
       const response = await api.post("/auth/signin", { login, password });
 
@@ -72,8 +69,6 @@ const LoginScreen: React.FC = () => {
         duration: 3000,
         color: "danger",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -81,11 +76,13 @@ const LoginScreen: React.FC = () => {
     <IonPage>
       <IonContent className="ion-padding custom-login-bg" scrollY={false}>
         <div className="flex flex-col h-full justify-center items-center px-6">
-          <div className="text-center mb-6 animate-fade-in">
-            <h1 className="text-6xl font-black tracking-tighter text-orange-600 mb-1">
-              ВІКТЕ
-            </h1>
-            <div className="h-1 w-12 bg-orange-600 mx-auto rounded-full mb-2"></div>
+          <div className="text-center mb-6 animate-fade-in flex flex-col items-center">
+            <img
+              src="/logo.png"
+              alt="Логотип"
+              className="h-[120px] w-auto object-contain mb-3 drop-shadow-md"
+            />
+            <div className="h-1 w-12 bg-gray-600 mx-auto rounded-full mb-2"></div>
             <p className="text-gray-400 font-bold tracking-widest uppercase text-[9px]">
               Ласкаво просимо! Будь ласка, увійдіть до свого кабінету
             </p>
@@ -106,12 +103,13 @@ const LoginScreen: React.FC = () => {
                   <div className="w-full">
                     <IonLabel
                       position="stacked"
-                      className="text-orange-600 font-bold ml-1 mb-1"
+                      className="text-gray-600 font-bold ml-1 mb-1"
                     >
                       Email або Телефон
                     </IonLabel>
                     <IonInput
                       value={login}
+                      color={"medium"}
                       onIonInput={(e) => setLogin(e.detail.value!)}
                       className="font-medium text-gray-800"
                       placeholder="Введіть дані для входу"
@@ -129,13 +127,14 @@ const LoginScreen: React.FC = () => {
                   <div className="w-full">
                     <IonLabel
                       position="stacked"
-                      className="text-orange-600 font-bold ml-1 mb-1"
+                      className="text-gray-600 font-bold ml-1 mb-1"
                     >
                       Пароль
                     </IonLabel>
                     <div className="flex items-center">
                       <IonInput
                         type={showPassword ? "text" : "password"}
+                        color={"medium"}
                         value={password}
                         onIonInput={(e) => setPassword(e.detail.value!)}
                         className="font-medium text-gray-800"
@@ -154,7 +153,7 @@ const LoginScreen: React.FC = () => {
               <div className="text-right px-2">
                 <span
                   onClick={() => history.push("/forgot-password")}
-                  className="text-[11px] text-orange-600 font-medium hover:underline cursor-pointer"
+                  className="text-[11px] text-gray-600 font-medium hover:underline cursor-pointer"
                 >
                   Забули пароль?
                 </span>
@@ -168,7 +167,7 @@ const LoginScreen: React.FC = () => {
                   "--border-radius": "30px",
                   "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
                 }}
-                color="primary"
+                color="dark"
               >
                 УВІЙТИ
               </IonButton>
@@ -178,23 +177,17 @@ const LoginScreen: React.FC = () => {
               <p className="text-xs text-gray-500 mb-1">Немає акаунту?</p>
               <span
                 onClick={() => history.push("/register")}
-                className="text-sm text-orange-600 font-bold hover:underline cursor-pointer"
+                className="text-sm text-black font-bold hover:underline cursor-pointer"
               >
-                Зареєструватися у ВІКТЕ
+                Створити обліковий запис
               </span>
             </div>
           </div>
 
-          <p className="mt-8 text-gray-400 text-[9px] uppercase tracking-widest">
-            © 2026 ВІКТЕ. Всі права захищені.
+          <p className="mt-8 text-gray-400 text-[8px] md:text-[10px] tracking-widest">
+            Продовжуючи, Ви погоджуєтесь з нашою Політикою конфіденційності
           </p>
         </div>
-
-        <IonLoading
-          isOpen={isLoading}
-          message="Завантаження..."
-          spinner="circular"
-        />
       </IonContent>
     </IonPage>
   );

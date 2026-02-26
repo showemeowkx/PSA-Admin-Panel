@@ -525,7 +525,7 @@ const ShopScreen: React.FC = () => {
                   onClick={() => setIsStoreModalOpen(true)}
                   className="flex items-center gap-2 active:opacity-70 group"
                 >
-                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 group-active:scale-90 transition-transform">
+                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-black group-active:scale-90 transition-transform">
                     <IonIcon icon={storefrontOutline} />
                   </div>
                   <div className="text-left">
@@ -538,7 +538,7 @@ const ShopScreen: React.FC = () => {
                       </span>
                       <IonIcon
                         icon={chevronDownOutline}
-                        className="text-orange-500 text-[10px]"
+                        className="text-black text-[10px]"
                       />
                     </div>
                   </div>
@@ -584,7 +584,7 @@ const ShopScreen: React.FC = () => {
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery("")}
-                      className="text-gray-400 active:text-orange-500 p-1"
+                      className="text-gray-400 active:text-black p-1"
                     >
                       <IonIcon icon={closeCircleOutline} className="text-xl" />
                     </button>
@@ -592,11 +592,11 @@ const ShopScreen: React.FC = () => {
                   {isSearchActive && (
                     <button
                       onClick={() => setIsFilterOpen(true)}
-                      className={`relative p-1 transition-colors ${hasActiveFilters ? "text-orange-500" : "text-gray-400 active:text-orange-500"}`}
+                      className={`relative p-1 transition-colors ${hasActiveFilters ? "text-black" : "text-gray-400 active:text-black"}`}
                     >
                       <IonIcon icon={filterOutline} className="text-xl" />
                       {hasActiveFilters && (
-                        <span className="absolute top-0 right-0.5 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
+                        <span className="absolute top-0 right-0.5 w-2 h-2 bg-black rounded-full border-2 border-white"></span>
                       )}
                     </button>
                   )}
@@ -622,7 +622,7 @@ const ShopScreen: React.FC = () => {
               {isSearchActive && (
                 <button
                   onClick={handleExitSearch}
-                  className="text-gray-500 hover:text-orange-600 flex items-center gap-1 font-bold animate-fade-in-left"
+                  className="text-gray-500 hover:text-black flex items-center gap-1 font-bold animate-fade-in-left"
                 >
                   <IonIcon icon={chevronBackOutline} className="text-xl" />
                   Назад
@@ -647,7 +647,7 @@ const ShopScreen: React.FC = () => {
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery("")}
-                      className="text-gray-400 hover:text-orange-500 transition-colors p-1"
+                      className="text-gray-400 hover:text-black transition-colors p-1"
                     >
                       <IonIcon icon={closeCircleOutline} className="text-xl" />
                     </button>
@@ -655,11 +655,11 @@ const ShopScreen: React.FC = () => {
                   {isSearchActive && (
                     <button
                       onClick={() => setIsFilterOpen(true)}
-                      className={`relative p-1 transition-colors ${hasActiveFilters ? "text-orange-500" : "text-gray-400 hover:text-orange-500"}`}
+                      className={`relative p-1 transition-colors ${hasActiveFilters ? "text-black" : "text-gray-400 hover:text-black"}`}
                     >
                       <IonIcon icon={filterOutline} className="text-xl" />
                       {hasActiveFilters && (
-                        <span className="absolute top-0 right-0.5 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
+                        <span className="absolute top-0 right-0.5 w-2 h-2 bg-black rounded-full border-2 border-white"></span>
                       )}
                     </button>
                   )}
@@ -690,13 +690,13 @@ const ShopScreen: React.FC = () => {
                   <div className="hidden md:flex gap-2">
                     <button
                       onClick={() => scrollCategories("left")}
-                      className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
+                      className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-gray-600 hover:text-black active:scale-95 transition-all"
                     >
                       <IonIcon icon={chevronBackOutline} />
                     </button>
                     <button
                       onClick={() => scrollCategories("right")}
-                      className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
+                      className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-gray-600 hover:text-black active:scale-95 transition-all"
                     >
                       <IonIcon icon={chevronForwardOutline} />
                     </button>
@@ -739,7 +739,7 @@ const ShopScreen: React.FC = () => {
                   <div className="absolute right-0 top-0 bottom-4 z-10 w-12 bg-gradient-to-l from-gray-50 via-gray-50/80 to-transparent md:hidden flex items-center justify-end pr-1 pointer-events-none">
                     <IonIcon
                       icon={chevronForwardOutline}
-                      className="text-orange-400 text-2xl animate-pulse drop-shadow-sm"
+                      className="text-gray-800 text-2xl animate-pulse drop-shadow-sm"
                     />
                   </div>
                 </div>
@@ -809,7 +809,7 @@ const ShopScreen: React.FC = () => {
                       {searchQuery ? (
                         <>
                           Результати:{" "}
-                          <span className="text-orange-600 font-medium ml-1">
+                          <span className="text-black font-medium ml-1">
                             "{searchQuery}"
                           </span>
                         </>
@@ -942,13 +942,13 @@ const ShopScreen: React.FC = () => {
                   });
                 }, 400);
               }}
-              className="w-14 h-14 bg-orange-500 text-white rounded-full flex items-center justify-center shadow-2xl border-4 border-gray-50 active:bg-orange-600 active:scale-95 transition-all relative"
+              className="w-14 h-14 bg-black text-white rounded-full flex items-center justify-center shadow-xl border-4 border-gray-50 active:bg-gray-800 active:scale-95 transition-all relative"
             >
               <IonIcon icon={basketOutline} className="text-2xl" />
 
               {cartItemsCount > 0 && (
                 <IonBadge
-                  color="danger"
+                  color="light"
                   className="absolute -top-1 -right-1 text-[11px] px-1.5 py-1 border-[1.5px] border-white rounded-full leading-none"
                 >
                   {cartItemsCount > 99 ? "99+" : cartItemsCount}
@@ -975,7 +975,7 @@ const ShopScreen: React.FC = () => {
             </h3>
             <button
               onClick={() => setEditingCategory(null)}
-              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+              className="text-gray-400 hover:text-black transition-colors p-1"
             >
               <IonIcon icon={closeOutline} className="text-2xl" />
             </button>
@@ -990,7 +990,7 @@ const ShopScreen: React.FC = () => {
                 type="text"
                 value={editCatName}
                 onChange={(e) => setEditCatName(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-black focus:bg-white transition-all"
                 placeholder="Введіть назву"
               />
             </div>
@@ -1000,7 +1000,7 @@ const ShopScreen: React.FC = () => {
                 Іконка
               </label>
 
-              <div className="flex gap-3 overflow-x-auto pb-4 pt-1 snap-x [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-orange-300 hover:[&::-webkit-scrollbar-thumb]:bg-orange-500 [&::-webkit-scrollbar-thumb]:rounded-full">
+              <div className="flex gap-3 overflow-x-auto pb-4 pt-1 snap-x [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 hover:[&::-webkit-scrollbar-thumb]:bg-gray-500 [&::-webkit-scrollbar-thumb]:rounded-full">
                 <input
                   type="file"
                   accept="image/*"
@@ -1020,8 +1020,8 @@ const ShopScreen: React.FC = () => {
                   onClick={() => fileInputRef.current?.click()}
                   className={`w-14 h-14 shrink-0 rounded-xl border-2 flex items-center justify-center p-2 transition-all ${
                     customIconFile
-                      ? "border-orange-500 bg-orange-50 shadow-sm"
-                      : "border-gray-200 border-dashed bg-gray-50 hover:border-orange-300 hover:bg-orange-50/50"
+                      ? "border-black bg-gray-100 shadow-sm"
+                      : "border-gray-200 border-dashed bg-gray-50 hover:border-gray-400 hover:bg-gray-200/50"
                   }`}
                 >
                   {customIconPreview ? (
@@ -1049,8 +1049,8 @@ const ShopScreen: React.FC = () => {
                     }}
                     className={`w-14 h-14 shrink-0 rounded-xl border-2 flex items-center justify-center p-2 transition-all ${
                       !customIconFile && editCatIcon === iconUrl
-                        ? "border-orange-500 bg-orange-50 shadow-sm"
-                        : "border-gray-100 bg-white hover:border-orange-200"
+                        ? "border-black bg-gray-100 shadow-sm"
+                        : "border-gray-100 bg-white hover:border-gray-300"
                     }`}
                   >
                     <img
@@ -1073,7 +1073,7 @@ const ShopScreen: React.FC = () => {
                 </span>
               </div>
               <IonToggle
-                color="medium"
+                color="dark"
                 checked={editCatIsActive}
                 onIonChange={(e) => setEditCatIsActive(e.detail.checked)}
               />
@@ -1091,7 +1091,7 @@ const ShopScreen: React.FC = () => {
             <button
               onClick={() => setShowCatConfirmAlert(true)}
               disabled={isSubmittingCat}
-              className="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm hover:bg-orange-700 active:scale-95 transition-all shadow-md shadow-orange-200 disabled:opacity-50 disabled:active:scale-100"
+              className="flex-1 py-3 bg-black text-white rounded-xl font-bold text-sm hover:bg-gray-800 active:scale-95 transition-all shadow-md shadow-gray-200 disabled:opacity-50 disabled:active:scale-100"
             >
               {isSubmittingCat ? "Збереження..." : "Зберегти"}
             </button>
