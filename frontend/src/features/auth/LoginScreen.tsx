@@ -103,7 +103,7 @@ const LoginScreen: React.FC = () => {
                   <div className="w-full">
                     <IonLabel
                       position="stacked"
-                      className="text-orange-600 font-bold ml-1 mb-1"
+                      className="text-gray-600 font-bold ml-1 mb-1"
                     >
                       Email або Телефон
                     </IonLabel>
