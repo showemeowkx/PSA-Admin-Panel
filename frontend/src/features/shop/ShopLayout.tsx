@@ -300,16 +300,18 @@ const ShopLayout: React.FC = () => {
         </IonRouterOutlet>
 
         <div className="hidden md:flex fixed top-0 left-0 right-0 h-20 bg-white/90 backdrop-blur-md border-b border-gray-200 z-50 px-8 items-center justify-between">
-          <div className="flex items-center gap-12">
+          <div className="flex items-center gap-4">
             <div
               onClick={() => history.push(`${basePath}/shop`)}
               className="flex flex-col items-start cursor-pointer group"
             >
-              <h1 className="text-3xl font-black text-orange-600 tracking-tighter leading-none transition-transform group-hover:scale-105">
-                ВІКТЕ
-              </h1>
+              <img
+                src="/logo.png"
+                alt="Логотип"
+                className="h-14 w-auto object-contain transition-transform group-hover:scale-105"
+              />
               {isAdminOnDesktop && (
-                <span className="text-[10px] font-bold text-orange-500 uppercase tracking-[0.2em] leading-none mt-1 ml-0.5">
+                <span className="text-[10px] font-bold text-black uppercase tracking-[0.2em] leading-none mt-1 ml-0.5">
                   Admin
                 </span>
               )}
@@ -341,14 +343,12 @@ const ShopLayout: React.FC = () => {
                     icon={clipboardOutline}
                     active={location.pathname.includes("orders")}
                     href={`${basePath}/orders`}
-                    className="text-orange-600 hover:bg-gray-50"
                   />
                   <NavButton
                     label="Синхронізація"
                     icon={syncOutline}
                     active={location.pathname.includes("sync")}
                     href={`${basePath}/sync`}
-                    className="text-orange-600 hover:bg-gray-50"
                   />
                 </>
               )}
@@ -361,21 +361,19 @@ const ShopLayout: React.FC = () => {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className={`
                   flex items-center gap-2 px-4 py-2 rounded-xl transition-all
-                  ${isDropdownOpen ? "bg-orange-50 text-orange-800" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}
+                  ${isDropdownOpen ? "bg-gray-100 text-black" : "bg-gray-50 text-gray-700 hover:bg-gray-100"}
                 `}
               >
                 <IonIcon
                   icon={storefrontOutline}
-                  className={
-                    isDropdownOpen ? "text-orange-500" : "text-gray-500"
-                  }
+                  className={isDropdownOpen ? "text-black" : "text-gray-500"}
                 />
                 <span className="text-sm font-bold truncate max-w-[200px]">
                   {currentStore.address}
                 </span>
                 <IonIcon
                   icon={chevronDownOutline}
-                  className={`text-xs transition-transform duration-200 ${isDropdownOpen ? "rotate-180 text-orange-500" : "text-gray-400"}`}
+                  className={`text-xs transition-transform duration-200 ${isDropdownOpen ? "rotate-180 text-black" : "text-gray-400"}`}
                 />
               </button>
 
@@ -392,12 +390,12 @@ const ShopLayout: React.FC = () => {
                           key={store.id}
                           className={`
                             w-full flex items-center justify-between px-3 py-3 rounded-xl transition-colors mb-1 border border-transparent
-                            ${isSelected ? "bg-orange-50 border-orange-100" : "hover:bg-gray-50"}
+                            ${isSelected ? "bg-gray-100 border-gray-200" : "hover:bg-gray-50"}
                           `}
                         >
                           <div className="flex-1 pr-4">
                             <p
-                              className={`text-sm font-bold truncate ${isSelected ? "text-gray-900" : "text-gray-700"}`}
+                              className={`text-sm font-bold truncate ${isSelected ? "text-black" : "text-gray-700"}`}
                             >
                               {store.address.length <= 25
                                 ? store.address
@@ -419,14 +417,14 @@ const ShopLayout: React.FC = () => {
                                   e.stopPropagation();
                                   handleOpenEdit(store);
                                 }}
-                                className="text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors px-2 py-1 active:scale-95 bg-white shadow-sm border border-orange-100 rounded-md"
+                                className="text-xs font-bold text-black hover:text-gray-600 transition-colors px-2 py-1 active:scale-95 bg-white shadow-sm border border-gray-200 rounded-md"
                               >
                                 Редагувати
                               </button>
                             )}
 
                             {isSelected ? (
-                              <div className="flex items-center gap-2 text-orange-600 px-3 py-1.5 bg-white rounded-lg border border-orange-100 shadow-sm">
+                              <div className="flex items-center gap-2 text-black px-3 py-1.5 bg-white rounded-lg border border-gray-200 shadow-sm">
                                 <span className="text-xs font-bold">
                                   Обрано
                                 </span>
@@ -435,7 +433,7 @@ const ShopLayout: React.FC = () => {
                             ) : (
                               <button
                                 onClick={() => handleStoreSelect(store.id)}
-                                className="px-4 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg hover:bg-orange-600 transition-colors shadow-sm active:scale-95"
+                                className="px-4 py-1.5 bg-black text-white text-xs font-bold rounded-lg hover:bg-gray-800 transition-colors shadow-sm active:scale-95"
                               >
                                 Обрати
                               </button>
@@ -455,7 +453,7 @@ const ShopLayout: React.FC = () => {
             >
               <IonIcon
                 icon={personCircleOutline}
-                className="text-3xl text-gray-400"
+                className="text-3xl text-gray-400 hover:text-black transition-colors"
               />
             </a>
           </div>
@@ -474,12 +472,12 @@ const ShopLayout: React.FC = () => {
               icon={homeOutline}
               className={
                 location.pathname.includes("shop")
-                  ? "text-orange-600"
+                  ? "text-black"
                   : "text-gray-400"
               }
             />
             <IonLabel
-              className={`text-[10px] font-medium mt-1 ${location.pathname.includes("shop") ? "text-orange-600" : "text-gray-400"}`}
+              className={`text-[10px] font-medium mt-1 ${location.pathname.includes("shop") ? "text-black font-bold" : "text-gray-400"}`}
             >
               Головна
             </IonLabel>
@@ -490,17 +488,17 @@ const ShopLayout: React.FC = () => {
               icon={basketOutline}
               className={
                 location.pathname.includes("cart")
-                  ? "text-orange-600"
+                  ? "text-black"
                   : "text-gray-400"
               }
             />
             <IonLabel
-              className={`text-[10px] font-medium mt-1 ${location.pathname.includes("cart") ? "text-orange-600" : "text-gray-400"}`}
+              className={`text-[10px] font-medium mt-1 ${location.pathname.includes("cart") ? "text-black font-bold" : "text-gray-400"}`}
             >
               Кошик
             </IonLabel>
             {cartItemsCount > 0 && (
-              <IonBadge color="danger" className="text-[10px] px-1.5 py-1">
+              <IonBadge color="dark" className="text-[10px] px-1.5 py-1">
                 {cartItemsCount > 99 ? "99+" : cartItemsCount}
               </IonBadge>
             )}
@@ -515,12 +513,12 @@ const ShopLayout: React.FC = () => {
               icon={bagHandleOutline}
               className={
                 location.pathname.includes("purchases")
-                  ? "text-orange-600"
+                  ? "text-black"
                   : "text-gray-400"
               }
             />
             <IonLabel
-              className={`text-[10px] font-medium mt-1 ${location.pathname.includes("purchases") ? "text-orange-600" : "text-gray-400"}`}
+              className={`text-[10px] font-medium mt-1 ${location.pathname.includes("purchases") ? "text-black font-bold" : "text-gray-400"}`}
             >
               Покупки
             </IonLabel>
@@ -544,7 +542,7 @@ const ShopLayout: React.FC = () => {
             </h3>
             <button
               onClick={handleCloseEdit}
-              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+              className="text-gray-400 hover:text-black transition-colors p-1"
             >
               <IonIcon icon={closeOutline} className="text-2xl" />
             </button>
@@ -559,7 +557,7 @@ const ShopLayout: React.FC = () => {
                 type="text"
                 value={editAddress}
                 onChange={(e) => setEditAddress(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-orange-500 focus:bg-white transition-all"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 outline-none focus:border-black focus:bg-white transition-all"
                 placeholder="Введіть адресу магазину"
               />
             </div>
@@ -574,7 +572,7 @@ const ShopLayout: React.FC = () => {
                 </span>
               </div>
               <IonToggle
-                color="medium"
+                color="dark"
                 checked={editIsActive}
                 onIonChange={(e) => setEditIsActive(e.detail.checked)}
               />
@@ -592,7 +590,7 @@ const ShopLayout: React.FC = () => {
             <button
               onClick={() => setShowConfirmAlert(true)}
               disabled={isSubmitting}
-              className="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold text-sm hover:bg-orange-700 active:scale-95 transition-all shadow-md shadow-orange-200 disabled:opacity-50 disabled:active:scale-100"
+              className="flex-1 py-3 bg-black text-white rounded-xl font-bold text-sm hover:bg-gray-800 active:scale-95 transition-all shadow-md shadow-gray-200 disabled:opacity-50 disabled:active:scale-100"
             >
               {isSubmitting ? "Збереження..." : "Зберегти"}
             </button>
@@ -647,7 +645,7 @@ const NavButton = ({
     href={href}
     className={`
       flex items-center px-4 py-2 rounded-full transition-all duration-200 text-sm font-bold relative
-      ${active ? "bg-orange-50 text-orange-600" : "text-gray-500 hover:text-gray-800 hover:bg-gray-50"}
+      ${active ? "bg-black text-white hover:text-white hover:bg-black" : "text-gray-500 hover:text-black hover:bg-gray-100"}
       ${className} 
     `}
   >
@@ -656,7 +654,7 @@ const NavButton = ({
 
     {badgeCount > 0 && (
       <IonBadge
-        color="danger"
+        color="dark"
         className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full"
       >
         {badgeCount > 99 ? "99+" : badgeCount}
