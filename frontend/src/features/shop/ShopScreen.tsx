@@ -948,7 +948,7 @@ const ShopScreen: React.FC = () => {
 
               {cartItemsCount > 0 && (
                 <IonBadge
-                  color="danger"
+                  color="light"
                   className="absolute -top-1 -right-1 text-[11px] px-1.5 py-1 border-[1.5px] border-white rounded-full leading-none"
                 >
                   {cartItemsCount > 99 ? "99+" : cartItemsCount}
