@@ -102,7 +102,7 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
       <div className="flex items-center gap-3">
         <button
           onClick={handleClear}
-          className="text-sm font-bold text-gray-400 hover:text-orange-500 transition-colors"
+          className="text-sm font-bold text-gray-400 hover:text-black transition-colors"
         >
           Очистити
         </button>
@@ -126,11 +126,11 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
             Адмін-фільтри
           </h3>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-orange-600 tracking-wide">
+            <span className="text-sm font-bold text-gray-700 tracking-wide">
               Показувати без наявності
             </span>
             <IonToggle
-              color="medium"
+              color="dark"
               checked={localFilters.showAll}
               onIonChange={(e) =>
                 setLocalFilters({ ...localFilters, showAll: e.detail.checked })
@@ -138,11 +138,11 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
             />
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-orange-600 tracking-wide">
+            <span className="text-sm font-bold text-gray-700 tracking-wide">
               Показувати неактивні
             </span>
             <IonToggle
-              color="medium"
+              color="dark"
               checked={localFilters.showInactive}
               onIonChange={(e) =>
                 setLocalFilters({
@@ -168,7 +168,7 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
               }
               className={`flex items-center justify-between px-4 py-2.5 rounded-xl border transition-all ${
                 localFilters.sort === option.value
-                  ? "bg-orange-50 border-orange-200 text-orange-700"
+                  ? "bg-black border-gray-200 text-white"
                   : "bg-white border-gray-100 text-gray-600 hover:border-gray-200"
               }`}
             >
@@ -195,7 +195,7 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
                 priceMin: Number(e.target.value),
               })
             }
-            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold text-gray-800 outline-none focus:border-orange-300 transition-colors"
+            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold text-gray-800 outline-none focus:border-black transition-colors"
             placeholder="0"
           />
           <span className="text-gray-300 font-medium">-</span>
@@ -212,13 +212,14 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
                 priceMax: Number(e.target.value) || MAX_PRICE_LIMIT,
               })
             }
-            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold text-gray-800 outline-none focus:border-orange-300 transition-colors"
+            className="w-full bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-sm font-bold text-gray-800 outline-none focus:border-black transition-colors"
             placeholder={MAX_PRICE_LIMIT.toString()}
           />
         </div>
         <div className="px-2 pt-1">
           <IonRange
             dualKnobs={true}
+            color="dark"
             min={0}
             max={MAX_PRICE_LIMIT}
             step={10}
@@ -255,7 +256,7 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
                 onClick={() => toggleCategory(cat.id)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
                   isActive
-                    ? "bg-orange-600 border-orange-600 text-white shadow-sm shadow-orange-200"
+                    ? "bg-black border-black text-white shadow-sm"
                     : "bg-white border-gray-200 text-gray-600 hover:border-gray-300"
                 }`}
               >
@@ -272,7 +273,7 @@ const FilterMenu: React.FC<FilterMenuProps> = ({
     <div className="p-4 border-t border-gray-100 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
       <button
         onClick={handleApply}
-        className="w-full bg-gray-900 text-white rounded-xl py-3.5 font-black text-sm hover:bg-orange-600 active:scale-95 transition-all shadow-md"
+        className="w-full bg-black text-white rounded-xl py-3.5 font-black text-sm active:scale-95 transition-all shadow-md"
       >
         Застосувати
       </button>
