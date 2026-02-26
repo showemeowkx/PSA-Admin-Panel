@@ -138,10 +138,10 @@ const RegisterScreen: React.FC = () => {
             {step === 1 ? (
               <div className="space-y-6 animate-fade-in">
                 <div className="text-center mb-4">
-                  <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-gray-50 rounded-full flex border-[1px] border-gray-300 items-center justify-center mx-auto mb-4">
                     <IonIcon
                       icon={phonePortraitOutline}
-                      className="text-3xl text-orange-500"
+                      className="text-3xl text-gray-500"
                     />
                   </div>
                   <p className="text-gray-500 text-sm font-medium leading-relaxed">
@@ -158,13 +158,14 @@ const RegisterScreen: React.FC = () => {
                     <div className="w-full">
                       <IonLabel
                         position="stacked"
-                        className="text-orange-600 font-bold ml-1 mb-1"
+                        className="text-gray-600 font-bold ml-1 mb-1"
                       >
                         Номер телефону
                       </IonLabel>
                       <IonInput
                         type="tel"
                         inputmode="tel"
+                        color={"medium"}
                         value={phone}
                         onIonInput={(e) => {
                           const val = e.detail.value!;
@@ -190,7 +191,7 @@ const RegisterScreen: React.FC = () => {
                     "--border-radius": "30px",
                     "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
                   }}
-                  color="primary"
+                  color="dark"
                 >
                   ОТРИМАТИ КОД
                 </IonButton>
@@ -215,7 +216,7 @@ const RegisterScreen: React.FC = () => {
                     <div className="w-full">
                       <IonLabel
                         position="stacked"
-                        className="text-orange-600 font-bold ml-1 mb-1"
+                        className="text-gray-600 font-bold ml-1 mb-1"
                       >
                         СМС Код
                       </IonLabel>
@@ -256,7 +257,7 @@ const RegisterScreen: React.FC = () => {
                     <div className="w-full">
                       <IonLabel
                         position="stacked"
-                        className="text-orange-600 font-bold ml-1 mb-1"
+                        className="text-gray-600 font-bold ml-1 mb-1"
                       >
                         Придумайте пароль
                       </IonLabel>
@@ -286,7 +287,7 @@ const RegisterScreen: React.FC = () => {
                     "--border-radius": "30px",
                     "--box-shadow": "0 12px 24px -6px rgba(60, 60, 60, 0.4)",
                   }}
-                  color="primary"
+                  color="dark"
                 >
                   ЗАРЕЄСТРУВАТИСЯ
                 </IonButton>
@@ -308,8 +309,8 @@ const RegisterScreen: React.FC = () => {
             )}
           </div>
 
-          <p className="mt-8 text-gray-300 text-[9px] uppercase tracking-[0.2em]">
-            © 2026 ВІКТЕ. Всі права захищені.
+          <p className="mt-8 text-gray-400 text-[8px] md:text-[10px] tracking-widest">
+            Продовжуючи, Ви погоджуєтесь з нашою Політикою конфіденційності
           </p>
         </div>
 
@@ -317,6 +318,7 @@ const RegisterScreen: React.FC = () => {
           isOpen={isLoading}
           message="Обробка..."
           spinner="circular"
+          style={{ "--spinner-color": "black" } as any}
         />
       </IonContent>
     </IonPage>
