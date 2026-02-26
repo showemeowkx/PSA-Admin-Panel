@@ -130,6 +130,7 @@ const ShopLayout: React.FC = () => {
       await api.post(`/auth/store/${id}`);
       setSelectedStore(id);
       setIsDropdownOpen(false);
+      fetchCart();
       presentToast({
         message: "Магазин успішно змінено!",
         duration: 1500,
