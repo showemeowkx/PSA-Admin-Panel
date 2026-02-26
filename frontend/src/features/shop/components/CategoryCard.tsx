@@ -31,7 +31,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           
           ${
             isActive
-              ? "bg-orange-500 border-orange-500 text-white md:hover:bg-orange-400 md:hover:border-orange-400 md:hover:shadow-md"
+              ? "bg-black border-gray-500 text-white md:hover:bg-gray-600 md:hover:border-gray-400 md:hover:shadow-md"
               : "bg-gray-100 border-gray-200 text-gray-500 md:hover:bg-gray-200 md:hover:border-gray-300 md:hover:shadow-sm"
           }
         `}
@@ -42,7 +42,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
               e.stopPropagation();
               onEdit(e);
             }}
-            className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-gray-400 hover:text-orange-500 hover:border-orange-200 transition-colors z-10"
+            className="absolute -top-2 -right-2 w-7 h-7 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-black hover:text-gray-500 hover:border-gray-200 transition-colors z-10"
           >
             <IonIcon icon={createOutline} className="text-sm" />
           </button>
