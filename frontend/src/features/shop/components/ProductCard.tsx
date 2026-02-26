@@ -82,7 +82,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           className={`absolute bottom-1 right-1 z-20 w-8 h-8 rounded-[10px] flex items-center justify-center transition-all shadow-md ${
             isUnavailable
               ? "bg-gray-100/80 text-gray-400 cursor-not-allowed"
-              : "bg-white text-orange-600 hover:bg-orange-50 active:bg-orange-500 active:text-white active:scale-95"
+              : "bg-white text-black hover:bg-gray-50 active:bg-gray-100 active:text-white active:scale-95"
           }`}
         >
           <IonIcon icon={add} className="text-lg" />
