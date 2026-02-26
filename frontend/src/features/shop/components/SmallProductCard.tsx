@@ -106,7 +106,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
                 e.stopPropagation();
                 onRemove?.();
               }}
-              className="text-gray-300 hover:text-red-500 transition-colors shrink-0 ml-1"
+              className="text-gray-300 hover:text-black transition-colors shrink-0 ml-1"
             >
               <IonIcon icon={trashOutline} className="text-[18px]" />
             </button>

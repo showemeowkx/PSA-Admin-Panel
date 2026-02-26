@@ -209,7 +209,6 @@ const CartScreen: React.FC = () => {
         ],
       });
     } else {
-      // Якщо це просто мінус (removeAll = 0), видаляємо без запитань
       await executeRemoval(productId, 0);
     }
   };
@@ -292,7 +291,7 @@ const CartScreen: React.FC = () => {
       <IonPage>
         <IonHeader className="ion-no-border bg-white md:hidden pt-safe">
           <IonToolbar style={{ "--background": "white" }}>
-            <div className="flex items-center px-2 relative h-full">
+            <div className="flex items-center justify-between px-2 relative h-full">
               <IonButton
                 color="medium"
                 fill="clear"
@@ -305,12 +304,23 @@ const CartScreen: React.FC = () => {
               <span className="absolute left-0 right-0 text-center font-bold text-gray-800 text-lg pointer-events-none">
                 Кошик
               </span>
+
+              <IonButton
+                fill="clear"
+                onClick={handleClearCart}
+                className="z-10"
+              >
+                <IonIcon
+                  icon={trashOutline}
+                  className="text-xl text-gray-500 active:text-black"
+                />
+              </IonButton>
             </div>
           </IonToolbar>
         </IonHeader>
         <IonContent className="bg-gray-50 text-gray-900" fullscreen>
           <div className="flex flex-col items-center justify-center h-full gap-4">
-            <IonSpinner name="crescent" className="text-orange-500" />
+            <IonSpinner name="crescent" className="text-black" />
             <p className="text-gray-400 font-bold text-sm">
               Завантаження кошика...
             </p>
@@ -325,7 +335,7 @@ const CartScreen: React.FC = () => {
       <IonPage>
         <IonHeader className="ion-no-border bg-white md:hidden pt-safe">
           <IonToolbar style={{ "--background": "white" }}>
-            <div className="flex items-center px-2 relative h-full">
+            <div className="flex items-center justify-between px-2 relative h-full">
               <IonButton
                 color="medium"
                 fill="clear"
@@ -338,16 +348,27 @@ const CartScreen: React.FC = () => {
               <span className="absolute left-0 right-0 text-center font-bold text-gray-800 text-lg pointer-events-none">
                 Кошик
               </span>
+
+              <IonButton
+                fill="clear"
+                onClick={handleClearCart}
+                className="z-10"
+              >
+                <IonIcon
+                  icon={trashOutline}
+                  className="text-xl text-gray-500 active:text-black"
+                />
+              </IonButton>
             </div>
           </IonToolbar>
         </IonHeader>
 
         <IonContent className="bg-gray-50 text-gray-900" fullscreen>
           <div className="flex flex-col items-center justify-center h-full px-6 text-center pb-32 animate-fade-in-up">
-            <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100 mb-6">
+            <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-sm border-[2px] border-gray-300 mb-6">
               <IonIcon
                 icon={basketOutline}
-                className="text-6xl text-gray-300"
+                className="text-6xl text-gray-600"
               />
             </div>
             <h2 className="text-2xl font-black text-gray-800 mb-3">
@@ -359,7 +380,7 @@ const CartScreen: React.FC = () => {
             </p>
             <button
               onClick={() => history.push(`${basePath}/shop`)}
-              className="bg-orange-500 hover:bg-orange-600 active:scale-95 transition-all text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-md shadow-orange-200 flex items-center gap-2"
+              className="bg-black hover:bg-gray-800 active:scale-95 transition-all text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-md shadow-gray-200 flex items-center gap-2"
             >
               <IonIcon icon={searchOutline} className="text-xl" />
               Перейти до покупок
@@ -374,7 +395,7 @@ const CartScreen: React.FC = () => {
     <IonPage>
       <IonHeader className="ion-no-border bg-white md:hidden pt-safe">
         <IonToolbar style={{ "--background": "white" }}>
-          <div className="flex items-center px-2 relative h-full">
+          <div className="flex items-center justify-between px-2 relative h-full">
             <IonButton
               color="medium"
               fill="clear"
@@ -387,6 +408,13 @@ const CartScreen: React.FC = () => {
             <span className="absolute left-0 right-0 text-center font-bold text-gray-800 text-lg pointer-events-none">
               Кошик
             </span>
+
+            <IonButton fill="clear" onClick={handleClearCart} className="z-10">
+              <IonIcon
+                icon={trashOutline}
+                className="text-xl text-gray-500 active:text-black"
+              />
+            </IonButton>
           </div>
         </IonToolbar>
       </IonHeader>
@@ -396,14 +424,14 @@ const CartScreen: React.FC = () => {
           <div className="hidden md:flex justify-between items-center mb-8">
             <button
               onClick={() => history.push(`${basePath}/shop`)}
-              className="text-gray-500 hover:text-orange-600 flex items-center gap-1 font-bold transition-colors"
+              className="text-gray-500 hover:text-black flex items-center gap-1 font-bold transition-colors"
             >
               <IonIcon icon={chevronBackOutline} className="text-xl" />
               Назад до покупок
             </button>
             <button
               onClick={handleClearCart}
-              className="flex items-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50 px-4 py-2 rounded-xl transition-all font-bold"
+              className="flex items-center gap-2 text-gray-500 hover:text-black hover:bg-gray-50 px-4 py-2 rounded-xl transition-all font-bold"
             >
               <IonIcon icon={trashOutline} className="text-lg" />
               Очистити кошик
@@ -495,7 +523,7 @@ const CartScreen: React.FC = () => {
 
               <button
                 onClick={() => history.push(`${basePath}/shop`)}
-                className="w-full bg-white border border-gray-200 rounded-2xl p-4 flex items-center justify-between text-gray-700 hover:border-orange-500 hover:text-orange-500 transition-colors shadow-sm active:scale-[0.98]"
+                className="w-full bg-white border border-gray-200 rounded-2xl p-4 flex items-center justify-between text-gray-700 hover:text-black hover:bg-gray-50 transition-colors shadow-sm active:scale-[0.98]"
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
@@ -522,13 +550,13 @@ const CartScreen: React.FC = () => {
                     <div className="hidden md:flex gap-2">
                       <button
                         onClick={() => scrollRecommended("left")}
-                        className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
+                        className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-black active:scale-95 transition-all"
                       >
                         <IonIcon icon={chevronBackOutline} />
                       </button>
                       <button
                         onClick={() => scrollRecommended("right")}
-                        className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-orange-500 active:scale-95 transition-all"
+                        className="w-8 h-8 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-600 hover:text-black active:scale-95 transition-all"
                       >
                         <IonIcon icon={chevronForwardOutline} />
                       </button>
@@ -586,7 +614,7 @@ const CartScreen: React.FC = () => {
                         <div className="w-[100px] flex-none flex items-center justify-center h-[200px]">
                           <IonSpinner
                             name="crescent"
-                            className="text-orange-500"
+                            style={{ "--spinner-color": "black" }}
                           />
                         </div>
                       )}
@@ -622,7 +650,7 @@ const CartScreen: React.FC = () => {
                 </div>
 
                 {remainingAmount > 0 && (
-                  <div className="bg-orange-50 text-orange-600 p-3 rounded-xl text-sm font-medium mb-4 text-center border border-orange-100">
+                  <div className="bg-gray-50 text-gray-600 p-3 rounded-xl text-sm font-medium mb-4 text-center border border-gray-100">
                     Додайте товарів ще на{" "}
                     <span className="font-bold">{remainingFormatted} ₴</span>
                   </div>
@@ -633,7 +661,7 @@ const CartScreen: React.FC = () => {
                   className={`w-full font-bold text-base py-4 rounded-2xl flex items-center justify-center gap-2 transition-all ${
                     isSubmitDisabled
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
-                      : "bg-orange-500 hover:bg-orange-600 active:scale-95 text-white shadow-md shadow-orange-200"
+                      : "bg-black hover:bg-gray-800 active:scale-95 text-white shadow-md shadow-gray-200"
                   }`}
                 >
                   <IonIcon icon={bagCheckOutline} className="text-xl" />
@@ -646,7 +674,7 @@ const CartScreen: React.FC = () => {
 
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe">
           {remainingAmount > 0 && (
-            <div className="bg-orange-50 text-orange-600 px-4 py-2 text-xs font-medium text-center border-b border-orange-100">
+            <div className="bg-gray-50 text-gray-600 p-3 rounded-xl text-sm font-medium mb-4 text-center border border-gray-100">
               Додайте товарів ще на{" "}
               <span className="font-bold">{remainingFormatted} ₴</span> для
               оформлення
@@ -668,8 +696,8 @@ const CartScreen: React.FC = () => {
               disabled={isSubmitDisabled}
               className={`px-8 py-3.5 rounded-2xl font-bold flex items-center gap-2 transition-all ${
                 isSubmitDisabled
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-orange-500 text-white shadow-md shadow-orange-200 active:bg-orange-600 active:scale-95"
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
+                  : "bg-black hover:bg-gray-800 active:scale-95 text-white shadow-md shadow-gray-200"
               }`}
             >
               <IonIcon icon={bagCheckOutline} className="text-xl" />
