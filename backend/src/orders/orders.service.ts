@@ -24,6 +24,7 @@ import type { Cache } from 'cache-manager';
 import { AutoClearCache } from 'src/common/decorators/auto-clear-cache.decorator';
 import { PaymentsService } from 'src/payments/payments.service';
 import { CartItem } from 'src/cart/entities/cart-item.entity';
+import { SmsService } from 'src/notifications/sms.service';
 
 @Injectable()
 export class OrdersService {
@@ -41,6 +42,7 @@ export class OrdersService {
     private readonly configService: ConfigService,
     private readonly syncService: SyncService,
     private readonly paymentsService: PaymentsService,
+    private readonly smsService: SmsService,
     @Inject(CACHE_MANAGER) public cacheManager: Cache,
   ) {}
 
@@ -149,7 +151,18 @@ export class OrdersService {
       await qr.manager.save(savedOrder);
       await qr.manager.delete(CartItem, { cart: { id: cart.id } });
 
+      if (this.configService.get<string>('NODE_ENV') === 'prod') {
+        await this.smsService.sendSms(
+          user.phone,
+          `Ваше замовлення у магазині "Що? Ще?" за адресою ${user.selectedStore.address} прийнято,\nСлідкуйте в додатку за номером: ${savedOrder.orderNumber}`,
+        );
+      } else {
+        this.logger.debug(
+          `[MOCK SMS] To: ${user.phone} | Message: Ваше замовлення у магазині "Що? Ще?" за адресою ${user.selectedStore.address} прийнято,\nСлідкуйте в додатку за номером: ${savedOrder.orderNumber}`,
+        );
+      }
       await qr.commitTransaction();
+      this.logger.debug(`Order placed successfully! {userId: ${user.id}}`);
     } catch (error) {
       await qr.rollbackTransaction();
       this.logger.error(`Failed to create an order: ${error.stack}`);
@@ -157,7 +170,6 @@ export class OrdersService {
         'Не вдалося створити замовлення. Спробуйте ще раз пізніше.',
       );
     } finally {
-      this.logger.debug(`Order places successfully! {userId: ${user.id}}`);
       await qr.release();
     }
   }
@@ -245,7 +257,7 @@ export class OrdersService {
 
     const order = await this.orderRepository.findOne({
       where: condition,
-      relations: ['items', 'items.product'],
+      relations: ['items', 'items.product', 'user', 'store'],
     });
 
     if (!order) {
@@ -281,6 +293,17 @@ export class OrdersService {
       await this.releaseReservation(order);
 
       await this.syncService.setSyncState(true);
+
+      if (this.configService.get<string>('NODE_ENV') === 'prod') {
+        await this.smsService.sendSms(
+          order.user.phone,
+          `Замовлення номер ${order.orderNumber} готове до отримання у магазині "Що? Ще?" за адресою: ${order.store.address}.`,
+        );
+      } else {
+        this.logger.debug(
+          `[MOCK SMS] To: ${order.user.phone} | Message: Замовлення номер ${order.orderNumber} готове до отримання у магазині "Що? Ще?" за адресою: ${order.store.address}.`,
+        );
+      }
     }
     if (status === OrderStatus.CANCELLED) {
       await this.releaseReservation(order);

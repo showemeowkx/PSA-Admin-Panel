@@ -20,14 +20,11 @@ export class SmsService {
     this.logger.debug(`[MOCK SMS] To: ${phoneNumber} | Code: ${code}`);
   }
 
-  async sendVerificationCode(phoneNumber: string, code: string): Promise<void> {
+  async sendSms(phoneNumber: string, text: string): Promise<void> {
     const token = this.configService.get<string>('TURBOSMS_TOKEN');
     const sender = this.configService.get<string>('TURBOSMS_SENDER', 'Msg');
 
     const recipient = phoneNumber.replace('+', '').replaceAll(' ', '');
-    const expiresIn =
-      this.configService.get<number>('VERIFICATION_CODE_EXPIRE_MINUTES') || 5;
-    const text = `Ваш код для реєстрації: ${code},\nДійсний протягом ${expiresIn} хвилин.`;
 
     const payload = {
       recipients: [recipient],

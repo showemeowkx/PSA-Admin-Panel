@@ -124,7 +124,10 @@ export class AuthService {
     if (this.configService.get<string>('NODE_ENV') !== 'prod') {
       this.smsService.sendVerificationCodeMock(phone, rawCode);
     } else {
-      await this.smsService.sendVerificationCode(phone, rawCode);
+      const expiresIn =
+        this.configService.get<number>('VERIFICATION_CODE_EXPIRE_MINUTES') || 5;
+      const text = `Ваш код для реєстрації "Що? Ще?": ${rawCode},\nДійсний протягом ${expiresIn} хвилин.`;
+      await this.smsService.sendSms(phone, text);
     }
   }
 

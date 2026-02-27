@@ -315,7 +315,6 @@ const ProductScreen: React.FC = () => {
     if (!targetProduct || !user?.selectedStoreId) return;
 
     const amount = getDefaultAddQuantity(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       targetProduct as any,
       user.selectedStoreId,
     );
