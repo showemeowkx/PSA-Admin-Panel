@@ -26,7 +26,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
   unit,
   image,
   oldPrice,
-  isActive,
+  isActive = true,
   isOutOfStock,
   onClick,
   isCartItem = false,
@@ -46,7 +46,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
 
   const handleIncrease = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onAddToCart?.();
+    if (isActive) onAddToCart?.();
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,7 +80,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
   };
 
   const isUnavailable = !isActive || isOutOfStock;
-  const isDecreaseDisabled = Number(quantity) <= 1;
+  const isDecreaseDisabled = Number(quantity) <= 1 || !isActive;
 
   return (
     <div
@@ -106,7 +106,7 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
                 e.stopPropagation();
                 onRemove?.();
               }}
-              className="text-gray-300 hover:text-black transition-colors shrink-0 ml-1"
+              className={`${isActive ? "text-black hover:text-red-600" : "text-red-600"} transition-colors shrink-0 ml-1`}
             >
               <IonIcon icon={trashOutline} className="text-[18px]" />
             </button>
@@ -124,18 +124,19 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
 
       {isCartItem ? (
         <div
-          className="flex items-center bg-gray-50 rounded-full border border-gray-100 p-0.5"
+          className={`flex items-center rounded-full border p-0.5 ${!isActive ? "bg-gray-100 border-gray-200 opacity-60" : "bg-gray-50 border-gray-100"}`}
           onClick={(e) => e.stopPropagation()}
         >
           <button
             disabled={isDecreaseDisabled}
             onClick={() => {
-              onDecrease?.();
+              if (isActive) onDecrease?.();
             }}
-            className={`w-8 h-8 flex items-center justify-center ${isDecreaseDisabled ? "text-gray-300" : "text-black"}`}
+            className={`w-8 h-8 flex items-center justify-center transition-colors ${isDecreaseDisabled ? "text-gray-300 cursor-not-allowed" : "text-black active:scale-95"}`}
           >
             <IonIcon icon={remove} />
           </button>
+
           <input
             ref={inputRef}
             type="text"
@@ -143,11 +144,14 @@ const SmallProductCard: React.FC<SmallProductCardProps> = ({
             onChange={handleInputChange}
             onBlur={handleInputBlur}
             onKeyDown={handleKeyDown}
-            className="w-8 text-center bg-transparent font-bold text-sm text-gray-800 outline-none"
+            disabled={!isActive}
+            className={`w-8 text-center bg-transparent font-bold text-sm outline-none ${!isActive ? "text-gray-400 cursor-not-allowed pointer-events-none" : "text-gray-800"}`}
           />
+
           <button
+            disabled={!isActive}
             onClick={handleIncrease}
-            className="w-8 h-8 flex items-center justify-center text-black"
+            className={`w-8 h-8 flex items-center justify-center transition-colors ${!isActive ? "text-gray-300 cursor-not-allowed" : "text-black active:scale-95"}`}
           >
             <IonIcon icon={add} />
           </button>

@@ -57,6 +57,15 @@ export class OrdersService {
     const orderItems: OrderItem[] = [];
 
     for (const cartItem of cart.items) {
+      if (!cartItem.product || !cartItem.product.isActive) {
+        this.logger.error(
+          `Product is inactive or not found {productId: ${cartItem.product?.id}}`,
+        );
+        throw new ConflictException(
+          `Товар ${cartItem.product.name} недоступний для замовлення.`,
+        );
+      }
+
       const itemPrice = cartItem.product.isPromo
         ? cartItem.product.pricePromo
         : cartItem.product.price;

@@ -189,8 +189,14 @@ const CartScreen: React.FC = () => {
     }
   };
 
-  const handleRemove = async (productId: number, removeAll: 0 | 1) => {
-    if (removeAll === 1) {
+  const handleRemove = async (
+    productId: number,
+    removeAll: 0 | 1,
+    isActive: boolean = true,
+  ) => {
+    if (removeAll === 1 && !isActive) {
+      await executeRemoval(productId, 1);
+    } else if (removeAll === 1) {
       presentAlert({
         header: "Видалити товар?",
         message: "Ви впевнені, що хочете прибрати цю позицію з кошика?",
@@ -253,7 +259,7 @@ const CartScreen: React.FC = () => {
         presentToast({
           message: "Товар видалено",
           duration: 1500,
-          color: "medium",
+          color: "success",
           position: "bottom",
           mode: "ios",
         });
@@ -284,7 +290,12 @@ const CartScreen: React.FC = () => {
     minPurchaseAmount > totalAmount ? minPurchaseAmount - totalAmount : 0;
   const remainingFormatted = Number(remainingAmount.toFixed(2));
 
-  const isSubmitDisabled = items.length === 0 || remainingAmount > 0;
+  const hasInactiveItems = items.some(
+    (item) => item.product && !item.product.isActive,
+  );
+
+  const isSubmitDisabled =
+    items.length === 0 || remainingAmount > 0 || hasInactiveItems;
 
   if (isLoading) {
     return (
@@ -468,44 +479,54 @@ const CartScreen: React.FC = () => {
                         : undefined;
 
                       return (
-                        <SmallProductCard
+                        <div
                           key={item.id}
-                          name={product.name}
-                          price={Number(
-                            (
-                              (product.isPromo && product.pricePromo !== null
-                                ? product.pricePromo
-                                : product.price) * Number(item.quantity)
-                            ).toFixed(2),
+                          className={`relative transition-all `}
+                        >
+                          {!product.isActive && (
+                            <div className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-md z-10 pointer-events-none shadow-sm">
+                              Недоступно
+                            </div>
                           )}
-                          unit={product.unitsOfMeasurments}
-                          image={product.imagePath}
-                          isCartItem={true}
-                          initialQuantity={Number(item.quantity)}
-                          availableStock={availableStock}
-                          onAddToCart={() =>
-                            handleAddToCart(
-                              product.id,
-                              getDefaultAddQuantity(
-                                product,
-                                user?.selectedStoreId,
-                              ),
-                              false,
-                            )
-                          }
-                          onUpdateQuantity={(newQty) => {
-                            handleAddToCart(product.id, newQty, true);
-                          }}
-                          onDecrease={() => {
-                            handleRemove(product.id, 0);
-                          }}
-                          onRemove={() => {
-                            handleRemove(product.id, 1);
-                          }}
-                          onClick={() =>
-                            history.push(`${basePath}/product/${product.id}`)
-                          }
-                        />
+                          <SmallProductCard
+                            name={product.name}
+                            price={Number(
+                              (
+                                (product.isPromo && product.pricePromo !== null
+                                  ? product.pricePromo
+                                  : product.price) * Number(item.quantity)
+                              ).toFixed(2),
+                            )}
+                            unit={product.unitsOfMeasurments}
+                            image={product.imagePath}
+                            isCartItem={true}
+                            initialQuantity={Number(item.quantity)}
+                            availableStock={availableStock}
+                            isActive={product.isActive}
+                            onAddToCart={() =>
+                              handleAddToCart(
+                                product.id,
+                                getDefaultAddQuantity(
+                                  product,
+                                  user?.selectedStoreId,
+                                ),
+                                false,
+                              )
+                            }
+                            onUpdateQuantity={(newQty) => {
+                              handleAddToCart(product.id, newQty, true);
+                            }}
+                            onDecrease={() => {
+                              handleRemove(product.id, 0);
+                            }}
+                            onRemove={() => {
+                              handleRemove(product.id, 1, product.isActive);
+                            }}
+                            onClick={() =>
+                              history.push(`${basePath}/product/${product.id}`)
+                            }
+                          />
+                        </div>
                       );
                     })}
                   </div>
@@ -656,6 +677,12 @@ const CartScreen: React.FC = () => {
                   </div>
                 )}
 
+                {hasInactiveItems && (
+                  <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-medium mb-4 text-center border border-red-100">
+                    У кошику є недоступні товари. Видаліть їх, щоб продовжити.
+                  </div>
+                )}
+
                 <button
                   disabled={isSubmitDisabled}
                   className={`w-full font-bold text-base py-4 rounded-2xl flex items-center justify-center gap-2 transition-all ${
@@ -678,6 +705,12 @@ const CartScreen: React.FC = () => {
               Додайте товарів ще на{" "}
               <span className="font-bold">{remainingFormatted} ₴</span> для
               оформлення
+            </div>
+          )}
+
+          {hasInactiveItems && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm font-medium mb-4 text-center border border-red-100">
+              У кошику є недоступні товари. Видаліть їх.
             </div>
           )}
 
