@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useEffect, useState } from "react";
 import {
   IonPage,
@@ -246,6 +247,13 @@ const ProductScreen: React.FC = () => {
       }
 
       const { data } = await api.patch(`/products/${product.id}`, formData);
+
+      (window as any).psaForceUpdateId = product.id;
+      (window as any).psaForceUpdateData = {
+        isActive: editIsActive,
+        name: editName,
+        imagePath: data?.imagePath || product.imagePath,
+      };
 
       setProduct((prev) =>
         prev

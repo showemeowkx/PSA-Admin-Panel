@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   IonPage,
@@ -18,6 +19,7 @@ import {
   IonToggle,
   useIonToast,
   IonBadge,
+  useIonViewDidEnter,
 } from "@ionic/react";
 import {
   searchOutline,
@@ -317,6 +319,22 @@ const ShopScreen: React.FC = () => {
     if (!isPlatform("desktop") && isSearchActive) {
       const tabBar = document.querySelector("ion-tab-bar");
       if (tabBar) tabBar.style.display = "none";
+    }
+  });
+
+  useIonViewDidEnter(() => {
+    const updateId = (window as any).psaForceUpdateId;
+    const updateData = (window as any).psaForceUpdateData;
+
+    if (updateId && updateData) {
+      const updateFn = (p: Product) =>
+        Number(p.id) === Number(updateId) ? { ...p, ...updateData } : p;
+
+      setProducts((prev) => [...prev.map(updateFn)]);
+      setSearchProducts((prev) => [...prev.map(updateFn)]);
+
+      (window as any).psaForceUpdateId = null;
+      (window as any).psaForceUpdateData = null;
     }
   });
 
