@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import {
   IonPage,
@@ -110,6 +111,29 @@ const SyncScreen: React.FC = () => {
       });
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleToggle = async (e: any) => {
+    const checked = e.detail.checked;
+    if (checked === isAutoSyncEnabled) return;
+
+    setIsAutoSyncEnabled(checked);
+
+    try {
+      await api.post("/sync/toggle", { enabled: checked });
+      const { data } = await api.get("/sync/config");
+      setIsAutoSyncEnabled(data.running);
+      setLastRun(data.lastRun);
+      setNextRun(data.nextRun);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      setIsAutoSyncEnabled(!checked);
+      presentToast({
+        message: "Не вдалося змінити статус",
+        duration: 3000,
+        color: "danger",
+      });
     }
   };
 
@@ -230,7 +254,7 @@ const SyncScreen: React.FC = () => {
                   <IonToggle
                     color="success"
                     checked={isAutoSyncEnabled}
-                    onIonChange={(e) => setIsAutoSyncEnabled(e.detail.checked)}
+                    onIonChange={handleToggle}
                     style={{ transform: "scale(1.1)" }}
                   />
                 </div>
