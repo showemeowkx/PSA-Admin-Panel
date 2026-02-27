@@ -17,21 +17,19 @@ export class PaymentsService {
     private readonly paymentRepository: Repository<Payment>,
   ) {}
 
-  async addWallet(user: User, createWalletDto: CreateWalletDto): Promise<void> {
-    // MOCK
-    const bankResponse = {
-      status: 'success',
-      token: `tok_pb_${Math.random().toString(36).substr(2, 9)}`,
-      last4: createWalletDto.cardNumber.slice(-4),
-    };
-
-    const wallet = this.walletRepository.create({
-      user,
-      bankToken: bankResponse.token,
-      cardHolderFirstName: createWalletDto.cardHolderFirstName.toUpperCase(),
-      cardHolderLastName: createWalletDto.cardHolderLastName.toUpperCase(),
-      maskedCard: `**** **** **** ${bankResponse.last4}`,
+  async createWallet(userId: number, createWalletDto: CreateWalletDto) {
+    let wallet = await this.walletRepository.findOne({
+      where: { userId },
     });
+
+    if (!wallet) {
+      wallet = this.walletRepository.create({ userId });
+    }
+
+    wallet.bankToken = createWalletDto.bankToken;
+    wallet.maskedCard = createWalletDto.maskedCard;
+    wallet.cardHolderFirstName = createWalletDto.cardHolderFirstName || null;
+    wallet.cardHolderLastName = createWalletDto.cardHolderLastName || null;
 
     await this.walletRepository.save(wallet);
   }
@@ -44,7 +42,7 @@ export class PaymentsService {
     const wallet = await this.getWallet(userId);
 
     if (wallet) {
-      await this.walletRepository.delete(wallet);
+      await this.walletRepository.delete(wallet.id);
     }
   }
 

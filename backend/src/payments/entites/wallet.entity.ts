@@ -27,11 +27,11 @@ export class Wallet {
   @Column()
   maskedCard: string;
 
-  @Column()
-  cardHolderFirstName: string;
+  @Column({ nullable: true })
+  cardHolderFirstName: string | null;
 
-  @Column()
-  cardHolderLastName: string;
+  @Column({ nullable: true })
+  cardHolderLastName: string | null;
 
   @OneToMany(() => Payment, (payment) => payment.wallet)
   payments: Payment[];

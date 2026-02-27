@@ -22,12 +22,12 @@ export class PaymentsController {
 
   @UseGuards(JwtAuthGuard)
   @Post('/wallet')
-  addWallet(
+  createWallet(
     @Req() req: { user: User },
     @Body() createWalletDto: CreateWalletDto,
   ): Promise<void> {
     this.logger.verbose(`Creating a wallet... {userId: ${req.user.id}}`);
-    return this.paymentsService.addWallet(req.user, createWalletDto);
+    return this.paymentsService.createWallet(req.user.id, createWalletDto);
   }
 
   @UseGuards(JwtAuthGuard)

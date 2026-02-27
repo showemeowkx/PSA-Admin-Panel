@@ -1,26 +1,19 @@
-import { IsCreditCard, IsNotEmpty, IsString, Length } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateWalletDto {
   @IsString()
   @IsNotEmpty()
-  cardHolderFirstName: string;
+  bankToken: string;
 
   @IsString()
   @IsNotEmpty()
-  cardHolderLastName: string;
+  maskedCard: string;
 
-  @IsCreditCard()
-  cardNumber: string;
-
+  @IsOptional()
   @IsString()
-  @Length(2, 2)
-  expireMonth: string;
+  cardHolderFirstName?: string;
 
+  @IsOptional()
   @IsString()
-  @Length(2, 2)
-  expireYear: string;
-
-  @IsString()
-  @Length(3, 3)
-  cvv: string;
+  cardHolderLastName?: string;
 }
