@@ -21,6 +21,7 @@ const SyncScreen: React.FC = () => {
   const [isAutoSyncEnabled, setIsAutoSyncEnabled] = useState(false);
   const [syncInterval, setSyncInterval] = useState("1");
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
 
   const [lastRun, setLastRun] = useState<string | null>(null);
   const [nextRun, setNextRun] = useState<string | null>(null);
@@ -64,10 +65,11 @@ const SyncScreen: React.FC = () => {
         setNextRun(data.nextRun);
 
         const cron = data.period?.source || "";
-        if (cron.includes("*/3")) setSyncInterval("3");
+        if (cron.includes("*/30")) setSyncInterval("0.5");
+        else if (cron.includes("*/3")) setSyncInterval("3");
         else if (cron.includes("*/6")) setSyncInterval("6");
         else if (cron.includes("*/12")) setSyncInterval("12");
-        else if (cron.includes("0 0 0") || cron.includes("0 0 * * *"))
+        else if (cron.startsWith("0 0 0") || cron.includes("0 0 * * *"))
           setSyncInterval("24");
         else setSyncInterval("1");
       } catch (error) {
@@ -134,6 +136,39 @@ const SyncScreen: React.FC = () => {
         duration: 3000,
         color: "danger",
       });
+    }
+  };
+
+  const handleSaveSchedule = async () => {
+    setIsSavingSchedule(true);
+    let cronExpression = "0 0 * * * *";
+
+    if (syncInterval === "0.5") cronExpression = "0 */30 * * * *";
+    else if (syncInterval === "3") cronExpression = "0 0 */3 * * *";
+    else if (syncInterval === "6") cronExpression = "0 0 */6 * * *";
+    else if (syncInterval === "12") cronExpression = "0 0 */12 * * *";
+    else if (syncInterval === "24") cronExpression = "0 0 0 * * *";
+
+    try {
+      await api.post("/sync/config", { cronExpression });
+
+      const { data } = await api.get("/sync/config");
+      setNextRun(data.nextRun);
+
+      presentToast({
+        message: "Розклад успішно збережено",
+        duration: 2500,
+        color: "success",
+      });
+    } catch (error) {
+      console.error("Failed to save schedule:", error);
+      presentToast({
+        message: "Не вдалося зберегти розклад",
+        duration: 3000,
+        color: "danger",
+      });
+    } finally {
+      setIsSavingSchedule(false);
     }
   };
 
@@ -273,17 +308,19 @@ const SyncScreen: React.FC = () => {
                     <select
                       value={syncInterval}
                       onChange={(e) => setSyncInterval(e.target.value)}
-                      disabled={!isAutoSyncEnabled}
+                      disabled={!isAutoSyncEnabled || isSavingSchedule}
                       className="bg-gray-50 border border-gray-200 text-gray-800 font-bold text-sm rounded-xl px-4 py-3 outline-none focus:border-black focus:bg-white transition-all w-64 cursor-pointer"
                     >
+                      <option value="0.5">Кожні 30 хвилин</option>
                       <option value="1">Кожну годину</option>
                       <option value="3">Кожні 3 години</option>
                       <option value="6">Кожні 6 годин</option>
-                      <option value="12">Двічі на день (12 год)</option>
-                      <option value="24">Один раз на день (Вночі)</option>
+                      <option value="12">Кожні 12 годин</option>
+                      <option value="24">Кожні 24 години</option>
                     </select>
                     <button
-                      disabled={!isAutoSyncEnabled}
+                      onClick={handleSaveSchedule}
+                      disabled={!isAutoSyncEnabled || isSavingSchedule}
                       className="shrink-0 px-8 py-4 rounded-2xl font-bold text-sm shadow-md flex items-center gap-2 transition-all bg-black text-white hover:bg-gray-800 active:scale-95 shadow-gray-200"
                     >
                       Зберегти розклад
