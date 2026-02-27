@@ -92,25 +92,43 @@ const ProfileWalletScreen: React.FC = () => {
     });
   };
 
-  // MOCK WALLET DATA
-  const MOCK_WALLET = {
-    maskedCard: "**** **** **** 1234",
-    cardHolderFirstName: "Іван",
-    cardHolderLastName: "Петренко",
-  };
+  const mockAddWallet = async () => {
+    try {
+      setIsLoading(true);
 
-  const mockAddWallet = () => {
-    setWallet(MOCK_WALLET);
-    presentToast({
-      message: "Гаманець успішно додано!",
-      duration: 2000,
-      color: "success",
-    });
+      const randomLast4 = Math.floor(1000 + Math.random() * 9000);
+      const mockLiqpayResponse = {
+        bankToken: "mock_token_" + Math.random().toString(36).substring(7),
+        maskedCard: `************${randomLast4}`,
+        cardHolderFirstName: "ІВАН",
+        cardHolderLastName: "ПЕТРЕНКО",
+      };
+
+      await api.post("/payments/wallet", mockLiqpayResponse);
+
+      const { data } = await api.get("/payments/wallet");
+      setWallet(data);
+
+      presentToast({
+        message: "Гаманець успішно додано!",
+        duration: 2000,
+        color: "success",
+      });
+    } catch (error: any) {
+      console.error("Failed to bind wallet:", error);
+      presentToast({
+        message: "Не вдалося прив'язати картку",
+        duration: 2000,
+        color: "danger",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const maskedCard = wallet?.maskedCard
     ? wallet.maskedCard
-    : "**** **** **** 0000";
+    : "************0000";
 
   const displayName =
     wallet?.cardHolderFirstName && wallet?.cardHolderLastName
@@ -209,7 +227,7 @@ const ProfileWalletScreen: React.FC = () => {
                   </div>
                 ) : (
                   <button
-                    onClick={() => mockAddWallet()}
+                    onClick={mockAddWallet}
                     className="flex flex-col items-center justify-center min-h-[220px] md:min-h-[200px] w-full md:w-[340px] shrink-0 rounded-[24px] border-2 border-dashed border-gray-400 bg-gray-50/50 hover:bg-gray-100 text-gray-500 transition-colors active:scale-[0.98]"
                   >
                     <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-3 text-gray-500">
@@ -222,9 +240,7 @@ const ProfileWalletScreen: React.FC = () => {
                 {wallet && (
                   <div className="flex flex-col gap-3 w-full md:justify-center pt-2 md:pt-0">
                     <button
-                      onClick={() =>
-                        history.push(history.location.pathname + "/add")
-                      }
+                      onClick={() => {}} // PLACEHOLDER
                       className="flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 text-gray-700 font-bold py-4 px-6 rounded-2xl hover:bg-gray-50 active:scale-95 transition-all shadow-sm"
                     >
                       <IonIcon
