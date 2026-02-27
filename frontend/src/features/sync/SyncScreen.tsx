@@ -1,24 +1,117 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   IonPage,
   IonContent,
   IonToggle,
   IonIcon,
   isPlatform,
+  useIonToast,
 } from "@ionic/react";
 import { syncOutline, timeOutline, alertCircleOutline } from "ionicons/icons";
 import { useHistory } from "react-router-dom";
 import { useAuthStore } from "../auth/auth.store";
+import api from "../../config/api";
 
 const SyncScreen: React.FC = () => {
   const history = useHistory();
   const { user } = useAuthStore();
+  const [presentToast] = useIonToast();
 
-  const [isAutoSyncEnabled, setIsAutoSyncEnabled] = useState(true);
+  const [isAutoSyncEnabled, setIsAutoSyncEnabled] = useState(false);
   const [syncInterval, setSyncInterval] = useState("1");
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const [lastRun, setLastRun] = useState<string | null>(null);
+  const [nextRun, setNextRun] = useState<string | null>(null);
+
   const isAdminOnDesktop = user?.isAdmin && isPlatform("desktop");
+
+  const formatDate = (isoString: string | null) => {
+    if (!isoString) return "Ніколи";
+    const date = new Date(isoString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const timeString = date.toLocaleTimeString("uk-UA", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    if (date.toDateString() === today.toDateString()) {
+      return `Сьогодні, ${timeString}`;
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return `Вчора, ${timeString}`;
+    } else {
+      const dateString = date.toLocaleDateString("uk-UA", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      });
+      return `${dateString}, ${timeString}`;
+    }
+  };
+
+  useEffect(() => {
+    if (!isAdminOnDesktop) return;
+
+    const fetchConfig = async () => {
+      try {
+        const { data } = await api.get("/sync/config");
+        setIsAutoSyncEnabled(data.running);
+        setLastRun(data.lastRun);
+        setNextRun(data.nextRun);
+
+        const cron = data.period?.source || "";
+        if (cron.includes("*/3")) setSyncInterval("3");
+        else if (cron.includes("*/6")) setSyncInterval("6");
+        else if (cron.includes("*/12")) setSyncInterval("12");
+        else if (cron.includes("0 0 0") || cron.includes("0 0 * * *"))
+          setSyncInterval("24");
+        else setSyncInterval("1");
+      } catch (error) {
+        console.error("Failed to load sync config", error);
+      }
+    };
+
+    fetchConfig();
+  }, [isAdminOnDesktop]);
+
+  const handleManualSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+
+    try {
+      const { data } = await api.post("/sync/");
+
+      const errorsCount = data.errors?.length || 0;
+
+      let message = "Синхронізація успішна";
+      let toastColor = "success";
+
+      if (errorsCount > 0) {
+        message += ` Помилок: ${errorsCount}.`;
+        toastColor = "warning";
+      }
+
+      presentToast({
+        message,
+        duration: 3500,
+        color: toastColor,
+      });
+
+      setLastRun(new Date().toISOString());
+    } catch (error) {
+      console.error("Manual sync failed:", error);
+      presentToast({
+        message: "Не вдалося виконати синхронізацію",
+        duration: 3000,
+        color: "danger",
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   if (!isAdminOnDesktop) {
     return (
@@ -55,9 +148,6 @@ const SyncScreen: React.FC = () => {
             <h1 className="text-3xl font-black text-gray-800 tracking-tight mb-2">
               Управління синхронізацією
             </h1>
-            <p className="text-gray-500 font-medium">
-              Налаштування обміну даними між базою додатку та УкрСклад
-            </p>
           </div>
 
           <div className="space-y-6">
@@ -80,7 +170,7 @@ const SyncScreen: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => setIsSyncing(!isSyncing)}
+                  onClick={handleManualSync}
                   disabled={isSyncing}
                   className={`shrink-0 px-8 py-4 rounded-2xl font-bold text-sm shadow-md flex items-center gap-2 transition-all ${
                     isSyncing
@@ -114,7 +204,7 @@ const SyncScreen: React.FC = () => {
                       Минулий запуск
                     </span>
                     <span className="font-bold text-gray-800 text-sm">
-                      Сьогодні, 14:00
+                      {formatDate(lastRun)}
                     </span>
                   </div>
                   <div className="flex flex-col">
@@ -122,12 +212,11 @@ const SyncScreen: React.FC = () => {
                       Наступний запуск
                     </span>
                     <span className="font-bold text-gray-800 text-sm">
-                      Сьогодні, 15:00
+                      {isAutoSyncEnabled ? formatDate(nextRun) : "Вимкнено"}
                     </span>
                   </div>
                 </div>
 
-                {/* Тогл активації */}
                 <div className="flex items-center justify-between p-5 bg-gray-50 rounded-2xl border border-gray-100">
                   <div className="flex flex-col">
                     <span className="font-bold text-gray-800 text-base">
@@ -139,7 +228,7 @@ const SyncScreen: React.FC = () => {
                     </span>
                   </div>
                   <IonToggle
-                    color="medium"
+                    color="success"
                     checked={isAutoSyncEnabled}
                     onIonChange={(e) => setIsAutoSyncEnabled(e.detail.checked)}
                     style={{ transform: "scale(1.1)" }}
