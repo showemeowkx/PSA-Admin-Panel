@@ -41,6 +41,7 @@ import ProfileEditScreen from "../profile/ProfileEditScreen";
 import ProfileSecurityScreen from "../profile/ProfileSecurityScreen";
 import ProfileWalletScreen from "../profile/ProfileWalletScreen";
 import ProfileSupportScreen from "../profile/ProfileSupportScreen";
+import SyncScreen from "../sync/SyncScreen";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
@@ -282,19 +283,7 @@ const ShopLayout: React.FC = () => {
               </IonPage>
             )}
           />
-          <Route
-            exact
-            path={`${basePath}/sync`}
-            render={() => (
-              <IonPage className="bg-white">
-                <IonContent>
-                  <div className="flex h-full items-center justify-center font-bold text-gray-300">
-                    Синхронізація (Admin)
-                  </div>
-                </IonContent>
-              </IonPage>
-            )}
-          />
+          <Route exact path={`${basePath}/sync`} component={SyncScreen} />
           <Route exact path={`${basePath}`}>
             <Redirect to={`${basePath}/shop`} />
           </Route>
