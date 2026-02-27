@@ -184,7 +184,13 @@ const ShopScreen: React.FC = () => {
         const newProducts = data.data || [];
 
         if (isLoadMore) {
-          setProducts((prev) => [...prev, ...newProducts]);
+          setProducts((prev) => {
+            const existingIds = new Set(prev.map((p) => p.id));
+            const uniqueNewProducts = newProducts.filter(
+              (p: Product) => !existingIds.has(p.id),
+            );
+            return [...prev, ...uniqueNewProducts];
+          });
         } else {
           setProducts(newProducts);
         }
@@ -360,12 +366,12 @@ const ShopScreen: React.FC = () => {
 
     if (isSearchActive && (searchQuery.trim().length > 0 || hasActiveFilters)) {
       const nextPage = searchPage + 1;
-      await fetchSearchResults(searchQuery, nextPage, true);
       setSearchPage(nextPage);
+      await fetchSearchResults(searchQuery, nextPage, true);
     } else if (!isSearchActive) {
       const nextPage = page + 1;
-      await fetchProducts(user.selectedStoreId, nextPage, true);
       setPage(nextPage);
+      await fetchProducts(user.selectedStoreId, nextPage, true);
     }
 
     (ev.target as HTMLIonInfiniteScrollElement).complete();
