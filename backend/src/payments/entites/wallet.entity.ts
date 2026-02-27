@@ -28,10 +28,10 @@ export class Wallet {
   maskedCard: string;
 
   @Column({ nullable: true })
-  cardHolderFirstName: string | null;
+  cardHolderFirstName: string;
 
   @Column({ nullable: true })
-  cardHolderLastName: string | null;
+  cardHolderLastName: string;
 
   @OneToMany(() => Payment, (payment) => payment.wallet)
   payments: Payment[];

@@ -28,8 +28,13 @@ export class PaymentsService {
 
     wallet.bankToken = createWalletDto.bankToken;
     wallet.maskedCard = createWalletDto.maskedCard;
-    wallet.cardHolderFirstName = createWalletDto.cardHolderFirstName || null;
-    wallet.cardHolderLastName = createWalletDto.cardHolderLastName || null;
+
+    if (createWalletDto.cardHolderFirstName) {
+      wallet.cardHolderFirstName = createWalletDto.cardHolderFirstName;
+    }
+    if (createWalletDto.cardHolderLastName) {
+      wallet.cardHolderLastName = createWalletDto.cardHolderLastName;
+    }
 
     await this.walletRepository.save(wallet);
   }
