@@ -77,6 +77,7 @@ export class OrdersService {
         product: cartItem.product,
         productImagePath: cartItem.product.imagePath,
         productName: cartItem.product.name,
+        productCode: cartItem.product.code,
         productUnitsOfMeasurments: cartItem.product.unitsOfMeasurments,
         priceAtPurchase: itemPrice,
         quantity: cartItem.quantity,

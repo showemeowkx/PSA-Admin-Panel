@@ -20,11 +20,14 @@ export class OrderItem {
   productName: string;
 
   @Column()
+  productCode: string;
+
+  @Column()
   productUnitsOfMeasurments: string;
 
   @Column('decimal')
   priceAtPurchase: number;
 
-  @Column()
+  @Column('decimal')
   quantity: number;
 }

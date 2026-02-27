@@ -9,6 +9,7 @@ import {
   IonSpinner,
   useIonToast,
   useIonAlert,
+  useIonViewWillEnter,
 } from "@ionic/react";
 import {
   chevronBackOutline,
@@ -18,6 +19,7 @@ import {
   bagCheckOutline,
   basketOutline,
   chevronDownOutline,
+  checkmarkCircleOutline,
 } from "ionicons/icons";
 import { useHistory, useLocation } from "react-router-dom";
 import SmallProductCard from "../shop/components/SmallProductCard";
@@ -65,6 +67,13 @@ const CartScreen: React.FC = () => {
 
   const isAdminRoute = location.pathname.startsWith("/admin");
   const basePath = isAdminRoute ? "/admin" : "/app";
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  useIonViewWillEnter(() => {
+    setIsSuccess(false);
+  });
 
   useEffect(() => {
     const loadCart = async () => {
@@ -230,6 +239,28 @@ const CartScreen: React.FC = () => {
     });
   };
 
+  const handleSubmitOrder = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    try {
+      await api.post("/orders/");
+
+      if (fetchCart) await fetchCart();
+
+      setIsSuccess(true);
+    } catch (error) {
+      console.error("Помилка при оформленні замовлення:", error);
+      presentToast({
+        message: "Не вдалося оформити замовлення. Спробуйте ще раз.",
+        duration: 3000,
+        color: "danger",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const onAddToCartClick = (targetProduct: Product) => {
     if (!targetProduct || !user?.selectedStoreId) return;
 
@@ -341,7 +372,7 @@ const CartScreen: React.FC = () => {
     );
   }
 
-  if (!isLoading && items.length === 0) {
+  if (!isLoading && items.length === 0 && !isSuccess) {
     return (
       <IonPage>
         <IonHeader className="ion-no-border bg-white md:hidden pt-safe">
@@ -395,6 +426,46 @@ const CartScreen: React.FC = () => {
             >
               <IonIcon icon={searchOutline} className="text-xl" />
               Перейти до покупок
+            </button>
+          </div>
+        </IonContent>
+      </IonPage>
+    );
+  }
+
+  if (isSuccess) {
+    return (
+      <IonPage>
+        <IonContent className="bg-gray-50 text-gray-900" fullscreen>
+          <div className="flex flex-col items-center justify-center h-full px-6 text-center animate-fade-in gap-4">
+            <div className="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-4">
+              <IonIcon icon={checkmarkCircleOutline} className="text-6xl" />
+            </div>
+            <h2 className="text-3xl font-black text-gray-800">
+              Замовлення оформлено!
+            </h2>
+
+            <p className="text-gray-500 leading-relaxed max-w-sm text-base mt-2">
+              Ваше замовлення успішно прийнято в обробку. Найближчим часом Ви
+              отримаєте SMS-сповіщення з деталями.
+            </p>
+
+            <p className="text-gray-500 text-base">
+              Ви можете відстежувати статус на сторінці
+            </p>
+
+            <button
+              onClick={() => history.push(`${basePath}/purchases`)}
+              className="text-black font-bold text-lg bg-white underline active:scale-95 transition-transform"
+            >
+              Мої покупки
+            </button>
+
+            <button
+              onClick={() => history.push(`${basePath}/shop`)}
+              className="mt-8 px-8 py-4 bg-black text-white rounded-2xl font-bold active:scale-95 transition-all shadow-md w-full max-w-sm text-lg"
+            >
+              Повернутися до магазину
             </button>
           </div>
         </IonContent>
@@ -684,15 +755,16 @@ const CartScreen: React.FC = () => {
                 )}
 
                 <button
-                  disabled={isSubmitDisabled}
+                  disabled={isSubmitDisabled || isSubmitting}
+                  onClick={handleSubmitOrder}
                   className={`w-full font-bold text-base py-4 rounded-2xl flex items-center justify-center gap-2 transition-all ${
-                    isSubmitDisabled
+                    isSubmitDisabled || isSubmitting
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
                       : "bg-black hover:bg-gray-800 active:scale-95 text-white shadow-md shadow-gray-200"
                   }`}
                 >
                   <IonIcon icon={bagCheckOutline} className="text-xl" />
-                  Оформити замовлення
+                  {isSubmitting ? "Обробка..." : "Оформити замовлення"}
                 </button>
               </div>
             </div>
@@ -726,15 +798,16 @@ const CartScreen: React.FC = () => {
             </div>
 
             <button
-              disabled={isSubmitDisabled}
+              disabled={isSubmitDisabled || isSubmitting}
+              onClick={handleSubmitOrder}
               className={`px-8 py-3.5 rounded-2xl font-bold flex items-center gap-2 transition-all ${
-                isSubmitDisabled
+                isSubmitDisabled || isSubmitting
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
                   : "bg-black hover:bg-gray-800 active:scale-95 text-white shadow-md shadow-gray-200"
               }`}
             >
               <IonIcon icon={bagCheckOutline} className="text-xl" />
-              Замовити
+              {isSubmitting ? "Обробка..." : "Замовити"}
             </button>
           </div>
         </div>
