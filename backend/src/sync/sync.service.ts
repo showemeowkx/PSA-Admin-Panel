@@ -349,6 +349,7 @@ export class SyncService {
         const productData = {
           id: product ? product.id : undefined,
           ukrskladId: p.NUM,
+          code: p.CODE,
           name: p.NAME,
           lastSyncedName: p.NAME,
           description: product ? product.description : undefined,

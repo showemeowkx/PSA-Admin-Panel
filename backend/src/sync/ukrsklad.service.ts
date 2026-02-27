@@ -20,6 +20,7 @@ export interface UkrSkladProduct {
   PRICE_PROMO: number;
   UNIT: string;
   CATEGORY_ID: number;
+  CODE: string;
 }
 
 export interface UkrSkladStock {
@@ -78,7 +79,7 @@ export class UkrSkladService {
   async getCategories(): Promise<UkrSkladCategory[]> {
     this.logger.verbose('Getting categories from UkrSklad...');
     return this.query<UkrSkladCategory>(
-      'SELECT NUM, NAME FROM TIP WHERE VISIBLE = 1 AND CHAR_LENGTH(SKLAD_ID) > 0',
+      'SELECT NUM, NAME FROM TIP WHERE VISIBLE = 1 AND CHAR_LENGTH(SKLAD_ID) > 0 AND GRUPA != 0',
     );
   }
 
@@ -98,13 +99,17 @@ export class UkrSkladService {
         CENA_R as PRICE,
         CENA_PROMO as PRICE_PROMO,
         ED_IZM as UNIT, 
-        TIP as CATEGORY_ID
+        TIP as CATEGORY_ID,
+        KOD as CODE
       FROM TOVAR_NAME
       WHERE VISIBLE = 1
       AND IS_USLUGA = 0
       AND TIP IS NOT NULL
       AND CENA_R > 0
       AND NAME != 'Мій товар'
+      AND UPPER(NAME) NOT LIKE '%ВИНО%'
+      AND UPPER(NAME) NOT LIKE '%ПИВО%'
+      AND UPPER(NAME) NOT LIKE '%ШЕЙК%'
     `;
 
     if (ids && ids.length > 0) {

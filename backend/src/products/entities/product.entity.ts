@@ -20,6 +20,9 @@ export class Product {
   ukrskladId: number;
 
   @Column()
+  code: string;
+
+  @Column()
   name: string;
 
   @Column({ nullable: true })
