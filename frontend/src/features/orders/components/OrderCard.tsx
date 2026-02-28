@@ -24,7 +24,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
       case "IN PROCESS":
         return "У процесі обробки";
       case "CANCELLED":
-        return "Відмінено";
+        return "Скасовано";
       default:
         return currentStatus;
     }

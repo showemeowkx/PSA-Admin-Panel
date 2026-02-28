@@ -97,11 +97,11 @@ const PurchaseScreen: React.FC = () => {
       case "COMPLETED":
         return "Виконано";
       case "READY":
-        return "Готово";
+        return "Готово до отримання";
       case "IN PROCESS":
-        return "В обробці";
+        return "У процесі обробки";
       case "CANCELLED":
-        return "Відмінено";
+        return "Скасовано";
       default:
         return currentStatus;
     }
