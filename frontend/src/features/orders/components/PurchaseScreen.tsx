@@ -81,8 +81,9 @@ const PurchaseScreen: React.FC = () => {
   const getStatusColor = (currentStatus: string) => {
     switch (currentStatus.toUpperCase()) {
       case "COMPLETED":
-      case "READY":
         return "text-green-600 bg-green-50 border-green-100";
+      case "READY":
+        return "text-yellow-600 bg-yellow-100 border-yellow-200";
       case "IN PROCESS":
         return "text-blue-600 bg-blue-50 border-blue-100";
       case "CANCELLED":
