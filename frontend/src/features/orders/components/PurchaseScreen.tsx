@@ -17,6 +17,7 @@ import {
 import { useHistory, useParams, useLocation } from "react-router-dom";
 import { useCartStore } from "../../cart/cart.store";
 import SmallProductCard from "../../shop/components/SmallProductCard";
+import api from "../../../config/api";
 
 interface Product {
   id: number;
@@ -45,44 +46,10 @@ interface Order {
   totalAmount: number;
   status: string;
   createdAt: string;
+  updatedAt?: string; // Додано поле updatedAt
   store?: Store;
   items: OrderItem[];
 }
-
-// MOCK DATA
-const MOCK_ORDER_DETAIL: Order = {
-  id: 1,
-  orderNumber: "20260228-1001",
-  totalAmount: 1250.5,
-  status: "COMPLETED",
-  createdAt: new Date().toISOString(),
-  store: {
-    id: 1,
-    address: "вул. Київська, 34",
-  },
-  items: [
-    {
-      id: 101,
-      productImagePath: "",
-      productName: "Ковбаса 'Салямі' вищого ґатунку",
-      productCode: "892374",
-      productUnitsOfMeasurments: "кг",
-      priceAtPurchase: 900,
-      quantity: 1.5,
-      product: { id: 1, isActive: true },
-    },
-    {
-      id: 102,
-      productImagePath: "",
-      productName: "Сир 'Гауда' з витримкою 12 місяців",
-      productCode: "892375",
-      productUnitsOfMeasurments: "кг",
-      priceAtPurchase: 350.5,
-      quantity: 1,
-      product: { id: 2, isActive: false },
-    },
-  ],
-};
 
 const PurchaseScreen: React.FC = () => {
   const history = useHistory();
@@ -144,9 +111,8 @@ const PurchaseScreen: React.FC = () => {
     const fetchOrder = async () => {
       try {
         setIsLoading(true);
-        // Симуляція завантаження
-        await new Promise((resolve) => setTimeout(resolve, 600));
-        setOrder(MOCK_ORDER_DETAIL);
+        const { data } = await api.get(`/orders/${id}`);
+        setOrder(data);
       } catch (error) {
         console.error("Помилка при завантаженні покупки:", error);
         presentToast({
@@ -240,6 +206,14 @@ const PurchaseScreen: React.FC = () => {
             </div>
           ) : (
             <div className="flex flex-col gap-6">
+              {order.updatedAt && (
+                <div className="text-center w-full -mb-3 mt-0 md:-mt-4">
+                  <span className="text-[12px] text-gray-400 tracking-widest">
+                    Останнє оновлення: {formatDate(order.updatedAt)}
+                  </span>
+                </div>
+              )}
+
               <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div className="flex flex-col gap-2">
                   <span
@@ -279,7 +253,7 @@ const PurchaseScreen: React.FC = () => {
                 </h2>
 
                 <div className="flex flex-col gap-3">
-                  {order.items.map((item) => {
+                  {order.items?.map((item) => {
                     const isProductActive = item.product
                       ? item.product.isActive
                       : false;
