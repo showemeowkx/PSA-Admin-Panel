@@ -21,6 +21,7 @@ import {
 import { useHistory, useLocation } from "react-router-dom";
 import OrderCard from "./components/OrderCard";
 import api from "../../config/api";
+import { useOrdersStore } from "./orders.store";
 
 interface Order {
   id: number;
@@ -64,6 +65,8 @@ const OrdersScreen: React.FC = () => {
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+
+  const { markAsViewed } = useOrdersStore();
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -120,6 +123,7 @@ const OrdersScreen: React.FC = () => {
   }, [fetchOrders]);
 
   useIonViewWillEnter(() => {
+    markAsViewed();
     fetchOrders(1, true);
   });
 

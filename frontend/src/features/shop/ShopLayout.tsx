@@ -43,8 +43,10 @@ import ProfileWalletScreen from "../profile/ProfileWalletScreen";
 import ProfileSupportScreen from "../profile/ProfileSupportScreen";
 import SyncScreen from "../sync/SyncScreen";
 import PurchasesScreen from "../orders/PurchasesScreen";
-import PurchaseScreen from "../orders/components/PurchaseScreen";
 import OrdersScreen from "../orders/OrdersScreen";
+
+import { useOrdersStore } from "../orders/orders.store";
+import PurchaseScreen from "../orders/components/PurchaseScreen";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
@@ -52,6 +54,9 @@ const ShopLayout: React.FC = () => {
   const history = useHistory();
   const { user, setSelectedStore, token, logout, setUser } = useAuthStore();
   const { cartItemsCount, fetchCart } = useCartStore();
+
+  const { hasNewOrders, setHasNewOrders, lastViewedAt } = useOrdersStore();
+  const [showOrderNotification, setShowOrderNotification] = useState(false);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -66,6 +71,48 @@ const ShopLayout: React.FC = () => {
   const isAdminOnDesktop = user?.isAdmin && isPlatform("desktop");
   const isAdminRoute = location.pathname.startsWith("/admin");
   const basePath = isAdminRoute ? "/admin" : "/app";
+
+  useEffect(() => {
+    if (!isAdminOnDesktop || !token) return;
+
+    const checkNewOrders = async () => {
+      if (location.pathname.includes("/orders")) return;
+
+      try {
+        const { data } = await api.get("/orders/all?limit=1");
+        const latestOrder = data.data?.[0];
+
+        if (latestOrder) {
+          const latestDate = new Date(latestOrder.createdAt).getTime();
+          const viewedDate = lastViewedAt
+            ? new Date(lastViewedAt).getTime()
+            : 0;
+
+          if (latestDate > viewedDate) {
+            if (!hasNewOrders) {
+              setHasNewOrders(true);
+              setShowOrderNotification(true);
+              setTimeout(() => setShowOrderNotification(false), 5000);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Polling new orders failed", e);
+      }
+    };
+
+    checkNewOrders();
+    const interval = setInterval(checkNewOrders, 30000);
+
+    return () => clearInterval(interval);
+  }, [
+    isAdminOnDesktop,
+    token,
+    lastViewedAt,
+    hasNewOrders,
+    location.pathname,
+    setHasNewOrders,
+  ]);
 
   useEffect(() => {
     const refreshUserProfile = async () => {
@@ -218,7 +265,7 @@ const ShopLayout: React.FC = () => {
     (location.pathname.includes("/cart") ||
       location.pathname.includes("/product/") ||
       location.pathname.includes("/profile") ||
-      location.pathname.includes("/purchase/"));
+      location.pathname.includes("/purchases/"));
 
   return (
     <>
@@ -322,6 +369,11 @@ const ShopLayout: React.FC = () => {
                     icon={clipboardOutline}
                     active={location.pathname.includes("orders")}
                     href={`${basePath}/orders`}
+                    showDotBadge={
+                      hasNewOrders && !location.pathname.includes("orders")
+                    }
+                    showNotification={showOrderNotification}
+                    notificationText="Нове замовлення!"
                   />
                   <NavButton
                     label="Синхронізація"
@@ -610,6 +662,9 @@ interface NavButtonProps {
   href: string;
   className?: string;
   badgeCount?: number;
+  showDotBadge?: boolean;
+  showNotification?: boolean;
+  notificationText?: string;
 }
 
 const NavButton = ({
@@ -619,27 +674,43 @@ const NavButton = ({
   href,
   className = "",
   badgeCount = 0,
+  showDotBadge = false,
+  showNotification = false,
+  notificationText = "",
 }: NavButtonProps) => (
-  <a
-    href={href}
-    className={`
-      flex items-center px-4 py-2 rounded-full transition-all duration-200 text-sm font-bold relative
-      ${active ? "bg-black text-white hover:text-white hover:bg-black" : "text-gray-500 hover:text-black hover:bg-gray-100"}
-      ${className} 
-    `}
-  >
-    <IonIcon icon={icon} className="mr-2 text-xl" />
-    {label}
+  <div className="relative flex items-center">
+    <a
+      href={href}
+      className={`
+        flex items-center px-4 py-2 rounded-full transition-all duration-200 text-sm font-bold relative
+        ${active ? "bg-black text-white hover:text-white hover:bg-black" : "text-gray-500 hover:text-black hover:bg-gray-100"}
+        ${className} 
+      `}
+    >
+      <IonIcon icon={icon} className="mr-2 text-xl" />
+      {label}
 
-    {badgeCount > 0 && (
-      <IonBadge
-        color="dark"
-        className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full"
-      >
-        {badgeCount > 99 ? "99+" : badgeCount}
-      </IonBadge>
+      {badgeCount > 0 && (
+        <IonBadge
+          color="dark"
+          className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full"
+        >
+          {badgeCount > 99 ? "99+" : badgeCount}
+        </IonBadge>
+      )}
+
+      {showDotBadge && (
+        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white box-content"></span>
+      )}
+    </a>
+
+    {showNotification && (
+      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] font-bold px-3 py-1.5 rounded-xl shadow-xl animate-fade-in-up z-50 pointer-events-none whitespace-nowrap">
+        {notificationText}
+        <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-black rotate-45"></div>
+      </div>
     )}
-  </a>
+  </div>
 );
 
 export default ShopLayout;
