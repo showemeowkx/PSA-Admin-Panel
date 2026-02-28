@@ -44,6 +44,7 @@ import ProfileSupportScreen from "../profile/ProfileSupportScreen";
 import SyncScreen from "../sync/SyncScreen";
 import PurchasesScreen from "../orders/PurchasesScreen";
 import PurchaseScreen from "../orders/components/PurchaseScreen";
+import OrdersScreen from "../orders/OrdersScreen";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
@@ -270,19 +271,7 @@ const ShopLayout: React.FC = () => {
               </IonPage>
             )}
           />
-          <Route
-            exact
-            path={`${basePath}/orders`}
-            render={() => (
-              <IonPage className="bg-white">
-                <IonContent>
-                  <div className="flex h-full items-center justify-center font-bold text-gray-300">
-                    Замовлення (Admin)
-                  </div>
-                </IonContent>
-              </IonPage>
-            )}
-          />
+          <Route exact path={`${basePath}/orders`} component={OrdersScreen} />
           <Route exact path={`${basePath}/sync`} component={SyncScreen} />
           <Route exact path={`${basePath}`}>
             <Redirect to={`${basePath}/shop`} />
