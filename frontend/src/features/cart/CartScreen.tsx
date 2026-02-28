@@ -349,6 +349,7 @@ const CartScreen: React.FC = () => {
 
               <IonButton
                 fill="clear"
+                hidden={items.length === 0}
                 onClick={handleClearCart}
                 className="z-10"
               >
@@ -393,6 +394,7 @@ const CartScreen: React.FC = () => {
 
               <IonButton
                 fill="clear"
+                hidden={items.length === 0}
                 onClick={handleClearCart}
                 className="z-10"
               >
