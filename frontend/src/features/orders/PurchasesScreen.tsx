@@ -103,7 +103,7 @@ const PurchasesScreen: React.FC = () => {
       </IonHeader>
 
       <IonContent className="bg-gray-50 text-gray-900" fullscreen>
-        <div className="container mx-auto px-4 md:px-8 py-6 md:py-12 max-w-3xl md:mt-8 pb-32 animate-fade-in">
+        <div className="container mx-auto px-4 md:px-8 py-6 md:py-12 max-w-3xl pb-32 animate-fade-in">
           {(isLoading || orders.length > 0) && (
             <>
               <div className="flex items-center gap-4 mb-6 md:hidden">
@@ -159,7 +159,9 @@ const PurchasesScreen: React.FC = () => {
                   date={formatDate(order.createdAt)}
                   amount={Number(order.totalAmount)}
                   status={order.status}
-                  onClick={() => {}}
+                  onClick={() =>
+                    history.push(`${basePath}/purchase/${order.id}`)
+                  }
                 />
               ))}
             </div>
