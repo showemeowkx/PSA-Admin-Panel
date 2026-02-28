@@ -11,6 +11,15 @@ import {
 } from 'typeorm';
 import { ProductStock } from './product-stock.entity';
 
+export class ColumnNumericTransformer {
+  to(data: number | null): number | null {
+    return data;
+  }
+  from(data: string | null): number | null {
+    return data ? parseFloat(data) : null;
+  }
+}
+
 @Entity()
 export class Product {
   @PrimaryGeneratedColumn()
@@ -43,10 +52,19 @@ export class Product {
   @OneToMany(() => ProductStock, (stock) => stock.product, { cascade: true })
   stocks: ProductStock[];
 
-  @Column('decimal', { precision: 10, scale: 2 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    transformer: new ColumnNumericTransformer(),
+  })
   price: number;
 
-  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: new ColumnNumericTransformer(),
+  })
   pricePromo: number;
 
   @Column()

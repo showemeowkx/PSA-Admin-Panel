@@ -10,6 +10,15 @@ import { Product } from './product.entity';
 import { Store } from 'src/store/entities/store.entity';
 import { Expose } from 'class-transformer';
 
+export class ColumnNumericTransformer {
+  to(data: number | null): number | null {
+    return data;
+  }
+  from(data: string | null): number | null {
+    return data ? parseFloat(data) : null;
+  }
+}
+
 @Entity()
 @Unique(['product', 'storeId'])
 export class ProductStock {
@@ -32,14 +41,29 @@ export class ProductStock {
   @Column()
   storeId: number;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: new ColumnNumericTransformer(),
+  })
   quantity: number;
 
-  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  @Column('decimal', {
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: new ColumnNumericTransformer(),
+  })
   reserved: number;
 
   @Expose()
   get available(): number {
-    return parseFloat(Math.max(0, this.quantity - this.reserved).toFixed(2));
+    const qty = Number(this.quantity) || 0;
+    const res = Number(this.reserved) || 0;
+
+    const diff = Math.round((qty - res) * 100) / 100;
+
+    return Math.max(0, diff);
   }
 }
