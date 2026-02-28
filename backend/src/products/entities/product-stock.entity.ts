@@ -40,6 +40,6 @@ export class ProductStock {
 
   @Expose()
   get available(): number {
-    return Math.max(0, this.quantity - this.reserved);
+    return parseFloat(Math.max(0, this.quantity - this.reserved).toFixed(2));
   }
 }
