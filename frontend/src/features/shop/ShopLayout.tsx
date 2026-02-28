@@ -47,6 +47,7 @@ import OrdersScreen from "../orders/OrdersScreen";
 
 import { useOrdersStore } from "../orders/orders.store";
 import PurchaseScreen from "../orders/components/PurchaseScreen";
+import OrderScreen from "../orders/components/OrderScreen";
 
 const ShopLayout: React.FC = () => {
   const [presentToast] = useIonToast();
@@ -319,6 +320,7 @@ const ShopLayout: React.FC = () => {
             )}
           />
           <Route exact path={`${basePath}/orders`} component={OrdersScreen} />
+          <Route exact path={`${basePath}/order/:id`} component={OrderScreen} />
           <Route exact path={`${basePath}/sync`} component={SyncScreen} />
           <Route exact path={`${basePath}`}>
             <Redirect to={`${basePath}/shop`} />

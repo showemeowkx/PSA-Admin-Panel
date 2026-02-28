@@ -418,7 +418,7 @@ const OrdersScreen: React.FC = () => {
                     amount={Number(order.totalAmount)}
                     status={order.status}
                     onClick={() =>
-                      history.push(`${basePath}/purchases/${order.id}`)
+                      history.push(`${basePath}/order/${order.id}`)
                     }
                   />
                 ))}
