@@ -9,7 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { User } from 'src/auth/entities/user.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { Order, OrderStatus } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -100,15 +100,19 @@ export class OrdersService {
     await qr.startTransaction();
 
     try {
+      const chosenStore = user.selectedStoreId;
+      const productIds = orderItems.map((item) => item.product.id);
+
+      const stocks = await qr.manager.find(ProductStock, {
+        where: {
+          productId: In(productIds),
+          storeId: chosenStore,
+        },
+        lock: { mode: 'pessimistic_write' },
+      });
+
       for (const item of orderItems) {
-        const chosenStore = user.selectedStoreId;
-        const stock = await qr.manager.findOne(ProductStock, {
-          where: {
-            productId: item.product.id,
-            storeId: chosenStore,
-          },
-          lock: { mode: 'pessimistic_write' },
-        });
+        const stock = stocks.find((s) => s.productId === item.product.id);
 
         if (!stock || stock.available < item.quantity) {
           throw new ConflictException(
@@ -117,7 +121,10 @@ export class OrdersService {
         }
 
         stock.reserved = Number(stock.reserved) + Number(item.quantity);
-        await qr.manager.save(stock);
+      }
+
+      if (stocks.length > 0) {
+        await qr.manager.save(stocks);
       }
 
       const paymentEntity = await this.paymentsService.chargeWallet(
@@ -315,21 +322,28 @@ export class OrdersService {
   private async releaseReservation(order: Order) {
     this.logger.debug(`Releasing reservation... {orderId: ${order.id}}`);
 
-    for (const item of order.items) {
-      const stock = await this.stockRepository.findOne({
-        where: {
-          productId: item.product.id,
-          storeId: order.storeId,
-        },
-      });
+    if (!order.items || order.items.length === 0) return;
+    const productIds = order.items.map((item) => item.product.id);
 
+    const stocks = await this.stockRepository.find({
+      where: {
+        productId: In(productIds),
+        storeId: order.storeId,
+      },
+    });
+
+    for (const item of order.items) {
+      const stock = stocks.find((s) => s.productId === item.product.id);
       if (stock) {
         stock.reserved = Math.max(
           0,
           Number(stock.reserved) - Number(item.quantity),
         );
-        await this.stockRepository.save(stock);
       }
+    }
+
+    if (stocks.length > 0) {
+      await this.stockRepository.save(stocks);
     }
   }
 }
