@@ -8,6 +8,7 @@ import {
   IonSpinner,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
+  useIonViewWillEnter,
 } from "@ionic/react";
 import { bagHandleOutline, searchOutline } from "ionicons/icons";
 import { useHistory, useLocation } from "react-router-dom";
@@ -84,6 +85,10 @@ const PurchasesScreen: React.FC = () => {
   useEffect(() => {
     fetchOrders(1, true);
   }, []);
+
+  useIonViewWillEnter(() => {
+    fetchOrders(1, true);
+  });
 
   const loadMore = async (e: CustomEvent<void>) => {
     await fetchOrders(page + 1);

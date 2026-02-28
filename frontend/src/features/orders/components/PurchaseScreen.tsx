@@ -46,7 +46,7 @@ interface Order {
   totalAmount: number;
   status: string;
   createdAt: string;
-  updatedAt?: string; // Додано поле updatedAt
+  updatedAt?: string;
   store?: Store;
   items: OrderItem[];
 }
