@@ -17,7 +17,6 @@ import { CartService } from 'src/cart/cart.service';
 import { ConfigService } from '@nestjs/config';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
 import { SyncService } from 'src/sync/sync.service';
-import { GetOrderDto } from './dto/get-order.dto';
 import { GetOrdersDto } from './dto/get-orders.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
@@ -243,28 +242,14 @@ export class OrdersService {
     };
   }
 
-  async findOne(getOrderDto: GetOrderDto): Promise<Order> {
-    let condition = {};
-    const { orderId, orderNumber } = getOrderDto;
-
-    if (orderId) {
-      condition = { id: orderId };
-    } else if (orderNumber) {
-      condition = { orderNumber: orderNumber };
-    } else {
-      this.logger.error(`Body is empty`);
-      throw new BadRequestException('Body is empty');
-    }
-
+  async findOne(id: number): Promise<Order> {
     const order = await this.orderRepository.findOne({
-      where: condition,
+      where: { id },
       relations: ['items', 'items.product', 'user', 'store'],
     });
 
     if (!order) {
-      this.logger.error(
-        `Order not found {identifier: ${getOrderDto.orderId || getOrderDto.orderNumber}}`,
-      );
+      this.logger.error(`Order not found {orderId: ${id}}`);
       throw new NotFoundException('Замовлення не знайдено.');
     }
 
@@ -283,7 +268,7 @@ export class OrdersService {
 
   @AutoClearCache('/orders')
   async updateStatus(id: number, status: OrderStatus): Promise<Order> {
-    const order = await this.findOne({ orderId: id });
+    const order = await this.findOne(id);
 
     if (status === OrderStatus.READY) {
       const productsToUpdate = this.getProductsToUpdate(order);

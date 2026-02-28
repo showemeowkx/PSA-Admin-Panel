@@ -17,7 +17,6 @@ import { User } from 'src/auth/entities/user.entity';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { Order, OrderStatus } from './entities/order.entity';
 import { AdminGuard } from 'src/auth/guards/admin.guard';
-import { GetOrderDto } from './dto/get-order.dto';
 import { GetOrdersDto } from './dto/get-orders.dto';
 import { CacheTTL } from '@nestjs/cache-manager';
 
@@ -69,12 +68,10 @@ export class OrdersController {
     return this.ordersService.findAllByUser(req.user.id, paginationOptions);
   }
 
-  @Get('/one')
-  findOne(@Body() getOrderDto: GetOrderDto): Promise<Order> {
-    this.logger.verbose(
-      `Getting an order... {identifier: ${getOrderDto.orderId || getOrderDto.orderNumber}}`,
-    );
-    return this.ordersService.findOne(getOrderDto);
+  @Get('/:id')
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<Order> {
+    this.logger.verbose(`Getting an order... {orderId: ${id}}`);
+    return this.ordersService.findOne(id);
   }
 
   @UseGuards(AdminGuard)
