@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import {
   IonPage,
   IonContent,
@@ -97,22 +97,25 @@ const ProductScreen: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmAlert, setShowConfirmAlert] = useState(false);
 
-  useEffect(() => {
-    const fetchProduct = async () => {
+  const fetchProduct = useCallback(
+    async (showSpinner = false) => {
       if (!id) return;
       try {
-        setIsLoading(true);
+        if (showSpinner) setIsLoading(true);
         const { data } = await api.get(`/products/${id}`);
         setProduct(data);
       } catch (error) {
         console.error("Failed to fetch product:", error);
       } finally {
-        setIsLoading(false);
+        if (showSpinner) setIsLoading(false);
       }
-    };
+    },
+    [id],
+  );
 
-    fetchProduct();
-  }, [id]);
+  useEffect(() => {
+    fetchProduct(true);
+  }, [fetchProduct]);
 
   useEffect(() => {
     const fetchAlikeProducts = async () => {
@@ -190,6 +193,7 @@ const ProductScreen: React.FC = () => {
   };
 
   useIonViewWillEnter(() => {
+    fetchProduct(false);
     if (!isPlatform("desktop")) {
       const tabBar = document.querySelector("ion-tab-bar");
       if (tabBar) tabBar.style.display = "none";
