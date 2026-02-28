@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   IonPage,
   IonContent,
@@ -9,6 +9,7 @@ import {
   IonIcon,
   IonAlert,
   useIonToast,
+  IonSpinner,
 } from "@ionic/react";
 import {
   chevronBackOutline,
@@ -18,55 +19,56 @@ import {
   closeCircleOutline,
   alertCircleOutline,
 } from "ionicons/icons";
-import { useHistory } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
+import api from "../../../config/api";
 
-// MOCK DATA
-const MOCK_ADMIN_ORDER = {
-  id: 1,
-  orderNumber: "20260228-1001",
-  totalAmount: 1250.5,
-  status: "IN PROCESS",
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  transactionId: "TXN-9876543210ABC",
-  store: {
-    id: 1,
-    address: "вул. Хрещатик, 1",
-  },
-  user: {
-    id: 845,
-    firstName: "Іван",
-    lastName: "Петренко",
-    phone: "+380 50 123 45 67",
-  },
-  items: [
-    {
-      id: 101,
-      productImagePath: "https://via.placeholder.com/150",
-      productName: "Корм Royal Canin для кошенят",
-      productCode: "RC-101-KITTEN",
-      priceAtPurchase: 450.0,
-      quantity: 2,
-      product: {
-        id: 123,
-      },
-    },
-    {
-      id: 102,
-      productImagePath: "https://via.placeholder.com/150",
-      productName: "Іграшка 'Мишка' інтерактивна",
-      productCode: "TOY-55-MOUSE",
-      priceAtPurchase: 350.5,
-      quantity: 1,
-    },
-  ],
-};
+// ТИПИ НА ОСНОВІ ТВОЇХ СУТНОСТЕЙ БЕКЕНДУ
+interface User {
+  id: number;
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
+interface Product {
+  id: number;
+}
+
+interface OrderItem {
+  id: number;
+  productImagePath: string;
+  productName: string;
+  productCode: string;
+  productUnitsOfMeasurments: string;
+  priceAtPurchase: number;
+  quantity: number;
+  product: Product | null;
+}
+
+interface Store {
+  id: number;
+  address: string;
+}
+
+interface Order {
+  id: number;
+  orderNumber: string;
+  totalAmount: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  storeId?: number;
+  store?: Store;
+  user?: User;
+  paymentId?: string;
+  items: OrderItem[];
+}
 
 const AdminOrderItemCard = ({
   item,
   onClick,
 }: {
-  item: any;
+  item: OrderItem;
   onClick?: () => void;
 }) => (
   <div
@@ -113,11 +115,41 @@ const AdminOrderItemCard = ({
 
 const OrderScreen: React.FC = () => {
   const history = useHistory();
-  const order = MOCK_ADMIN_ORDER;
+  const { id } = useParams<{ id: string }>();
   const [presentToast] = useIonToast();
+
+  const [order, setOrder] = useState<Order | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [showUpdateAlert, setShowUpdateAlert] = useState(false);
   const [showCancelAlert, setShowCancelAlert] = useState(false);
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      if (!id) return;
+      try {
+        setIsLoading(true);
+
+        const { data } = await api.request({
+          method: "GET",
+          url: `/orders/${id}`,
+        });
+
+        setOrder(data);
+      } catch (error) {
+        console.error("Помилка при завантаженні замовлення:", error);
+        presentToast({
+          message: "Не вдалося завантажити деталі замовлення",
+          duration: 3000,
+          color: "danger",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrder();
+  }, [id, presentToast]);
 
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
@@ -152,17 +184,18 @@ const OrderScreen: React.FC = () => {
       case "COMPLETED":
         return "Виконано";
       case "READY":
-        return "Готово";
+        return "Готово до отримання";
       case "IN PROCESS":
-        return "В обробці";
+        return "У процесі обробки";
       case "CANCELLED":
-        return "Відмінено";
+        return "Скасовано";
       default:
         return currentStatus;
     }
   };
 
   const getUpdateAlertMessage = () => {
+    if (!order) return "";
     if (order.status === "IN PROCESS") {
       return "Переконайтеся, що створили заявку в системі обліку УкрСклад перед продовженням. Ви впевнені, що хочете оновити статус?";
     } else if (order.status === "READY") {
@@ -196,7 +229,7 @@ const OrderScreen: React.FC = () => {
               <IonIcon icon={chevronBackOutline} className="text-2xl" /> Назад
             </IonButton>
             <span className="absolute left-0 right-0 text-center font-bold text-gray-800 text-lg pointer-events-none">
-              Замовлення #{order.orderNumber}
+              Замовлення {order ? `#${order.orderNumber}` : ""}
             </span>
           </div>
         </IonToolbar>
@@ -212,186 +245,219 @@ const OrderScreen: React.FC = () => {
               <IonIcon icon={chevronBackOutline} className="text-3xl" />
             </button>
             <h1 className="text-3xl font-black text-gray-800 flex items-center gap-3">
-              Замовлення #{order.orderNumber}
+              Замовлення {order ? `#${order.orderNumber}` : ""}
             </h1>
           </div>
 
-          <div className="flex flex-col gap-6">
-            <div className="text-center w-full -mb-3 mt-2 md:mt-0">
-              <div className="text-center w-full -mb-3 mt-0 md:-mt-4">
-                <span className="text-[12px] text-gray-400 tracking-widest">
-                  Останнє оновлення: {formatDate(order.updatedAt)}
-                </span>
-              </div>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-32 gap-4">
+              <IonSpinner name="crescent" className="text-black w-8 h-8" />
             </div>
-
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-              <div className="flex flex-col gap-2">
-                <span
-                  className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border w-fit leading-none ${getStatusColor(
-                    order.status,
-                  )}`}
-                >
-                  {translateStatus(order.status)}
-                </span>
-                <div className="flex flex-col mt-2">
-                  <span className="text-sm font-bold text-gray-800">
-                    {order.store?.address}
-                  </span>
-                  <span className="text-sm font-medium text-gray-500 mt-0.5">
-                    Створено: {formatDate(order.createdAt)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-col items-start md:items-end w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-gray-100">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
-                  Сума замовлення
-                </span>
-                <span className="text-3xl font-black text-gray-900 leading-none">
-                  {Number(order.totalAmount)}{" "}
-                  <span className="text-lg font-normal text-gray-400">₴</span>
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
-              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <IonIcon
-                  icon={personOutline}
-                  className="text-black text-3xl pr-3"
-                />
-                Дані клієнта
-                {order.user?.id && (
-                  <span className="text-sm font-mono font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md ml-auto">
-                    ID: {order.user.id}
-                  </span>
-                )}
+          ) : !order ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <IonIcon
+                icon={receiptOutline}
+                className="text-6xl text-gray-300 mb-4"
+              />
+              <h2 className="text-xl font-bold text-gray-800">
+                Замовлення не знайдено
               </h2>
-
-              <div className="flex flex-col gap-3">
-                <div className="flex justify-between items-center border-b border-gray-50 pb-3">
-                  <span className="text-sm font-medium text-gray-500">
-                    ПІБ Клієнта
-                  </span>
-                  <span className="text-sm font-bold text-gray-800 text-right">
-                    {order.user?.firstName || order.user?.lastName
-                      ? `${order.user?.firstName || ""} ${order.user?.lastName || ""}`.trim()
-                      : "Не вказано"}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center border-b border-gray-50 pb-3">
-                  <span className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
-                    <IonIcon icon={callOutline} /> Телефон
-                  </span>
-                  <span className="text-sm font-bold text-gray-800 text-right">
-                    {order.user?.phone || "Не вказано"}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center pt-1">
-                  <span className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
-                    <IonIcon icon={receiptOutline} /> ID Транзакції
-                  </span>
-                  <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
-                    {order.transactionId || "N/A"}
+              <p className="text-gray-500 mt-2 text-sm">
+                Можливо воно було видалене або сталася помилка.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6">
+              <div className="text-center w-full -mb-3 mt-2 md:mt-0">
+                <div className="text-center w-full -mb-3 mt-0 md:-mt-4">
+                  <span className="text-[12px] text-gray-400 tracking-widest">
+                    Останнє оновлення: {formatDate(order.updatedAt)}
                   </span>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-3xl p-6 pt-1 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-800 mb-4 pl-1">
-                Товари у замовленні
-              </h2>
-              <div className="flex flex-col gap-3">
-                {order.items.map((item) => (
-                  <AdminOrderItemCard
-                    key={item.id}
-                    item={item}
-                    onClick={() => {
-                      if (item.product?.id) {
-                        history.push(`/admin/product/${item.product.id}`);
-                      }
-                    }}
-                  />
-                ))}
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div className="flex flex-col gap-2">
+                  <span
+                    className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border w-fit leading-none ${getStatusColor(
+                      order.status,
+                    )}`}
+                  >
+                    {translateStatus(order.status)}
+                  </span>
+                  <div className="flex flex-col mt-2">
+                    <span className="text-sm font-bold text-gray-800">
+                      {order.store?.address}
+                    </span>
+                    <span className="text-sm font-medium text-gray-500 mt-0.5">
+                      Створено: {formatDate(order.createdAt)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-start md:items-end w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0 border-gray-100">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    Сума замовлення
+                  </span>
+                  <span className="text-3xl font-black text-gray-900 leading-none">
+                    {Number(order.totalAmount)}{" "}
+                    <span className="text-lg font-normal text-gray-400">₴</span>
+                  </span>
+                </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-3xl p-6 pt-2 shadow-sm border border-gray-100 flex flex-col gap-5">
-              <h2 className="text-lg font-bold text-gray-800 mb-1">
-                Управління замовленням
-              </h2>
-
-              {order.status === "IN PROCESS" && (
-                <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex gap-3 items-start">
+              <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-4">
+                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                   <IonIcon
-                    icon={alertCircleOutline}
-                    className="text-red-500 text-xl shrink-0 mt-0.5"
+                    icon={personOutline}
+                    className="text-black text-3xl pr-3"
                   />
-                  <p className="text-sm font-medium text-red-800 leading-tight">
-                    ВАЖЛИВО: Переконайтеся, що створили заявку в системі обліку
-                    УкрСклад перед оновленням статусу. Недотримання інструкцій
-                    може призвести до поломки додатку.
+                  Дані клієнта
+                  {order.user?.id && (
+                    <span className="text-sm font-mono font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md ml-auto">
+                      ID: {order.user.id}
+                    </span>
+                  )}
+                </h2>
+
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-between items-center border-b border-gray-50 pb-3">
+                    <span className="text-sm font-medium text-gray-500">
+                      ПІБ Клієнта
+                    </span>
+                    <span className="text-sm font-bold text-gray-800 text-right">
+                      {order.user?.firstName || order.user?.lastName
+                        ? `${order.user?.firstName || ""} ${order.user?.lastName || ""}`.trim()
+                        : "Не вказано"}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center border-b border-gray-50 pb-3">
+                    <span className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
+                      <IonIcon icon={callOutline} /> Телефон
+                    </span>
+                    <span className="text-sm font-bold text-gray-800 text-right">
+                      {order.user?.phone || "Не вказано"}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-sm font-medium text-gray-500 flex items-center gap-1.5">
+                      <IonIcon icon={receiptOutline} /> ID Транзакції
+                    </span>
+                    <span className="text-xs font-mono font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
+                      {order.paymentId || "N/A"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 pt-1 shadow-sm border border-gray-100">
+                <h2 className="text-lg font-bold text-gray-800 mb-4 pl-1">
+                  Товари у замовленні
+                </h2>
+                <div className="flex flex-col gap-3">
+                  {order.items.map((item) => (
+                    <AdminOrderItemCard
+                      key={item.id}
+                      item={item}
+                      onClick={() => {
+                        if (item.product?.id) {
+                          history.push(`/admin/product/${item.product.id}`);
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 pt-2 shadow-sm border border-gray-100 flex flex-col gap-5">
+                <h2 className="text-lg font-bold text-gray-800 mb-1">
+                  Управління замовленням
+                </h2>
+
+                {order.status === "IN PROCESS" && (
+                  <div className="bg-red-50 border border-red-100 rounded-xl p-4 flex gap-3 items-start">
+                    <IonIcon
+                      icon={alertCircleOutline}
+                      className="text-red-500 text-xl shrink-0 mt-0.5"
+                    />
+                    <p className="text-sm font-medium text-red-800 leading-tight">
+                      Важливо: переконайтеся, що створили заявку в системі
+                      обліку УкрСклад перед продовженням. Недотримання
+                      інструкцій може призвести до поломки додатку.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex flex-col md:flex-row gap-3 items-end">
+                  <div className="flex-1 w-full flex flex-col gap-1.5">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider pl-1">
+                      Поточний статус
+                    </span>
+                    <div className="w-full flex items-center px-4 h-[52px] rounded-xl border border-gray-200 bg-gray-50">
+                      <span className="text-sm font-bold text-gray-800 truncate uppercase">
+                        {translateStatus(order.status)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 w-full flex flex-col gap-1.5">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider pl-1">
+                      Наступний статус
+                    </span>
+                    <div className="w-full flex items-center px-4 h-[52px] rounded-xl border border-gray-200 bg-gray-50">
+                      <span className="text-sm font-bold text-gray-800 truncate uppercase">
+                        {translateStatus(getNextStatus(order.status))}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowUpdateAlert(true)}
+                    disabled={
+                      order.status === "COMPLETED" ||
+                      order.status === "CANCELLED"
+                    }
+                    className={`bg-black text-white px-8 h-[52px] w-full md:w-auto rounded-xl font-bold text-[16px] ${
+                      order.status === "COMPLETED" ||
+                      order.status === "CANCELLED"
+                        ? ""
+                        : "hover:bg-gray-800"
+                    } active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md shadow-gray-200 disabled:opacity-50 disabled:active:scale-100`}
+                  >
+                    Оновити статус
+                  </button>
+                </div>
+
+                <div className="w-full h-px bg-gray-100 my-1"></div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setShowCancelAlert(true)}
+                    disabled={
+                      order.status === "COMPLETED" ||
+                      order.status === "CANCELLED"
+                    }
+                    className="w-full h-[52px] rounded-xl border-2 border-red-100 text-red-500 font-bold text-sm hover:bg-red-50 hover:border-red-200 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100 disabled:hover:bg-transparent"
+                  >
+                    <IonIcon icon={closeCircleOutline} className="text-lg" />
+                    Скасувати замовлення
+                  </button>
+                  <p
+                    hidden={
+                      order.status === "COMPLETED" ||
+                      order.status === "CANCELLED"
+                    }
+                    className="text-xs text-center text-gray-400 font-medium px-2"
+                  >
+                    * обов'язково зв'яжіться з клієнтом при скасуванні
+                    замовлення
                   </p>
                 </div>
-              )}
-
-              <div className="flex flex-col md:flex-row gap-3 items-end">
-                <div className="flex-1 w-full flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider pl-1">
-                    Поточний статус
-                  </span>
-                  <div className="w-full flex items-center px-4 h-[52px] rounded-xl border border-gray-200 bg-gray-50">
-                    <span className="text-sm font-bold text-gray-800 truncate uppercase">
-                      {translateStatus(order.status)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex-1 w-full flex flex-col gap-1.5">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider pl-1">
-                    Наступний статус
-                  </span>
-                  <div className="w-full flex items-center px-4 h-[52px] rounded-xl border border-gray-200 bg-gray-50">
-                    <span className="text-sm font-bold text-gray-800 truncate uppercase">
-                      {translateStatus(getNextStatus(order.status))}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setShowUpdateAlert(true)}
-                  disabled={
-                    order.status === "COMPLETED" || order.status === "CANCELLED"
-                  }
-                  className="bg-black text-white px-8 h-[52px] w-full md:w-auto rounded-xl font-bold text-[16px] hover:bg-gray-800 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md shadow-gray-200 disabled:opacity-50 disabled:active:scale-100"
-                >
-                  Оновити статус
-                </button>
-              </div>
-
-              <div className="w-full h-px bg-gray-100 my-1"></div>
-
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => setShowCancelAlert(true)}
-                  disabled={
-                    order.status === "COMPLETED" || order.status === "CANCELLED"
-                  }
-                  className="w-full h-[52px] rounded-xl border-2 border-red-100 text-red-500 font-bold text-sm hover:bg-red-50 hover:border-red-200 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100 disabled:hover:bg-transparent"
-                >
-                  <IonIcon icon={closeCircleOutline} className="text-lg" />
-                  Скасувати замовлення
-                </button>
-                <p className="text-xs text-center text-gray-400 font-medium px-2">
-                  * обов'язково зв'яжіться з клієнтом при скасуванні замовлення
-                </p>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </IonContent>
 
@@ -438,7 +504,7 @@ const OrderScreen: React.FC = () => {
               presentToast({
                 message: "Замовлення було скасовано",
                 duration: 2000,
-                color: "danger",
+                color: "success",
               });
             },
           },

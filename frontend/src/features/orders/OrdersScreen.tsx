@@ -37,10 +37,10 @@ interface Store {
 }
 
 const STATUS_OPTIONS = [
-  { value: "IN PROCESS", label: "В обробці" },
-  { value: "READY", label: "Готово" },
+  { value: "IN PROCESS", label: "У процесі обробки" },
+  { value: "READY", label: "Готово до отримання" },
   { value: "COMPLETED", label: "Виконано" },
-  { value: "CANCELLED", label: "Відмінено" },
+  { value: "CANCELLED", label: "Скасовано" },
 ];
 
 const OrdersScreen: React.FC = () => {
