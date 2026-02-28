@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import {
   IonPage,
@@ -168,8 +167,9 @@ const OrderScreen: React.FC = () => {
   const getStatusColor = (currentStatus: string) => {
     switch (currentStatus.toUpperCase()) {
       case "COMPLETED":
-      case "READY":
         return "text-green-600 bg-green-50 border-green-100";
+      case "READY":
+        return "text-yellow-600 bg-yellow-100 border-yellow-200";
       case "IN PROCESS":
         return "text-blue-600 bg-blue-50 border-blue-100";
       case "CANCELLED":
@@ -424,7 +424,7 @@ const OrderScreen: React.FC = () => {
                       order.status === "CANCELLED"
                         ? ""
                         : "hover:bg-gray-800"
-                    } active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md shadow-gray-200 disabled:opacity-50 disabled:active:scale-100`}
+                    } active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md shadow-gray-200 disabled:opacity-50 disabled:active:scale-100 disabled:pointer-events-none`}
                   >
                     Оновити статус
                   </button>
@@ -439,7 +439,7 @@ const OrderScreen: React.FC = () => {
                       order.status === "COMPLETED" ||
                       order.status === "CANCELLED"
                     }
-                    className="w-full h-[52px] rounded-xl border-2 border-red-100 text-red-500 font-bold text-sm hover:bg-red-50 hover:border-red-200 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100 disabled:hover:bg-transparent"
+                    className="w-full h-[52px] rounded-xl border-2 border-red-100 text-red-500 font-bold text-sm hover:bg-red-50 hover:border-red-200 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100 disabled:pointer-events-none"
                   >
                     <IonIcon icon={closeCircleOutline} className="text-lg" />
                     Скасувати замовлення
@@ -475,12 +475,36 @@ const OrderScreen: React.FC = () => {
           {
             text: "Так, оновити",
             role: "confirm",
-            handler: () => {
-              presentToast({
-                message: "Статус успішно оновлено",
-                duration: 2000,
-                color: "success",
-              });
+            handler: async () => {
+              if (!order) return;
+              try {
+                const nextStatus = getNextStatus(order.status);
+                if (nextStatus === "-") return;
+
+                await api.request({
+                  method: "PATCH",
+                  url: `/orders/${order.id}/${nextStatus}`,
+                });
+
+                setOrder({
+                  ...order,
+                  status: nextStatus,
+                  updatedAt: new Date().toISOString(),
+                });
+
+                presentToast({
+                  message: "Статус успішно оновлено",
+                  duration: 2000,
+                  color: "success",
+                });
+              } catch (error) {
+                console.error("Помилка при оновленні статусу:", error);
+                presentToast({
+                  message: "Не вдалося оновити статус",
+                  duration: 3000,
+                  color: "danger",
+                });
+              }
             },
           },
         ]}
@@ -500,12 +524,33 @@ const OrderScreen: React.FC = () => {
           {
             text: "Так, скасувати",
             role: "confirm",
-            handler: () => {
-              presentToast({
-                message: "Замовлення було скасовано",
-                duration: 2000,
-                color: "success",
-              });
+            handler: async () => {
+              if (!order) return;
+              try {
+                await api.request({
+                  method: "PATCH",
+                  url: `/orders/${order.id}/CANCELLED`,
+                });
+
+                setOrder({
+                  ...order,
+                  status: "CANCELLED",
+                  updatedAt: new Date().toISOString(),
+                });
+
+                presentToast({
+                  message: "Замовлення було скасовано",
+                  duration: 2000,
+                  color: "success",
+                });
+              } catch (error) {
+                console.error("Помилка при скасуванні:", error);
+                presentToast({
+                  message: "Не вдалося скасувати замовлення",
+                  duration: 3000,
+                  color: "danger",
+                });
+              }
             },
           },
         ]}
