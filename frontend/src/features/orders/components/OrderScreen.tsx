@@ -16,7 +16,6 @@ import {
   callOutline,
   receiptOutline,
   closeCircleOutline,
-  checkmarkCircleOutline,
   alertCircleOutline,
 } from "ionicons/icons";
 import { useHistory } from "react-router-dom";
@@ -172,6 +171,17 @@ const OrderScreen: React.FC = () => {
     return "Ви впевнені, що хочете оновити статус цього замовлення?";
   };
 
+  const getNextStatus = (currentStatus: string) => {
+    switch (currentStatus.toUpperCase()) {
+      case "IN PROCESS":
+        return "READY";
+      case "READY":
+        return "COMPLETED";
+      default:
+        return "-";
+    }
+  };
+
   return (
     <IonPage>
       <IonHeader className="ion-no-border bg-white md:hidden pt-safe">
@@ -310,7 +320,7 @@ const OrderScreen: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col gap-5">
+            <div className="bg-white rounded-3xl p-6 pt-2 shadow-sm border border-gray-100 flex flex-col gap-5">
               <h2 className="text-lg font-bold text-gray-800 mb-1">
                 Управління замовленням
               </h2>
@@ -335,8 +345,19 @@ const OrderScreen: React.FC = () => {
                     Поточний статус
                   </span>
                   <div className="w-full flex items-center px-4 h-[52px] rounded-xl border border-gray-200 bg-gray-50">
-                    <span className="text-sm font-bold text-gray-800 truncate">
+                    <span className="text-sm font-bold text-gray-800 truncate uppercase">
                       {translateStatus(order.status)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex-1 w-full flex flex-col gap-1.5">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider pl-1">
+                    Наступний статус
+                  </span>
+                  <div className="w-full flex items-center px-4 h-[52px] rounded-xl border border-gray-200 bg-gray-50">
+                    <span className="text-sm font-bold text-gray-800 truncate uppercase">
+                      {translateStatus(getNextStatus(order.status))}
                     </span>
                   </div>
                 </div>
@@ -348,7 +369,6 @@ const OrderScreen: React.FC = () => {
                   }
                   className="bg-black text-white px-8 h-[52px] w-full md:w-auto rounded-xl font-bold text-[16px] hover:bg-gray-800 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md shadow-gray-200 disabled:opacity-50 disabled:active:scale-100"
                 >
-                  <IonIcon icon={checkmarkCircleOutline} className="text-lg" />
                   Оновити статус
                 </button>
               </div>
