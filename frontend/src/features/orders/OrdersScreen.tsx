@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   IonPage,
   IonContent,
@@ -6,6 +6,9 @@ import {
   IonToolbar,
   IonIcon,
   IonSpinner,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
+  useIonViewWillEnter,
 } from "@ionic/react";
 import {
   searchOutline,
@@ -17,36 +20,20 @@ import {
 } from "ionicons/icons";
 import { useHistory, useLocation } from "react-router-dom";
 import OrderCard from "./components/OrderCard";
+import api from "../../config/api";
 
-// MOCK DATA
-const MOCK_ORDERS = [
-  {
-    id: 1,
-    orderNumber: "20260228-1001",
-    createdAt: new Date().toISOString(),
-    totalAmount: 1250.5,
-    status: "COMPLETED",
-  },
-  {
-    id: 2,
-    orderNumber: "20260228-1002",
-    createdAt: new Date().toISOString(),
-    totalAmount: 450.0,
-    status: "READY",
-  },
-  {
-    id: 3,
-    orderNumber: "20260227-1003",
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    totalAmount: 3200.0,
-    status: "IN PROCESS",
-  },
-];
+interface Order {
+  id: number;
+  orderNumber: string;
+  totalAmount: string | number;
+  status: string;
+  createdAt: string;
+}
 
-const MOCK_STORES = [
-  { id: 1, address: "вул. Київська, 34" },
-  { id: 2, address: "вул. Тараса Шевченка, 47" },
-];
+interface Store {
+  id: number;
+  address: string;
+}
 
 const STATUS_OPTIONS = [
   { value: "IN PROCESS", label: "В обробці" },
@@ -65,6 +52,11 @@ const OrdersScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [selectedStore, setSelectedStore] = useState<number | null>(null);
   const storeRef = useRef<HTMLDivElement>(null);
@@ -72,6 +64,69 @@ const OrdersScreen: React.FC = () => {
   const [isStatusOpen, setIsStatusOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        const { data } = await api.get("/store?limit=0&showInactive=1");
+        setStores(Array.isArray(data) ? data : data.data || []);
+      } catch (error) {
+        console.error("Failed to fetch stores", error);
+      }
+    };
+    fetchStores();
+  }, []);
+
+  const fetchOrders = useCallback(
+    async (pageNum: number, isInitial = false) => {
+      try {
+        if (isInitial) setIsLoading(true);
+
+        const params = new URLSearchParams({
+          limit: "10",
+          page: pageNum.toString(),
+        });
+
+        if (selectedStore) params.append("storeId", selectedStore.toString());
+        if (selectedStatus) params.append("status", selectedStatus);
+        if (searchQuery) params.append("search", searchQuery);
+
+        const { data } = await api.get(`/orders/all?${params.toString()}`);
+        const fetchedOrders = data.data || [];
+
+        if (isInitial) {
+          setOrders(fetchedOrders);
+        } else {
+          setOrders((prev) => [...prev, ...fetchedOrders]);
+        }
+
+        setHasMore(pageNum < (data.metadata?.totalPages || 1));
+        setPage(pageNum);
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+      } finally {
+        if (isInitial) setIsLoading(false);
+      }
+    },
+    [selectedStore, selectedStatus, searchQuery],
+  );
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchOrders(1, true);
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [fetchOrders]);
+
+  useIonViewWillEnter(() => {
+    fetchOrders(1, true);
+  });
+
+  const loadMore = async (e: CustomEvent<void>) => {
+    await fetchOrders(page + 1);
+    (e.target as HTMLIonInfiniteScrollElement).complete();
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -118,7 +173,7 @@ const OrdersScreen: React.FC = () => {
   };
 
   const currentStoreLabel = selectedStore
-    ? MOCK_STORES.find((s) => s.id === selectedStore)?.address
+    ? stores.find((s) => s.id === selectedStore)?.address
     : "Всі магазини";
 
   const currentStatusLabel = selectedStatus
@@ -214,7 +269,7 @@ const OrdersScreen: React.FC = () => {
                       )}
                     </button>
 
-                    {MOCK_STORES.map((store) => (
+                    {stores.map((store) => (
                       <button
                         key={store.id}
                         onClick={() => {
@@ -334,7 +389,7 @@ const OrdersScreen: React.FC = () => {
                   Завантаження замовлень...
                 </span>
               </div>
-            ) : MOCK_ORDERS.length === 0 ? (
+            ) : orders.length === 0 ? (
               <div className="flex flex-col items-center justify-center mt-20 px-6 text-center animate-fade-in-up">
                 <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-sm border-[2px] border-gray-300 mb-6">
                   <IonIcon
@@ -351,7 +406,7 @@ const OrdersScreen: React.FC = () => {
               </div>
             ) : (
               <div className="flex flex-col">
-                {MOCK_ORDERS.map((order) => (
+                {orders.map((order) => (
                   <OrderCard
                     key={order.id}
                     orderNumber={order.orderNumber}
@@ -366,6 +421,16 @@ const OrdersScreen: React.FC = () => {
               </div>
             )}
           </div>
+
+          <IonInfiniteScroll
+            onIonInfinite={loadMore}
+            disabled={!hasMore || isLoading}
+          >
+            <IonInfiniteScrollContent
+              loadingSpinner="crescent"
+              loadingText="Завантаження..."
+            />
+          </IonInfiniteScroll>
         </div>
       </IonContent>
     </IonPage>
