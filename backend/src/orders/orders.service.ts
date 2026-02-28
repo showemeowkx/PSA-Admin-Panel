@@ -272,13 +272,14 @@ export class OrdersService {
 
     if (status === OrderStatus.READY) {
       const productsToUpdate = this.getProductsToUpdate(order);
+      const prevSyncState = this.syncService.getSyncStatus().running;
 
       await this.syncService.setSyncState(false);
 
       await this.syncService.syncProducts(productsToUpdate);
       await this.releaseReservation(order);
 
-      await this.syncService.setSyncState(true);
+      await this.syncService.setSyncState(prevSyncState);
 
       if (this.configService.get<string>('NODE_ENV') === 'prod') {
         await this.smsService.sendSms(
