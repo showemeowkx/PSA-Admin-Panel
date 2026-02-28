@@ -64,14 +64,29 @@ const SyncScreen: React.FC = () => {
         setLastRun(data.lastRun);
         setNextRun(data.nextRun);
 
-        const cron = data.period?.source || "";
-        if (cron.includes("*/30")) setSyncInterval("0.5");
-        else if (cron.includes("*/3")) setSyncInterval("3");
-        else if (cron.includes("*/6")) setSyncInterval("6");
-        else if (cron.includes("*/12")) setSyncInterval("12");
-        else if (cron.startsWith("0 0 0") || cron.includes("0 0 * * *"))
-          setSyncInterval("24");
-        else setSyncInterval("1");
+        const rawPeriod = data.period;
+        const cron =
+          typeof rawPeriod === "string" ? rawPeriod : rawPeriod?.source || "";
+
+        switch (cron) {
+          case "0 */30 * * * *":
+            setSyncInterval("0.5");
+            break;
+          case "0 0 */3 * * *":
+            setSyncInterval("3");
+            break;
+          case "0 0 */6 * * *":
+            setSyncInterval("6");
+            break;
+          case "0 0 */12 * * *":
+            setSyncInterval("12");
+            break;
+          case "0 0 0 * * *":
+            setSyncInterval("24");
+            break;
+          default:
+            setSyncInterval("1");
+        }
       } catch (error) {
         console.error("Failed to load sync config", error);
       }
