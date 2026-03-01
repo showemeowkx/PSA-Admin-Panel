@@ -361,6 +361,9 @@ export class SyncService {
           imagePath: defaultImage,
           updatedAt: new Date(),
           category: p.CATEGORY_ID ? categoryMap.get(p.CATEGORY_ID) : undefined,
+          lastSyncedCategoryName: p.CATEGORY_ID
+            ? categoryMap.get(p.CATEGORY_ID)?.lastSyncedName
+            : undefined,
         };
 
         try {

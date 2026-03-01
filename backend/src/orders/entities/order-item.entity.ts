@@ -22,6 +22,9 @@ export class OrderItem {
   @Column()
   productCode: string;
 
+  @Column({ nullable: true })
+  categoryName: string;
+
   @Column()
   productUnitsOfMeasurments: string;
 

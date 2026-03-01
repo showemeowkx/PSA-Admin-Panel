@@ -43,6 +43,9 @@ export class Product {
   @Column({ nullable: true })
   categoryId: number;
 
+  @Column({ nullable: true })
+  lastSyncedCategoryName: string;
+
   @ManyToOne(() => Category, (category) => category.products, {
     onDelete: 'SET NULL',
   })

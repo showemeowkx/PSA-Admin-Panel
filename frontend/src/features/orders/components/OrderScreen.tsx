@@ -38,6 +38,7 @@ interface OrderItem {
   productImagePath: string;
   productName: string;
   productCode: string;
+  categoryName: string;
   productUnitsOfMeasurments: string;
   priceAtPurchase: number;
   quantity: number;
@@ -89,9 +90,14 @@ const AdminOrderItemCard = ({
       />
     </div>
     <div className="flex flex-col flex-1 py-1 pr-2">
-      <span className="text-[10px] font-mono font-bold text-gray-400 bg-gray-100 w-fit px-1.5 py-0.5 rounded mb-1">
-        {item.productCode}
-      </span>
+      <div hidden={!item.categoryName} className="flex items-center gap-1">
+        <span className="text-[10px] font-mono font-bold text-gray-400 bg-gray-100 w-fit px-1.5 py-0.5 rounded mb-1">
+          {item.categoryName}
+        </span>
+        <span className="text-[10px] font-mono font-bold text-gray-400 bg-gray-100 w-fit px-1.5 py-0.5 rounded mb-1">
+          {item.productCode}
+        </span>
+      </div>
       <h3 className="text-sm font-bold text-gray-800 leading-tight mb-auto line-clamp-2">
         {item.productName}
       </h3>
