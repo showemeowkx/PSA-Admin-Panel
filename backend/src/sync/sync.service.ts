@@ -2,7 +2,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CronJob, CronTime } from 'cron';
 import { UkrSkladService } from './ukrsklad.service';
-import { In, Repository } from 'typeorm';
+import { In, Repository, FindManyOptions } from 'typeorm';
 import { Product } from 'src/products/entities/product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ProductStock } from 'src/products/entities/product-stock.entity';
@@ -95,12 +95,7 @@ export class SyncService {
     let status = 'success';
 
     try {
-      const [storesRes, categoriesRes, productsRes] = await Promise.all([
-        this.syncStores(),
-        this.syncCategories(),
-        this.syncProducts(),
-      ]);
-
+      const storesRes = await this.syncStores();
       if (storesRes.status === 'success') {
         synced.push('Stores');
       } else {
@@ -108,6 +103,7 @@ export class SyncService {
         errors.push(...storesRes.errors);
       }
 
+      const categoriesRes = await this.syncCategories();
       if (categoriesRes.status === 'success') {
         synced.push('Categories');
       } else {
@@ -117,6 +113,7 @@ export class SyncService {
         errors.push(...categoriesRes.errors);
       }
 
+      const productsRes = await this.syncProducts();
       if (productsRes.status === 'success') {
         synced.push('Products');
       } else {
@@ -304,9 +301,20 @@ export class SyncService {
       this.ukrSklad.getProductStock(ids),
     ]);
 
-    const findOptions: { withDeleted: boolean; where?: { ukrskladId: any } } = {
+    const findOptions: FindManyOptions<Product> = {
       withDeleted: true,
+      select: [
+        'id',
+        'ukrskladId',
+        'name',
+        'lastSyncedName',
+        'description',
+        'isActive',
+        'imagePath',
+        'deletedAt',
+      ],
     };
+
     if (ids && ids.length > 0) {
       findOptions.where = { ukrskladId: In(ids) };
     }
@@ -447,7 +455,12 @@ export class SyncService {
       const productsToDelete = Array.from(productMap.values());
       if (productsToDelete.length > 0) {
         const idsToDelete = productsToDelete.map((p) => p.id);
-        await this.productService.remove(idsToDelete);
+
+        const DELETE_BATCH_SIZE = 500;
+        for (let i = 0; i < idsToDelete.length; i += DELETE_BATCH_SIZE) {
+          const batchIds = idsToDelete.slice(i, i + DELETE_BATCH_SIZE);
+          await this.productService.remove(batchIds);
+        }
       }
     } catch (error) {
       status = 'failed';
