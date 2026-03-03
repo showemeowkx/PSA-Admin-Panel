@@ -111,7 +111,12 @@ const AdminOrderItemCard = ({
 
       <div className="mt-2 flex items-end justify-between">
         <span className="text-sm font-black text-gray-900">
-          {Number(item.priceAtPurchase) * item.quantity}{" "}
+          {Number(
+            (
+              Math.round(item.priceAtPurchase * Number(item.quantity) * 100) /
+              100
+            ).toFixed(2),
+          )}{" "}
           <span className="text-xs font-normal text-gray-400">₴</span>
         </span>
       </div>

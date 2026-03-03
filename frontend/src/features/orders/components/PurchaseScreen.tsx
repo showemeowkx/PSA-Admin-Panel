@@ -272,7 +272,15 @@ const PurchaseScreen: React.FC = () => {
 
                         <SmallProductCard
                           name={item.productName}
-                          price={Number(item.priceAtPurchase) * item.quantity}
+                          price={Number(
+                            (
+                              Math.round(
+                                item.priceAtPurchase *
+                                  Number(item.quantity) *
+                                  100,
+                              ) / 100
+                            ).toFixed(2),
+                          )}
                           unit={item.productUnitsOfMeasurments}
                           image={item.productImagePath}
                           isActive={isProductActive}
