@@ -45,15 +45,11 @@ services:
       - ./backend/.env
     ports:
       - "${PORT}:${PORT}"
-    command: npm run start:dev
     depends_on:
       db:
         condition: service_healthy
       cache:
         condition: service_healthy
-    volumes:
-      - ./backend:/usr/src/app
-      - /usr/src/app/node_modules
     networks:
       - psa_network
 
