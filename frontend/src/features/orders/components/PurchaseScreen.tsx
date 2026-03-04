@@ -281,7 +281,7 @@ const PurchaseScreen: React.FC = () => {
                               ) / 100
                             ).toFixed(2),
                           )}
-                          unit={item.productUnitsOfMeasurments}
+                          unit=""
                           image={item.productImagePath}
                           isActive={isProductActive}
                           isCartItem={false}
