@@ -43,7 +43,7 @@ export class GetProductsFiltersDto {
     }
 
     if (Array.isArray(value)) {
-      return value.map((id) => parseInt(id, 10));
+      return value.map((id) => parseInt(id as string, 10));
     }
 
     return [parseInt(value as string, 10)];
@@ -65,6 +65,10 @@ export class GetProductsFiltersDto {
   @IsOptional()
   @IsEnum(SortMethod)
   sortMethod?: SortMethod = SortMethod.PROMO;
+
+  @IsOptional()
+  @IsString()
+  code?: string;
 
   @IsOptional()
   @Type(() => Number)

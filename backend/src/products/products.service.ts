@@ -123,6 +123,7 @@ export class ProductsService {
       storeId,
       categoryIds,
       search,
+      code,
       minPrice,
       maxPrice,
       sortMethod = 'PROMO',
@@ -161,10 +162,15 @@ export class ProductsService {
       qb.andWhere('product.categoryId IN (:...categoryIds)', { categoryIds });
     }
     if (search) {
-      qb.andWhere(
-        '(product.name ILIKE :search OR product.description ILIKE :search)',
-        { search: `%${search}%` },
-      );
+      const searchTerms = search.trim().split(/\s+/);
+      searchTerms.forEach((term, index) => {
+        qb.andWhere(`product.name ILIKE :term${index}`, {
+          [`term${index}`]: `%${term}%`,
+        });
+      });
+    }
+    if (code) {
+      qb.andWhere('product.code ILIKE :code', { code: `%${code}%` });
     }
     if (minPrice !== undefined) {
       qb.andWhere(
