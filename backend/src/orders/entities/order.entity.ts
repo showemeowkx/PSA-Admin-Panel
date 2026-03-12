@@ -15,7 +15,7 @@ import { Store } from 'src/store/entities/store.entity';
 export enum OrderStatus {
   CANCELLED = 'CANCELLED',
   IN_PROCESS = 'IN PROCESS',
-  READY = 'READY',
+  IN_DELIVERY = 'IN DELIVERY',
   COMPLETED = 'COMPLETED',
 }
 

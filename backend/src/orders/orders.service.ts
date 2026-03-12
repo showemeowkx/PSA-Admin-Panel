@@ -275,7 +275,7 @@ export class OrdersService {
   async updateStatus(id: number, status: OrderStatus): Promise<Order> {
     const order = await this.findOne(id);
 
-    if (status === OrderStatus.READY) {
+    if (status === OrderStatus.IN_DELIVERY) {
       const productsToUpdate = this.getProductsToUpdate(order);
       const prevSyncState = this.syncService.getSyncStatus().running;
 
